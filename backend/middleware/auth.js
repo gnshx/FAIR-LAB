@@ -228,9 +228,10 @@ function setSessionCookie(res, token) {
 }
 
 function clearSessionCookie(res) {
+  const secureAttr = process.env.NODE_ENV === 'production' ? '; Secure' : '';
   res.setHeader(
     'Set-Cookie',
-    `${SESSION_COOKIE_NAME}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0`
+    `${SESSION_COOKIE_NAME}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0${secureAttr}`
   );
 }
 
@@ -241,7 +242,8 @@ function createRateLimiter({ windowMs = 60000, maxRequests = 60 } = {}) {
   const buckets = new Map();
 
   return (req, res, next) => {
-    const key = (req.user && req.user.user_id) || req.headers['x-user-id'] || req.ip || 'anonymous';
+    const devHeader = process.env.NODE_ENV !== 'production' ? req.headers['x-user-id'] : null;
+    const key = (req.user && req.user.user_id) || devHeader || req.ip || 'anonymous';
     const now = Date.now();
     const entry = buckets.get(key) || [];
     const recent = entry.filter(ts => now - ts < windowMs);

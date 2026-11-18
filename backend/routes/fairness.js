@@ -1,12 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const { getDb } = require('../db/database');
+const { resolveAuthenticatedUser } = require('../middleware/auth');
 const { runMonteCarloSimulation, runThreePolicyComparison } = require('../services/analyticsService');
 const { checkDailyBookingLimit, getFairnessLeaderboard } = require('../services/fairnessEngine');
 const { getTodayDateString } = require('../db/seed');
 
 router.get('/me', (req, res) => {
-  const userId = req.headers['x-user-id'] || 'usr-student-ganesh';
+  const authed = resolveAuthenticatedUser(req, process.env.NODE_ENV !== 'production' ? 'usr-student-ganesh' : null);
+  if (!authed) return res.status(401).json({ error: 'Authentication required' });
+  const userId = authed.user_id;
   const date = req.query.date || getTodayDateString();
   const db = getDb();
 
@@ -94,7 +97,9 @@ router.get('/leaderboard', (req, res) => {
 
 // Allocation & score history for current user
 router.get('/history', (req, res) => {
-  const userId = req.headers['x-user-id'] || 'usr-student-ganesh';
+  const authed = resolveAuthenticatedUser(req, process.env.NODE_ENV !== 'production' ? 'usr-student-ganesh' : null);
+  if (!authed) return res.status(401).json({ error: 'Authentication required' });
+  const userId = authed.user_id;
   const db = getDb();
   try {
     const history = db.prepare(`

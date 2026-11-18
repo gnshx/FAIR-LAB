@@ -6,6 +6,8 @@ export function SocketProvider({ children }) {
   const [connected, setConnected] = useState(false);
   const [lastEvent, setLastEvent] = useState(null);
   const listenersRef = useRef(new Map());
+  // Bounded set of processed outbox eventIds for idempotent at-least-once delivery handling
+  const seenEventIdsRef = useRef(new Set());
 
   useEffect(() => {
     let ws;
@@ -25,6 +27,17 @@ export function SocketProvider({ children }) {
         ws.onmessage = (event) => {
           try {
             const data = JSON.parse(event.data);
+            const eventId = data.eventId || data.payload?.eventId;
+            if (eventId) {
+              if (seenEventIdsRef.current.has(eventId)) {
+                return; // Idempotent consumer: ignore duplicate redelivery from outbox recovery
+              }
+              seenEventIdsRef.current.add(eventId);
+              if (seenEventIdsRef.current.size > 500) {
+                const oldest = seenEventIdsRef.current.values().next().value;
+                seenEventIdsRef.current.delete(oldest);
+              }
+            }
             setLastEvent(data);
 
             const listeners = listenersRef.current.get(data.type);

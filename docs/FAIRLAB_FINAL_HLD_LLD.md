@@ -236,6 +236,7 @@ flowchart TD
 - **Client Retry Storms**: Handled via `Idempotency-Key` deduplication.
 - **Pass Generation Failure**: Decoupled from booking commit; a booking stays confirmed even if QR rendering retries asynchronously.
 - **Workstation Failure / Maintenance**: Marking a booked seat offline atomically reallocates active bookings to another free seat in the same block and logs an audit entry.
+- **Transactional Outbox Recovery & At-Least-Once Idempotency**: Events committed as `PENDING` inside booking/allocation transactions are swept immediately on server startup and every 5 seconds. Every outbox broadcast carries its deterministic `eventId`, and the frontend WebSocket consumer ([SocketContext.jsx](file:///home/ganesh/Desktop/csd/project/frontend/src/context/SocketContext.jsx)) deduplicates by `eventId` (bounded 500-entry set) so a crash between broadcast and `PUBLISHED` update never causes duplicate consumer side effects.
 - **Graceful Shutdown**: `SIGTERM`/`SIGINT` handlers stop the outbox timer, drain HTTP connections, and close database handles cleanly.
 
 ---
@@ -255,7 +256,8 @@ flowchart TD
 
 | Metric / Claim | Classification | Evidence / Basis |
 | :--- | :--- | :--- |
-| **13 / 13 automated test suites passing** | **Measured test result** | Executed locally via `npm test` ([run-all-tests.js](file:///home/ganesh/Desktop/csd/project/tests/run-all-tests.js)) |
+| **14 / 14 automated test suites passing** | **Measured test result** | Executed locally via `npm test` ([run-all-tests.js](file:///home/ganesh/Desktop/csd/project/tests/run-all-tests.js)) |
+| **Phase 10 validation (`71 / 71` assertions)** | **Measured test result** | Executed in [test-phase10-validation.js](file:///home/ganesh/Desktop/csd/project/tests/test-phase10-validation.js) — clean DB boot, full student + gate journey, anti-bypass fairness, maintenance reallocation, `NODE_ENV=production` JWT/Secure-cookie/`x-user-id` blocking, and server-restart outbox recovery + consumer deduplication |
 | **100 concurrent requests vs 5 slots** | **Tested concurrency scenario** | Executed in [test-concurrency.js](file:///home/ganesh/Desktop/csd/project/tests/test-concurrency.js) (`~150–230 ms`, 0 duplicates) |
 | **PostgreSQL 16 `btree_gist` exclusion (`23P01`)** | **Tested live PostgreSQL result** | Executed against PostgreSQL 16 container ([test-app-on-postgres.js](file:///home/ganesh/Desktop/csd/project/tests/test-app-on-postgres.js)) |
 | **14 red-team security & auth vectors** | **Measured test result** | Executed in [test-adversarial-redteam.js](file:///home/ganesh/Desktop/csd/project/tests/test-adversarial-redteam.js) (JWT verify/tamper, `ACCESS_OPERATOR` `403`, `@iitbhilai.ac.in` spoofs, RBAC, IDOR, SQLi/XSS, `429`) |
@@ -281,3 +283,4 @@ Target campus VM: **10 vCPU / 10 GB RAM** running:
 2. **Multi-Instance Horizontal Scaling**: If FairLab ever scales beyond a single Node worker, add Redis Pub/Sub to fan out WebSocket events across instances.
 3. **Physical Hardware Integrations**: Connect physical L-106 turnstile relays (`RELAY_CONTROLLER_URL`) and optional workstation telemetry agents (`agents/`) after campus network approval.
 4. **Formal Load Testing**: Run a full k6/Artillery load test against the PostgreSQL 16 deployment on the target VM to replace peak capacity estimates with measured throughput curves.
+

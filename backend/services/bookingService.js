@@ -1290,9 +1290,11 @@ function getQueueForSlot(slotId, bookingDate = null) {
 }
 
 /**
- * Transactional Outbox Publisher:
- * Reads PENDING events committed to outbox_events, emits them via WebSocket broadcast,
- * and marks them PUBLISHED (crash-safe retry on restart or interval sweep).
+ * Transactional Outbox Publisher (At-Least-Once Delivery + Idempotent Event IDs):
+ * Reads PENDING events committed to outbox_events, emits them via WebSocket broadcast
+ * tagged with their deterministic `eventId`, and marks them PUBLISHED.
+ * If the process crashes after broadcast and before the DB update, the next recovery sweep
+ * redelivers the same `eventId`, and WebSocket consumers deduplicate by `eventId`.
  */
 function publishPendingOutboxEvents(broadcastFn) {
   if (typeof broadcastFn !== 'function') return 0;
@@ -1312,7 +1314,7 @@ function publishPendingOutboxEvents(broadcastFn) {
   for (const evt of pending) {
     try {
       const parsed = JSON.parse(evt.payload);
-      broadcastFn(evt.event_type, parsed);
+      broadcastFn(evt.event_type, { ...parsed, eventId: evt.event_id }, { eventId: evt.event_id });
       markPublished.run(evt.event_id);
       count++;
     } catch {

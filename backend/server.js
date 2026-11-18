@@ -31,9 +31,20 @@ const adminRoutes = require('./routes/admin');
 const app = express();
 const server = http.createServer(app);
 
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map(o => o.trim()).filter(Boolean)
+  : null;
+
 app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins) {
+      return callback(null, allowedOrigins.includes(origin));
+    }
+    return callback(null, process.env.NODE_ENV !== 'production');
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-user-id', 'idempotency-key']
 }));
 
@@ -72,8 +83,9 @@ wss.on('connection', (ws) => {
   });
 });
 
-function broadcast(type, payload) {
+function broadcast(type, payload, meta = {}) {
   const data = JSON.stringify({
+    eventId: meta.eventId || (payload && payload.eventId) || null,
     type,
     payload,
     version: getStateVersion(),
@@ -281,6 +293,15 @@ server.listen(PORT, config.HOST, () => {
     console.log(`Serving Frontend at http://${config.HOST}:${PORT}/`);
   }
   console.log(`====================================================`);
+  // Immediate startup recovery sweep for any PENDING outbox events committed prior to a crash/restart
+  try {
+    const recovered = publishPendingOutboxEvents(broadcast);
+    if (recovered > 0) {
+      console.log(`[Outbox] Recovered and published ${recovered} pending event(s) on startup.`);
+    }
+  } catch {
+    // non-fatal startup sweep
+  }
 });
 
 // Transactional Outbox Publisher sweep (republishes any PENDING events after crash/commit)

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { validateBody, z } = require('../middleware/validation');
+const { resolveAuthenticatedUser, requireUser, requireAdmin } = require('../middleware/auth');
 const {
   submitBookingRequest,
   cancelBookingRequest,
@@ -11,6 +12,25 @@ const {
 const { getPassByBookingId } = require('../services/passService');
 const { getDb } = require('../db/database');
 const { getTodayDateString } = require('../db/seed');
+
+function resolveBookingUser(req, fallbackDevId = null) {
+  return resolveAuthenticatedUser(
+    req,
+    process.env.NODE_ENV !== 'production' ? fallbackDevId : null
+  );
+}
+
+function requireAllocateAuth(req, res, next) {
+  if (
+    req.headers.authorization ||
+    req.headers.cookie ||
+    req.headers['x-user-id'] ||
+    process.env.NODE_ENV === 'production'
+  ) {
+    return requireAdmin(req, res, next);
+  }
+  next();
+}
 
 const bookingRequestSchema = z.object({
   slotId: z.string().optional().nullable(),
@@ -35,7 +55,9 @@ function broadcastEvents(app, events) {
 
 // Submit booking request (Hybrid: preferred workstation + fairness queue)
 router.post('/request', validateBody(bookingRequestSchema), async (req, res) => {
-  const userId = req.headers['x-user-id'] || 'usr-student-ganesh';
+  const authed = resolveBookingUser(req, 'usr-student-ganesh');
+  if (!authed) return res.status(401).json({ error: 'Authentication required' });
+  const userId = authed.user_id;
   const idempKey = req.body.idempotencyKey || req.headers['idempotency-key'] || null;
   try {
     const result = submitBookingRequest({
@@ -64,8 +86,8 @@ router.post('/request', validateBody(bookingRequestSchema), async (req, res) => 
 });
 
 // Withdraw a queued/waitlisted request with zero penalty
-router.delete('/request/:id', (req, res) => {
-  const userId = req.headers['x-user-id'] || '';
+router.delete('/request/:id', requireUser, (req, res) => {
+  const userId = req.user.user_id;
   try {
     const result = cancelBookingRequest(req.params.id, userId);
     broadcastEvents(req.app, [
@@ -80,7 +102,9 @@ router.delete('/request/:id', (req, res) => {
 
 // Get user's active & past bookings (confirmed/checked-in/completed/cancelled) AND pending requests
 router.get('/my-bookings', (req, res) => {
-  const userId = req.headers['x-user-id'] || 'usr-student-ganesh';
+  const authed = resolveBookingUser(req, 'usr-student-ganesh');
+  if (!authed) return res.status(401).json({ error: 'Authentication required' });
+  const userId = authed.user_id;
   const db = getDb();
   try {
     const bookings = db.prepare(`
@@ -124,7 +148,9 @@ router.get('/my-bookings', (req, res) => {
 
 // Legacy alias: Get user's active and past passes
 router.get('/my-passes', async (req, res) => {
-  const userId = req.headers['x-user-id'] || 'usr-student-ganesh';
+  const authed = resolveBookingUser(req, 'usr-student-ganesh');
+  if (!authed) return res.status(401).json({ error: 'Authentication required' });
+  const userId = authed.user_id;
   const db = getDb();
   try {
     const bookings = db.prepare(`
@@ -163,8 +189,8 @@ router.get('/:id/pass', async (req, res) => {
 });
 
 // Cancel a confirmed booking (POST or DELETE /api/bookings/:id)
-router.delete('/:id', (req, res) => {
-  const userId = req.headers['x-user-id'] || '';
+router.delete('/:id', requireUser, (req, res) => {
+  const userId = req.user.user_id;
   try {
     const result = cancelBooking(req.params.id, userId, 'Student cancelled reservation');
     broadcastEvents(req.app, [
@@ -189,8 +215,8 @@ const cancelSchema = z.object({
   reason: z.string().optional()
 });
 
-router.post('/:id/cancel', validateBody(cancelSchema), (req, res) => {
-  const userId = req.headers['x-user-id'] || '';
+router.post('/:id/cancel', requireUser, validateBody(cancelSchema), (req, res) => {
+  const userId = req.user.user_id;
   try {
     const result = cancelBooking(req.params.id, userId, req.body.reason);
 
@@ -217,7 +243,7 @@ router.get('/queue/:slotId', (req, res) => {
 });
 
 // Run batch allocation round for a slot
-router.post('/queue/:slotId/allocate', async (req, res) => {
+router.post('/queue/:slotId/allocate', requireAllocateAuth, async (req, res) => {
   try {
     const bookingDate = (req.body && req.body.bookingDate) || req.query.date || null;
     const maxLimit = (req.body && req.body.maxLimit) ? Number(req.body.maxLimit) : null;

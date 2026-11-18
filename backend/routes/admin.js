@@ -6,7 +6,12 @@ const { getDb } = require('../db/database');
 const { executeSemesterReset, getFairnessLeaderboard } = require('../services/fairnessEngine');
 const { getFairnessScoreSpectrum, getVramHoursByField } = require('../services/analyticsService');
 const { toggleWorkstationMaintenance } = require('../services/gpuResourceService');
-const { runAllocationRound, runWindowAllocationRound, processNoShows } = require('../services/bookingService');
+const {
+  runAllocationRound,
+  runWindowAllocationRound,
+  processNoShows,
+  publishPendingOutboxEvents
+} = require('../services/bookingService');
 const { syncLabSlotsFromPolicy, getLabAvailability, invalidateAvailabilityCache } = require('../services/availabilityService');
 const {
   listTimetable,
@@ -56,7 +61,7 @@ const policyUpdateSchema = z.object({
 
 // Update Policy & sync configurable lab schedule intervals (Admin RBAC enforced)
 router.put('/policy', requireAdmin, validateBody(policyUpdateSchema), (req, res) => {
-  const actorId = req.headers['x-user-id'] || 'usr-admin-sharma';
+  const actorId = req.user.user_id;
   const db = getDb();
 
   const current = db.prepare('SELECT * FROM policy_config WHERE id = 1').get() || {};
@@ -172,7 +177,7 @@ router.post('/allocation-rounds', requireAdmin, validateBody(allocRoundSchema), 
     });
 
     if (req.app.get('wssBroadcast')) {
-      req.app.get('wssBroadcast')('allocation.completed', { roundId: result.roundId, allocatedCount: result.allocatedCount });
+      publishPendingOutboxEvents(req.app.get('wssBroadcast'));
       req.app.get('wssBroadcast')('QUEUE_CHANGED', { roundId: result.roundId });
       req.app.get('wssBroadcast')('SLOT_UPDATED', { roundId: result.roundId });
     }
@@ -201,7 +206,7 @@ router.post('/allocate/:slotId', requireAdmin, async (req, res) => {
     const result = await runAllocationRound(req.params.slotId, maxLimit, bookingDate);
 
     if (req.app.get('wssBroadcast')) {
-      req.app.get('wssBroadcast')('allocation.completed', { slotId: req.params.slotId, allocatedCount: result.allocatedCount });
+      publishPendingOutboxEvents(req.app.get('wssBroadcast'));
       req.app.get('wssBroadcast')('QUEUE_CHANGED', { slotId: req.params.slotId });
       req.app.get('wssBroadcast')('SLOT_UPDATED', { slotId: req.params.slotId });
     }
@@ -221,7 +226,7 @@ const noShowSchema = z.object({
 });
 
 router.post('/process-no-shows', requireAdmin, validateBody(noShowSchema), async (req, res) => {
-  const actorId = req.headers['x-user-id'] || 'usr-admin-sharma';
+  const actorId = req.user.user_id;
   try {
     const result = await processNoShows({
       bookingId: req.body.bookingId || null,
@@ -249,7 +254,7 @@ const semesterResetSchema = z.object({
 
 // Execute Semester Reset
 router.post('/semester/reset', requireAdmin, validateBody(semesterResetSchema), (req, res) => {
-  const actorId = req.headers['x-user-id'] || 'usr-admin-sharma';
+  const actorId = req.user.user_id;
   try {
     const result = executeSemesterReset(actorId, 'Dr. A. K. Sharma', req.body.semesterName);
 
@@ -341,7 +346,7 @@ const toggleMaintenanceSchema = z.object({
 
 // Toggle Workstation Maintenance (with automatic booking reallocation if taken offline)
 router.post('/workstation/toggle-maintenance', requireAdmin, validateBody(toggleMaintenanceSchema), (req, res) => {
-  const actorId = req.headers['x-user-id'] || 'usr-admin-sharma';
+  const actorId = req.user.user_id;
   try {
     const result = toggleWorkstationMaintenance(req.body.machineId, req.body.isMaintenance, actorId);
 
@@ -370,7 +375,7 @@ const overrideSchema = z.object({
 
 // Administrative Override
 router.post('/override', requireAdmin, validateBody(overrideSchema), async (req, res) => {
-  const actorId = req.headers['x-user-id'] || 'usr-admin-sharma';
+  const actorId = req.user.user_id;
   const db = getDb();
   const bookingDate = req.body.bookingDate || getTodayDateString();
 

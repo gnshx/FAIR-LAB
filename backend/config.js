@@ -17,7 +17,7 @@ module.exports = {
   HOST: process.env.HOST || '0.0.0.0',
   JWT_SECRET: resolveSecret('JWT_SECRET'),
   HMAC_SECRET: resolveSecret('HMAC_SECRET'),
-  DB_PATH: path.join(__dirname, 'fairlab.db'),
+  DB_PATH: process.env.FAIRLAB_DB_PATH || path.join(__dirname, 'fairlab.db'),
   DEFAULT_POLICY: {
     baseScore: 100,
     deductionPerBooking: 10,
