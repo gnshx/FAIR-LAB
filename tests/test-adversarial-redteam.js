@@ -380,7 +380,30 @@ async function runRedTeamSuite() {
     const validAdmin = await httpRequest('POST', '/api/auth/login', { email: 'aksharma@iitbhilai.ac.in', password: 'testpassword' });
     assert.strictEqual(validAdmin.status, 200, `Registered @iitbhilai.ac.in admin must succeed (200), got ${validAdmin.status}`);
     assert.strictEqual(validAdmin.data.user.role, 'admin');
-    console.log('[Attack 13] PASS: Strict @iitbhilai.ac.in login gate blocked all 6 spoofed/external domains (403), rejected unknown institute email (401), and authenticated verified student/admin (200).');
+    assert(validAdmin.data.token && validAdmin.data.token.split('.').length === 3, 'Login must issue a valid HS256 JWT');
+    console.log('[Attack 13] PASS: Strict @iitbhilai.ac.in login gate blocked all 6 spoofed/external domains (403), rejected unknown institute email (401), and issued signed JWTs (200).');
+
+    // -----------------------------------------------------------------------
+    // ATTACK 14: Verified JWT Auth Trust Model & Scoped ACCESS_OPERATOR Permission
+    // -----------------------------------------------------------------------
+    // 14A: Valid Bearer JWT authenticates /api/auth/me without any x-user-id header
+    const jwtMe = await httpRequest('GET', '/api/auth/me', null, { Authorization: `Bearer ${validAdmin.data.token}` });
+    assert.strictEqual(jwtMe.status, 200, 'Verified Bearer JWT must authenticate /api/auth/me');
+    assert.strictEqual(jwtMe.data.user.user_id, 'usr-admin-sharma');
+
+    // 14B: Tampered JWT signature must be rejected with 401
+    const badJwt = await httpRequest('GET', '/api/auth/me', null, { Authorization: `Bearer ${validAdmin.data.token}x` });
+    assert.strictEqual(badJwt.status, 401, `Tampered JWT must return 401, got ${badJwt.status}`);
+
+    // 14C: Admin account WITHOUT ACCESS_OPERATOR permission (usr-faculty-sneha) must be rejected (403) on gate check-in
+    const nonOpAdminLogin = await httpRequest('POST', '/api/auth/login', { email: 'ssen@iitbhilai.ac.in', password: 'testpassword' });
+    assert.strictEqual(nonOpAdminLogin.status, 200);
+    assert.strictEqual(nonOpAdminLogin.data.user.role, 'admin');
+    const nonOpGate = await httpRequest('POST', '/api/access/check-in', { passId: 'pass-nonexistent' }, {
+      Authorization: `Bearer ${nonOpAdminLogin.data.token}`
+    });
+    assert.strictEqual(nonOpGate.status, 403, `Admin without ACCESS_OPERATOR permission must get 403 on gate check-in, got ${nonOpGate.status}`);
+    console.log('[Attack 14] PASS: Signed JWT verified on /api/auth/me, tampered JWT rejected (401), and Admin without ACCESS_OPERATOR blocked from gate check-in (403).');
 
     // -----------------------------------------------------------------------
     // FINAL CHECK: Server Liveness & Integrity Post-Red-Team

@@ -409,31 +409,8 @@ async function submitHybridBookingRequest(params) {
     };
   }
 
-  // Step 2: Check for competing pending requests overlapping this exact window
-  const competingCount = db.prepare(`
-    SELECT COUNT(*) as cnt
-    FROM booking_requests r
-    LEFT JOIN lab_slots s ON r.slot_id = s.slot_id
-    WHERE r.request_id != ?
-      AND r.booking_date = ?
-      AND r.status = 'QUEUED'
-      AND COALESCE(r.start_time, s.start_time) < ?
-      AND ? < COALESCE(r.end_time, s.end_time)
-  `).get(reqResult.requestId, reqResult.bookingDate, reqResult.endTime, reqResult.startTime).cnt;
-
-  // SECURITY INVARIANT: Client can NEVER force IMMEDIATE mode when competing requests exist!
-  if (competingCount > 0) {
-    db.prepare("UPDATE booking_requests SET allocation_mode = 'SCHEDULED' WHERE request_id = ?").run(reqResult.requestId);
-    return {
-      ...reqResult,
-      status: 'PENDING',
-      allocationMode: 'SCHEDULED',
-      competingRequests: competingCount,
-      message: `${competingCount} competing request(s) detected for this window. Queued for fairness ranking.`
-    };
-  }
-
-  // Step 3: Uncontested! Try immediate transactional confirmation on first available ranked preference
+  // Step 2 & 3: Atomically verify contention (no competing QUEUED requests & no RUNNING round)
+  // AND immediately confirm on first available ranked preference inside ONE DB transaction!
   const activeSem = db.prepare("SELECT * FROM semesters WHERE status = 'active' LIMIT 1").get();
   const policy = db.prepare('SELECT * FROM policy_config WHERE id = 1').get() || { policy_version: 'fairlab-v2' };
   const user = db.prepare('SELECT * FROM users WHERE user_id = ?').get(reqResult.userId);
@@ -445,8 +422,33 @@ async function submitHybridBookingRequest(params) {
   `).all(reqResult.requestId);
 
   let confirmedBooking = null;
+  let contentionInfo = null;
 
   const immediateTx = db.transaction(() => {
+    // SECURITY & CONCURRENCY INVARIANT: Checked INSIDE the same transaction as INSERT booking
+    const runningRound = db.prepare(`
+      SELECT round_id FROM allocation_rounds
+      WHERE booking_date = ? AND status = 'RUNNING'
+      LIMIT 1
+    `).get(reqResult.bookingDate);
+
+    const competingCount = db.prepare(`
+      SELECT COUNT(*) as cnt
+      FROM booking_requests r
+      LEFT JOIN lab_slots s ON r.slot_id = s.slot_id
+      WHERE r.request_id != ?
+        AND r.booking_date = ?
+        AND r.status = 'QUEUED'
+        AND COALESCE(r.start_time, s.start_time) < ?
+        AND ? < COALESCE(r.end_time, s.end_time)
+    `).get(reqResult.requestId, reqResult.bookingDate, reqResult.endTime, reqResult.startTime).cnt;
+
+    if (runningRound || competingCount > 0) {
+      db.prepare("UPDATE booking_requests SET allocation_mode = 'SCHEDULED' WHERE request_id = ?").run(reqResult.requestId);
+      contentionInfo = { competingCount, activeRound: Boolean(runningRound) };
+      return null;
+    }
+
     let assignedRig = null;
     let preferenceRankHonored = null;
 
@@ -502,7 +504,7 @@ async function submitHybridBookingRequest(params) {
     db.prepare("UPDATE booking_requests SET status = 'ALLOCATED', allocation_mode = 'IMMEDIATE' WHERE request_id = ?").run(reqResult.requestId);
     db.prepare("UPDATE waitlist_entries SET status = 'PROMOTED', updated_at = datetime('now') WHERE request_id = ?").run(reqResult.requestId);
 
-    // Transactional notification & outbox event
+    // Transactional notification & PENDING outbox event (published after commit with crash retry)
     db.prepare(`
       INSERT INTO notifications (notification_id, user_id, type, title, message)
       VALUES (?, ?, 'BOOKING_CONFIRMED', ?, ?)
@@ -514,7 +516,7 @@ async function submitHybridBookingRequest(params) {
     );
     db.prepare(`
       INSERT INTO outbox_events (event_id, event_type, aggregate_id, payload, status)
-      VALUES (?, 'booking.confirmed', ?, ?, 'PUBLISHED')
+      VALUES (?, 'booking.confirmed', ?, ?, 'PENDING')
     `).run(
       `evt-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
       bookingId,
@@ -554,6 +556,17 @@ async function submitHybridBookingRequest(params) {
   invalidateAvailabilityCache();
 
   if (!confirmedBooking) {
+    if (contentionInfo) {
+      return {
+        ...reqResult,
+        status: 'PENDING',
+        allocationMode: 'SCHEDULED',
+        competingRequests: contentionInfo.competingCount,
+        message: contentionInfo.activeRound
+          ? 'An allocation round is currently running for this date. Queued for fairness ranking.'
+          : `${contentionInfo.competingCount} competing request(s) detected for this window. Queued for fairness ranking.`
+      };
+    }
     return {
       ...reqResult,
       status: 'PENDING',
@@ -917,6 +930,16 @@ async function runWindowAllocationRound({
       SET allocated_count = ?, waitlisted_count = ?, status = 'COMPLETED'
       WHERE round_id = ?
     `).run(allocations.length, remainingWaitlist.length, roundId);
+
+    // Transactional Outbox entry committed atomically with allocation round
+    db.prepare(`
+      INSERT INTO outbox_events (event_id, event_type, aggregate_id, payload, status)
+      VALUES (?, 'allocation.completed', ?, ?, 'PENDING')
+    `).run(
+      `evt-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+      roundId,
+      JSON.stringify({ roundId, bookingDate: targetDate, allocatedCount: allocations.length, waitlistedCount: remainingWaitlist.length })
+    );
   });
 
   matchTx();
@@ -1266,6 +1289,39 @@ function getQueueForSlot(slotId, bookingDate = null) {
   return [...allocated, ...ranked];
 }
 
+/**
+ * Transactional Outbox Publisher:
+ * Reads PENDING events committed to outbox_events, emits them via WebSocket broadcast,
+ * and marks them PUBLISHED (crash-safe retry on restart or interval sweep).
+ */
+function publishPendingOutboxEvents(broadcastFn) {
+  if (typeof broadcastFn !== 'function') return 0;
+  const db = getDb();
+  const pending = db.prepare(`
+    SELECT event_id, event_type, payload
+    FROM outbox_events
+    WHERE status = 'PENDING'
+    ORDER BY created_at ASC
+    LIMIT 100
+  `).all();
+
+  if (pending.length === 0) return 0;
+
+  const markPublished = db.prepare("UPDATE outbox_events SET status = 'PUBLISHED' WHERE event_id = ?");
+  let count = 0;
+  for (const evt of pending) {
+    try {
+      const parsed = JSON.parse(evt.payload);
+      broadcastFn(evt.event_type, parsed);
+      markPublished.run(evt.event_id);
+      count++;
+    } catch {
+      // Leave PENDING for next retry sweep
+    }
+  }
+  return count;
+}
+
 module.exports = {
   submitBookingRequest,
   submitHybridBookingRequest,
@@ -1274,5 +1330,6 @@ module.exports = {
   runWindowAllocationRound,
   cancelBooking,
   processNoShows,
-  getQueueForSlot
+  getQueueForSlot,
+  publishPendingOutboxEvents
 };

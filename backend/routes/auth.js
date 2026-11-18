@@ -2,7 +2,14 @@ const express = require('express');
 const router = express.Router();
 const { getDb } = require('../db/database');
 const { validateBody, z } = require('../middleware/validation');
-const { createRateLimiter } = require('../middleware/auth');
+const {
+  signAuthToken,
+  setSessionCookie,
+  clearSessionCookie,
+  resolveAuthenticatedUser,
+  parsePermissions,
+  createRateLimiter
+} = require('../middleware/auth');
 
 const ALLOWED_EMAIL_DOMAIN = '@iitbhilai.ac.in';
 const IIT_BHILAI_EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@iitbhilai\.ac\.in$/i;
@@ -22,7 +29,7 @@ const loginSchema = z.object({
   password: z.string().min(1, 'Password is required').max(128, 'Password is too long')
 });
 
-// Strict IIT Bhilai institute login (@iitbhilai.ac.in ONLY)
+// Strict IIT Bhilai institute login (@iitbhilai.ac.in ONLY) -> issues verified HS256 JWT + HttpOnly session cookie
 router.post('/login', loginRateLimiter, validateBody(loginSchema), (req, res) => {
   const email = req.body.email.trim().toLowerCase();
 
@@ -35,7 +42,7 @@ router.post('/login', loginRateLimiter, validateBody(loginSchema), (req, res) =>
 
   const db = getDb();
   const user = db.prepare(`
-    SELECT user_id, name, roll_no, email, role, department
+    SELECT user_id, name, roll_no, email, role, permissions, department
     FROM users
     WHERE LOWER(email) = ?
     LIMIT 1
@@ -55,6 +62,13 @@ router.post('/login', loginRateLimiter, validateBody(loginSchema), (req, res) =>
     });
   }
 
+  const normalizedUser = {
+    ...user,
+    permissions: parsePermissions(user.permissions)
+  };
+  const token = signAuthToken(normalizedUser);
+  setSessionCookie(res, token);
+
   const activeSem = db.prepare("SELECT * FROM semesters WHERE status = 'active' LIMIT 1").get();
   let fairness = null;
   if (activeSem) {
@@ -65,16 +79,26 @@ router.post('/login', loginRateLimiter, validateBody(loginSchema), (req, res) =>
 
   return res.json({
     success: true,
-    user,
+    token,
+    user: normalizedUser,
     fairness: fairness || { current_score: 100, booking_count: 0, penalty_points: 0 }
   });
 });
 
-// List primary demo personas for role switching (strictly @iitbhilai.ac.in)
+// Clear HttpOnly session cookie on logout
+router.post('/logout', (req, res) => {
+  clearSessionCookie(res);
+  res.json({ success: true });
+});
+
+// List demo personas for dev/demo role switching (strictly @iitbhilai.ac.in, disabled in production)
 router.get('/users', (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(403).json({ error: 'Demo user directory is disabled in production.' });
+  }
   const db = getDb();
   const users = db.prepare(`
-    SELECT u.user_id, u.name, u.roll_no, u.email, u.role, u.department,
+    SELECT u.user_id, u.name, u.roll_no, u.email, u.role, u.permissions, u.department,
            sf.current_score, sf.booking_count, sf.total_hours_used, sf.high_demand_count, sf.high_demand_hours, sf.penalty_points
     FROM users u
     LEFT JOIN semesters s ON s.status = 'active'
@@ -86,25 +110,26 @@ router.get('/users', (req, res) => {
       AND u.user_id NOT LIKE 'usr-test-%'
       AND u.user_id NOT LIKE 'usr-audit-%'
     ORDER BY u.role, u.name
-  `).all();
+  `).all().map(u => ({ ...u, permissions: parsePermissions(u.permissions) }));
   res.json(users);
 });
 
-// Get user profile details
+// Get authenticated user profile details (derives identity from verified JWT / session cookie)
 router.get('/me', (req, res) => {
-  const userId = req.headers['x-user-id'] || 'usr-student-ganesh';
+  const authed = resolveAuthenticatedUser(req, process.env.NODE_ENV !== 'production' ? 'usr-student-ganesh' : null);
+  if (!authed) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+
   const db = getDb();
-
-  const user = db.prepare('SELECT user_id, name, roll_no, email, role, department FROM users WHERE user_id = ?').get(userId);
-  if (!user) return res.status(404).json({ error: 'User not found' });
-
   const activeSem = db.prepare("SELECT * FROM semesters WHERE status = 'active' LIMIT 1").get();
   let fairness = null;
   if (activeSem) {
-    fairness = db.prepare('SELECT * FROM student_fairness WHERE user_id = ? AND semester_id = ?').get(userId, activeSem.semester_id);
+    fairness = db
+      .prepare('SELECT * FROM student_fairness WHERE user_id = ? AND semester_id = ?')
+      .get(authed.user_id, activeSem.semester_id);
   }
 
-  // Active confirmed booking if any (LEFT JOIN lab_slots supports custom time intervals)
   const activeBooking = db.prepare(`
     SELECT b.*, p.pass_id, p.signed_token, p.token_hash,
            COALESCE(s.slot_name, 'Custom Window') as slot_name,
@@ -118,10 +143,10 @@ router.get('/me', (req, res) => {
     LEFT JOIN booking_requests br ON b.request_id = br.request_id
     WHERE b.user_id = ? AND b.status IN ('CONFIRMED', 'CHECKED_IN')
     ORDER BY b.booked_at DESC LIMIT 1
-  `).get(userId);
+  `).get(authed.user_id);
 
   res.json({
-    user,
+    user: authed,
     activeSemester: activeSem,
     fairness: fairness || { current_score: 100, booking_count: 0, penalty_points: 0 },
     activeBooking: activeBooking || null
@@ -132,16 +157,27 @@ const switchUserSchema = z.object({
   userId: z.string().min(1)
 });
 
+// Development/demo-only persona switcher (strictly disabled in NODE_ENV=production)
 router.post('/switch-user', validateBody(switchUserSchema), (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(403).json({
+      error: 'Account switching is strictly disabled in production mode.'
+    });
+  }
   const db = getDb();
-  const user = db.prepare('SELECT user_id, name, roll_no, email, role, department FROM users WHERE user_id = ?').get(req.body.userId);
+  const user = db.prepare(
+    'SELECT user_id, name, roll_no, email, role, permissions, department FROM users WHERE user_id = ?'
+  ).get(req.body.userId);
   if (!user) return res.status(404).json({ error: 'User not found' });
   if (!isValidIITBhilaiEmail(user.email)) {
     return res.status(403).json({
       error: `Only ${ALLOWED_EMAIL_DOMAIN} accounts are permitted.`
     });
   }
-  res.json({ success: true, user });
+  const normalizedUser = { ...user, permissions: parsePermissions(user.permissions) };
+  const token = signAuthToken(normalizedUser);
+  setSessionCookie(res, token);
+  res.json({ success: true, token, user: normalizedUser });
 });
 
 module.exports = router;

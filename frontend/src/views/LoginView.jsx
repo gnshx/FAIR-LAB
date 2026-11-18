@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 const IIT_BHILAI_EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@iitbhilai\.ac\.in$/i;
 
 export default function LoginView({ onSignedIn }) {
-  const { switchUser } = useAuth();
+  const { setSession } = useAuth();
   const [email, setEmail] = useState('ganesh.k@iitbhilai.ac.in');
   const [password, setPassword] = useState('••••••••');
   const [remember, setRemember] = useState(true);
@@ -40,12 +40,12 @@ export default function LoginView({ onSignedIn }) {
       }
 
       const userObj = data.user;
-      switchUser(userObj.user_id);
+      setSession(data.token, userObj);
 
       if (userObj.role === 'admin') {
-        onSignedIn('admin', 'admin-overview');
-      } else if (userObj.role === 'watchman') {
-        onSignedIn('admin', 'admin-access');
+        const perms = Array.isArray(userObj.permissions) ? userObj.permissions : [];
+        const onlyAccessOp = perms.includes('ACCESS_OPERATOR') && !perms.includes('POLICY_ADMIN');
+        onSignedIn('admin', onlyAccessOp ? 'admin-access' : 'admin-overview');
       } else {
         onSignedIn('student', 'student-dashboard');
       }

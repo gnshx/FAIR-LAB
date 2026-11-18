@@ -39,13 +39,13 @@ export default function Sidebar({ workspace, currentView, setCurrentView, onSwit
 
   const initial = (isAdminWorkspace ? 'A' : (displayName || 'S').charAt(0)).toUpperCase();
 
-  const handleSelectPersona = (u) => {
-    switchUser(u.user_id);
+  const handleSelectPersona = async (u) => {
+    await switchUser(u.user_id);
     setMenuOpen(false);
     if (u.role === 'admin') {
-      onSwitchWorkspace('admin', 'admin-overview');
-    } else if (u.role === 'watchman') {
-      onSwitchWorkspace('admin', 'admin-access');
+      const perms = Array.isArray(u.permissions) ? u.permissions : [];
+      const onlyAccessOp = perms.includes('ACCESS_OPERATOR') && !perms.includes('POLICY_ADMIN');
+      onSwitchWorkspace('admin', onlyAccessOp ? 'admin-access' : 'admin-overview');
     } else {
       onSwitchWorkspace('student', 'student-dashboard');
     }

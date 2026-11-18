@@ -184,8 +184,8 @@ async function seedDatabase() {
   const today = getTodayDateString();
 
   const insertUser = db.prepare(`
-    INSERT INTO users (user_id, name, roll_no, email, role, department, avatar_url)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO users (user_id, name, roll_no, email, role, permissions, department, avatar_url)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const insertSemester = db.prepare(`
@@ -346,9 +346,9 @@ async function seedDatabase() {
       { id: 'usr-student-ananya', name: 'Ananya Patel', roll: 'BT23CSE034', email: 'ananya.p@iitbhilai.ac.in', role: 'student', dept: 'PhD Scholar (Computer Science)', bookings: 4, totalHrs: 4.0, highCnt: 2, highHrs: 2.0, waitSec: 980, score: 70 },
       { id: 'usr-student-vikram', name: 'Vikram Singh', roll: 'BT23CSE045', email: 'vikram.s@iitbhilai.ac.in', role: 'student', dept: 'M.Tech Data Science & AI', bookings: 6, totalHrs: 7.0, highCnt: 3, highHrs: 3.0, waitSec: 600, score: 50 },
       { id: 'usr-student-devansh', name: 'Devansh Roy', roll: 'BT23CSE058', email: 'devansh.r@iitbhilai.ac.in', role: 'student', dept: 'B.Tech Electrical & CS', bookings: 8, totalHrs: 8.0, highCnt: 4, highHrs: 4.0, waitSec: 320, score: 40 },
-      { id: 'usr-watchman-ram', name: 'Guard Ram Singh', roll: 'EMP-SEC-104', email: 'security.l106@iitbhilai.ac.in', role: 'watchman', dept: 'Campus Security & Gate Operations' },
-      { id: 'usr-admin-sharma', name: 'Dr. A. K. Sharma', roll: 'EMP-FAC-012', email: 'aksharma@iitbhilai.ac.in', role: 'admin', dept: 'Lab L-106 Faculty Coordinator' },
-      { id: 'usr-faculty-sneha', name: 'Prof. Sneha Sen', roll: 'EMP-FAC-031', email: 'ssen@iitbhilai.ac.in', role: 'faculty', dept: 'Department of Computer Science' }
+      { id: 'usr-watchman-ram', name: 'Ram Singh (Gate Desk)', roll: 'EMP-SEC-104', email: 'accessdesk.l106@iitbhilai.ac.in', role: 'admin', permissions: ['ACCESS_OPERATOR'], dept: 'Lab L-106 Access Desk' },
+      { id: 'usr-admin-sharma', name: 'Dr. A. K. Sharma', roll: 'EMP-FAC-012', email: 'aksharma@iitbhilai.ac.in', role: 'admin', permissions: ['POLICY_ADMIN', 'ALLOCATION_ADMIN', 'ACCESS_OPERATOR'], dept: 'Lab L-106 Faculty Coordinator' },
+      { id: 'usr-faculty-sneha', name: 'Prof. Sneha Sen', roll: 'EMP-FAC-031', email: 'ssen@iitbhilai.ac.in', role: 'admin', permissions: ['ALLOCATION_ADMIN'], dept: 'Department of Computer Science' }
     ];
 
     // Add 30 additional cohort students to populate realistic bookings across Block A & B
@@ -362,7 +362,7 @@ async function seedDatabase() {
     ];
 
     for (const u of primaryUsers) {
-      insertUser.run(u.id, u.name, u.roll, u.email, u.role, u.dept, null);
+      insertUser.run(u.id, u.name, u.roll, u.email, u.role, JSON.stringify(u.permissions || []), u.dept, null);
       if (u.role === 'student') {
         insertFairness.run(
           `fair-${u.id}-${semId}`, u.id, semId, 100, u.score,
@@ -381,7 +381,7 @@ async function seedDatabase() {
       const normalHrs = bookings - highCnt;
       const highHrs = highCnt;
       const score = Math.max(10, 100 - normalHrs * 5 - highHrs * 10);
-      insertUser.run(uid, name, roll, email, 'student', 'B.Tech Computer Science & Engineering', null);
+      insertUser.run(uid, name, roll, email, 'student', '[]', 'B.Tech Computer Science & Engineering', null);
       insertFairness.run(
         `fair-${uid}-${semId}`, uid, semId, 100, score,
         bookings, bookings, highCnt, highHrs, (idx % 5) * 300, 0

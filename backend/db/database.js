@@ -34,6 +34,7 @@ function initializeSchema(database) {
       roll_no TEXT UNIQUE NOT NULL,
       email TEXT UNIQUE NOT NULL,
       role TEXT NOT NULL CHECK(role IN ('student', 'faculty', 'admin', 'watchman')),
+      permissions TEXT NOT NULL DEFAULT '[]',
       department TEXT NOT NULL,
       avatar_url TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -353,6 +354,7 @@ function initializeSchema(database) {
   `);
 
   // Non-destructive column migrations for existing databases
+  addColumnIfMissing(database, 'users', 'permissions', "TEXT NOT NULL DEFAULT '[]'");
   addColumnIfMissing(database, 'student_fairness', 'total_hours_used', 'REAL NOT NULL DEFAULT 0.0');
   addColumnIfMissing(database, 'student_fairness', 'high_demand_count', 'INTEGER NOT NULL DEFAULT 0');
   addColumnIfMissing(database, 'student_fairness', 'high_demand_hours', 'REAL NOT NULL DEFAULT 0.0');

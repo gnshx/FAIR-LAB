@@ -14,7 +14,8 @@ const {
 } = require('./services/availabilityService');
 const {
   submitHybridBookingRequest,
-  cancelBookingRequest
+  cancelBookingRequest,
+  publishPendingOutboxEvents
 } = require('./services/bookingService');
 const { validateBody, z } = require('./middleware/validation');
 const { requireUser, createRateLimiter } = require('./middleware/auth');
@@ -217,12 +218,7 @@ apiRouter.post('/booking-requests', requireUser, bookingRateLimiter, validateBod
     });
 
     if (result.status === 'CONFIRMED') {
-      broadcast('booking.confirmed', {
-        bookingId: result.booking?.bookingId,
-        workstationId: result.booking?.displayLabel || result.booking?.machineId,
-        startTime: result.startTime,
-        endTime: result.endTime
-      });
+      publishPendingOutboxEvents(broadcast);
       broadcast('SLOT_UPDATED', { requestId: result.requestId });
     } else {
       broadcast('booking.requested', {
@@ -287,8 +283,18 @@ server.listen(PORT, config.HOST, () => {
   console.log(`====================================================`);
 });
 
+// Transactional Outbox Publisher sweep (republishes any PENDING events after crash/commit)
+const outboxInterval = setInterval(() => {
+  try {
+    publishPendingOutboxEvents(broadcast);
+  } catch {
+    // non-fatal background sweep
+  }
+}, 5000);
+
 function shutdown() {
   console.log('\n[FairLab] Shutting down gracefully...');
+  clearInterval(outboxInterval);
   server.close(() => {
     try {
       if (db) db.close();

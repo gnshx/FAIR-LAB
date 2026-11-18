@@ -80,7 +80,7 @@ flowchart TD
     UI["React 18 + Vite + Tailwind SPA (Student & Admin Workspaces)"]
     WS["WebSocket Broadcast Hub (/ws)"]
     API["Express REST API (/api & /api/v1)"]
-    SEC["Security Layer (@iitbhilai.ac.in Auth · RBAC · Zod v4 · Rate Limiter)"]
+    SEC["Auth & RBAC Layer (Signed HS256 JWT / HttpOnly Cookie · 2-Role + ACCESS_OPERATOR · Zod v4 · Rate Limiter)"]
 
     subgraph Core["Modular Domain Services"]
         AV["availabilityService.js\n84-seat interval map + write-invalidated cache"]
@@ -93,12 +93,13 @@ flowchart TD
     end
 
     DB[("SQLite WAL (Dev) / PostgreSQL 16 (Prod btree_gist)")]
+    OB["Transactional Outbox Publisher (PENDING -> PUBLISHED)"]
 
-    UI -->|"JSON REST + x-user-id"| API
+    UI -->|"HTTPS JSON + Signed JWT / Cookie"| API
     UI <-->|"SLOT_UPDATED / QUEUE_CHANGED / GATE_EVENT"| WS
     API --> SEC --> Core
     Core --> DB
-    Core -->|"Transactional Outbox + Live Broadcast"| WS
+    DB --> OB --> WS
 ```
 
 ### Hybrid Allocation Lifecycle (Immediate vs Contested Fairness Queue)
@@ -149,12 +150,13 @@ $$P_u = \max\Big(P_{\min},\; \operatorname{round}\big(P_{\text{base}} - \alpha T
 ### 4-Tier Deterministic Tie-Breaking
 Contested requests are sorted strictly by:
 1. **Priority Score** ($P_u$, descending)
-2. **Cumulative Eligible Waiting Time** ($W_u$, descending) — guarantees **starvation-free virtual round-robin** even when heavy users saturate at the floor $P_{\min} = 10$
+2. **Cumulative Eligible Waiting Time** ($W_u$, descending)
 3. **Request Submission Timestamp** (ascending)
 4. **Deterministic Request ID** (lexicographic tie-breaker)
 
-### Conditional Bot-Mitigation Property
-> Under continuous contention, when users have comparable eligibility and the same allocation opportunity, successful usage reduces a user's priority, giving users with fewer completed sessions precedence. This neutralizes repeated advantages gained purely from low-latency automated submission scripts.
+### Rigorous Fairness Properties
+- **Conditional Bot-Mitigation**: *Under continuous contention, when users have comparable eligibility and the same allocation opportunity, successful usage reduces a user's priority, giving users with fewer completed sessions precedence. This reduces the advantage of repeatedly submitting requests with lower latency.*
+- **Starvation Mitigation**: *Eligible waiting-time accumulation provides a starvation-mitigation mechanism among users with equal priority scores. Under sustained contention and the defined eligibility assumptions, it promotes users who have waited longer.*
 
 ### 50-Seed Statistical Benchmark Results (`Mulberry32`, 60 Students, 10 Slots/Cycle)
 
@@ -208,11 +210,14 @@ erDiagram
 
 ## Security, RBAC & Anti-Abuse Hardening
 
-- **Strict `@iitbhilai.ac.in` Domain Gate**: Enforced via exact regex `/^[a-zA-Z0-9._%+-]+@iitbhilai\.ac\.in$/i` in [`backend/routes/auth.js`](backend/routes/auth.js) and [`LoginView.jsx`](frontend/src/views/LoginView.jsx) — rejecting external domains, suffix spoofs (`@iitbhilai.ac.in.evil.com`), prefix spoofs (`@notiitbhilai.ac.in`), subdomains (`@sub.iitbhilai.ac.in`), and whitespace/CRLF injection (`HTTP 403`).
-- **Role-Based Access Control (RBAC)**: [`backend/middleware/auth.js`](backend/middleware/auth.js) protects all admin mutations (`requireAdmin` → `403`) and gate operations (`watchman`/`admin`).
+- **Signed JWT + `HttpOnly` Session Architecture**: `POST /api/auth/login` verifies the `@iitbhilai.ac.in` account and issues a signed HS256 JWT (`Authorization: Bearer`) plus an `HttpOnly; SameSite=Lax` cookie (`fairlab_session`). Auth middleware extracts `user_id`, `role`, and `permissions` strictly from the verified token and database state. Client-supplied `x-user-id` headers and `/api/auth/switch-user` are strictly disabled in `NODE_ENV=production`. *(Note: domain suffix filtering is paired with institute SSO / Google Workspace OAuth `hd=iitbhilai.ac.in` for production ownership verification.)*
+- **Two-Role RBAC + Scoped `ACCESS_OPERATOR` Permission**: FairLab maintains strictly **two application roles** (`student` and `admin`). Sensitive gate check-in/check-out operations require an `admin` account explicitly holding the `ACCESS_OPERATOR` permission — keeping the role model clean while following least privilege.
 - **IDOR Prevention**: Booking and request cancellations strictly verify ownership (`owner === caller || role === 'admin'`).
 - **Cryptographic Zero-PII QR Passes**: Signed via HMAC-SHA256 (`FAIRPASS:<bookingId>:<hmac16>`) using runtime-configured secrets (no hardcoded credentials in source or Docker config), preventing replay (`ALREADY_CHECKED_IN`) and double check-out.
+- **Transactional Outbox Reliability**: Bookings and allocation rounds commit `PENDING` rows to `outbox_events` inside the same database transaction and flush them via a crash-resilient Outbox Publisher (`PENDING → PUBLISHED`).
 - **Zod v4 Validation & Flood Control**: Strict schema validation (`HTTP 400`), `64 KB` JSON body limit (`HTTP 413`), parameterized SQL throughout, and sliding-window per-user rate limiting (`HTTP 429`).
+
+> For the complete 17-section system design specification (including measured vs estimated metrics, configurable institutional policies vs core fairness invariants, and failure handling), see [`docs/FAIRLAB_FINAL_HLD_LLD.md`](docs/FAIRLAB_FINAL_HLD_LLD.md).
 
 ---
 
@@ -293,12 +298,13 @@ cd frontend && npm run build && cd ..
 cd backend && node server.js
 ```
 
-### Verified Demo Accounts (`@iitbhilai.ac.in`)
-| Role | Institute Email | Workspace |
-| :--- | :--- | :--- |
-| **Student** | `ganesh.k@iitbhilai.ac.in` *(or `priya.s@iitbhilai.ac.in`, `rahul.v@iitbhilai.ac.in`)* | Student Workspace (5 views) |
-| **Lab Administrator** | `aksharma@iitbhilai.ac.in` | Admin Workspace (9 views, including Schedule & Tickets) |
-| **Gate Security** | `security.l106@iitbhilai.ac.in` | Access Control Scanner |
+### Verified Demo Accounts (`@iitbhilai.ac.in` · Two-Role Model)
+| Role | Scoped Permissions | Institute Email | Workspace |
+| :--- | :--- | :--- | :--- |
+| **`student`** | Standard | `ganesh.k@iitbhilai.ac.in` *(or `priya.s@iitbhilai.ac.in`, `rahul.v@iitbhilai.ac.in`)* | Student Workspace (5 views) |
+| **`admin`** | `POLICY_ADMIN`, `ALLOCATION_ADMIN`, `ACCESS_OPERATOR` | `aksharma@iitbhilai.ac.in` | Full Admin Workspace (9 views) |
+| **`admin`** | `ACCESS_OPERATOR` | `accessdesk.l106@iitbhilai.ac.in` | Access Control Gate Desk |
+| **`admin`** | `ALLOCATION_ADMIN` *(no gate permission)* | `ssen@iitbhilai.ac.in` | Admin Queue & Policy (Gate blocked `403`) |
 
 ---
 
@@ -329,14 +335,14 @@ npm test
 
 ## Production VM Deployment (10 vCPU / 10 GB RAM)
 
-FairLab runs comfortably on a single **10 vCPU / 10 GB RAM** campus VM with >60% headroom even at peak semester-open traffic:
+Measured local baseline vs projected campus sizing estimates *(peak capacity estimates should be load-tested via k6 before SLA certification)*:
 
-| Layer | Measured Idle Footprint | Peak Campus Estimate (500–2,000 concurrent students) |
+| Layer | Measured Local Baseline | Projected Peak Estimate *(500–2,000 concurrent users)* |
 | :--- | :---: | :---: |
-| Frontend (`frontend/dist`) | `360 KB` disk | Served statically via Nginx |
-| Backend (`node server.js` + WS) | `~86 MB` RAM · `0.6%` CPU | `~300–500 MB` RAM · `1–2` vCPU |
-| PostgreSQL 16 (`shared_buffers=2GB`) | `~200 MB` RAM | `~2 GB` RAM · `1–2` vCPU |
-| Nginx (TLS + `/api` & `/ws` proxy) | `~20 MB` RAM | `~50 MB` RAM |
+| Frontend (`frontend/dist`) | `360 KB` disk *(measured)* | Served statically via Nginx |
+| Backend (`node server.js` + WS) | `~86 MB` RAM · `0.6%` CPU *(measured)* | `~300–500 MB` RAM · `1–2` vCPU *(estimate)* |
+| PostgreSQL 16 (`shared_buffers=2GB`) | `~200 MB` RAM *(idle)* | `~2 GB` RAM · `1–2` vCPU *(estimate)* |
+| Nginx (TLS + `/api` & `/ws` proxy) | `~20 MB` RAM *(estimate)* | `~50 MB` RAM *(estimate)* |
 
 ```bash
 # Generate runtime secrets before deploying via Docker Compose

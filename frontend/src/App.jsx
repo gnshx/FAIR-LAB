@@ -21,7 +21,7 @@ import AdminSettingsView from './views/AdminSettingsView';
 import AdminAuditLogView from './views/AdminAuditLogView';
 
 function MainLayout() {
-  const { availableUsers, switchUser } = useAuth();
+  const { availableUsers, switchUser, clearSession } = useAuth();
 
   const [isSignedIn, setIsSignedIn] = useState(() => {
     if (typeof window === 'undefined') return false;
@@ -72,7 +72,7 @@ function MainLayout() {
         setCurrentView={setCurrentView}
         onSwitchWorkspace={handleSwitchWorkspace}
         onSignOut={() => {
-          sessionStorage.removeItem('fairlab_signed_in');
+          clearSession();
           setIsSignedIn(false);
         }}
       />
