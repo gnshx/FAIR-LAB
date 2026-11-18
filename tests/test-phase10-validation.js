@@ -384,6 +384,30 @@ async function V3_competingRequestsFairness() {
   assert(allocs[0]?.machineId === 'L106-PC-01', 'V3.6  Rank #1 winner (Priya) receives contested preference L106-PC-01');
   assert(allocs[1]?.userId === 'usr-student-rahul', 'V3.7  Second-highest score (Rahul) ranked #2 over Ananya/Vikram');
   assert(allocs[1]?.machineId !== 'L106-PC-01', 'V3.8  Rank #2 receives conflict-free fallback workstation');
+
+  // Simultaneous Promise.all race: 5 distinct students fire AUTO requests concurrently for L106-PC-07
+  const raceDate = getFutureSaturday(11);
+  const devansh = await login(DEV_API, 'devansh.r@iitbhilai.ac.in');
+  const ganesh = await login(DEV_API, 'ganesh.k@iitbhilai.ac.in');
+  const racers = [priya, rahul, ananya, vikram, devansh, ganesh].map((r, idx) =>
+    fetchJSON(`${DEV_API}/booking-requests`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${r.json.token}` },
+      body: JSON.stringify({
+        bookingDate: raceDate, startTime: '15:00', endTime: '16:00',
+        preferredWorkstations: ['L106-PC-07'],
+        computePurpose: `Simultaneous race #${idx + 1}`, allocationMode: 'AUTO'
+      })
+    })
+  );
+  const raceResults = await Promise.all(racers);
+  const all201 = raceResults.every(r => r.status === 201);
+  const assignedToSeat7 = raceResults.filter(r => r.json?.booking?.machineId === 'L106-PC-07');
+  const assignedMachines = raceResults.map(r => r.json?.booking?.machineId).filter(Boolean);
+  const uniqueMachines = new Set(assignedMachines);
+  assert(all201, 'V3.9  Simultaneous 6-student Promise.all AUTO race completes with zero 500s');
+  assert(assignedToSeat7.length <= 1, `V3.10 Zero double-booking on contested L106-PC-07 (got ${assignedToSeat7.length})`);
+  assert(uniqueMachines.size === assignedMachines.length, 'V3.11 All confirmed assignments in simultaneous race map 1-to-1 to distinct seats');
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -682,8 +706,29 @@ async function V7_serverRestartAndOutboxRecovery(devProcRef) {
 
   // Verify the booking's outbox row in DB is PUBLISHED
   const dbEvent = dbAfter.prepare('SELECT status FROM outbox_events WHERE event_id = ?').get(outboxMsg?.eventId);
-  dbAfter.close();
   assert(bRes.status === 201 && dbEvent?.status === 'PUBLISHED', 'V7.5  Outbox row transitioned PENDING → PUBLISHED after WebSocket emit');
+
+  // Hard SIGKILL crash-between-broadcast-and-mark-published test:
+  // Revert the already-broadcast eventId back to PENDING and hard-kill the server process with SIGKILL
+  const redeliverId = outboxMsg.eventId;
+  dbAfter.prepare("UPDATE outbox_events SET status = 'PENDING' WHERE event_id = ?").run(redeliverId);
+  dbAfter.close();
+
+  await new Promise(resolve => {
+    devProcRef.proc.once('exit', resolve);
+    devProcRef.proc.kill('SIGKILL'); // Hard ungraceful kill (not SIGTERM!)
+  });
+  assert(devProcRef.proc.exitCode !== 0, 'V7.6  Hard SIGKILL terminated live server ungracefully');
+
+  // Restart server after SIGKILL -> SQLite WAL + startup outbox sweep recovers & marks PUBLISHED
+  devProcRef.proc = spawnServer(DEV_PORT);
+  await waitForHealth(DEV_BASE);
+  await new Promise(r => setTimeout(r, 300));
+
+  const dbAfterKill = new Database(TEST_DB_PATH);
+  const redeliveredRow = dbAfterKill.prepare('SELECT status FROM outbox_events WHERE event_id = ?').get(redeliverId);
+  dbAfterKill.close();
+  assert(redeliveredRow?.status === 'PUBLISHED', 'V7.7  Post-SIGKILL restart recovered WAL & republished pending outbox event safely');
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

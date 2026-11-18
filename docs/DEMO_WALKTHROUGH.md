@@ -2,7 +2,7 @@
 
 > **Target System:** FairLab · Fairness-Aware Workstation Booking & Allocation System  
 > **Lab Scope:** IIT Bhilai · Computer Lab L-106 (84 Workstations: Block A `6×10` + Block B `4×6`)  
-> **Status:** Phase 10 Validated Baseline (`14/14` Automated Test Suites · `71/71` Phase 10 Assertions Passing)
+> **Status:** Release `v1.0.0` Acceptance Verified (`14/14` Automated Test Suites · `76/76` Acceptance Assertions Passing)
 
 ---
 
@@ -43,7 +43,7 @@ Run all 14 test suites (including PostgreSQL 16, 100-request concurrency, 14 red
 node tests/run-all-tests.js
 ```
 
-Or run the standalone **Phase 10 Final Validation Suite** (`71` assertions, ~1.8s, isolated temp DB):
+Or run the standalone **Phase 10 Final Validation Suite** (`76` assertions, ~2.4s, isolated temp DB):
 
 ```bash
 node tests/test-phase10-validation.js
@@ -107,7 +107,7 @@ Run Track A, then add:
 Run Track B, then open a terminal and execute:
 
 ```bash
-# Live verification of all 71 Phase 10 checks (including NODE_ENV=production & Outbox Crash Recovery)
+# Live verification of all 76 acceptance checks (including simultaneous race, NODE_ENV=production & hard SIGKILL Outbox Recovery)
 node tests/test-phase10-validation.js
 ```
 
@@ -151,3 +151,4 @@ Before deploying on the IIT Bhilai campus VM (`10 vCPU / 10 GB RAM`), confirm:
 3. Serve behind HTTPS reverse proxy (Nginx/Caddy) so `Secure` session cookies transmit cleanly over TLS.
 4. Integrate institutional SSO (Google Workspace OAuth with `hd=iitbhilai.ac.in` or IIT Bhilai LDAP/CAS) to cryptographically verify mailbox ownership beyond domain-suffix checks.
 5. Run PostgreSQL 16 schema (`backend/db/postgres/schema.sql`) and verify `node tests/test-postgres.js` and `node tests/test-app-on-postgres.js`.
+
