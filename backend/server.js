@@ -100,10 +100,18 @@ function broadcast(type, payload, meta = {}) {
 
 app.set('wssBroadcast', broadcast);
 
-// Health check
+// Health check (identifies upstream backend replica behind Load Balancer)
+const INSTANCE_ID = process.env.INSTANCE_ID || `fairlab-api-${config.PORT}`;
+app.use((req, res, next) => {
+  res.setHeader('X-FairLab-Instance', INSTANCE_ID);
+  next();
+});
+
 app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
+    instance: INSTANCE_ID,
+    port: Number(config.PORT),
     lab: 'IIT Bhilai L-106',
     system: 'FairLab Workstation Booking & Fairness System',
     workstations: 84,

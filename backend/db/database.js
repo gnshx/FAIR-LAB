@@ -7,6 +7,7 @@ function getDb() {
   if (!db) {
     db = new Database(config.DB_PATH);
     db.pragma('journal_mode = WAL');
+    db.pragma('busy_timeout = 5000');
     db.pragma('foreign_keys = ON');
     db.pragma('synchronous = NORMAL');
     initializeSchema(db);
