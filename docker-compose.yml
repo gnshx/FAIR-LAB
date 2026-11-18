@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: fairlab_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-fairlab_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-fairlab_db}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./backend/db/postgres-schema.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fairlab_admin} -d ${POSTGRES_DB:-fairlab_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  fairlab:
+    build: .
+    container_name: fairlab_app
+    ports:
+      - "127.0.0.1:5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - HOST=0.0.0.0
+      - DATABASE_URL=postgres://${POSTGRES_USER:-fairlab_admin}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-fairlab_db}
+      - JWT_SECRET=${JWT_SECRET:?Set JWT_SECRET in .env}
+      - HMAC_SECRET=${HMAC_SECRET:?Set HMAC_SECRET in .env}
+      - RELAY_CONTROLLER_URL=${RELAY_CONTROLLER_URL:-http://localhost:8080/relay}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:

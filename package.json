@@ -1,0 +1,34 @@
+{
+  "name": "fairlab-gpu-access-system",
+  "version": "1.0.0",
+  "description": "Fairness-Based GPU Lab Booking & Access Management System for IIT Bhilai L-106",
+  "scripts": {
+    "start": "cd backend && node server.js",
+    "dev:backend": "cd backend && node server.js",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "seed": "cd backend && node -e \"const { seedDatabase } = require('./db/seed'); seedDatabase();\"",
+    "test": "node tests/run-all-tests.js",
+    "test:concurrency": "node tests/test-concurrency.js",
+    "test:overlap": "node tests/test-overlap-concurrency.js",
+    "test:reset": "node tests/test-semester-reset.js",
+    "test:security": "node tests/test-qr-security.js",
+    "test:postgres": "node tests/test-app-on-postgres.js",
+    "benchmark:fairness": "node tests/benchmark-fairness-50seeds.js",
+    "demo:live": "node demo-live-defense.js"
+  },
+  "keywords": [
+    "gpu",
+    "fairness",
+    "resource-allocation",
+    "qr-access",
+    "turnstile",
+    "iit-bhilai"
+  ],
+  "author": "Ganesh Kumar",
+  "license": "ISC",
+  "dependencies": {
+    "pg": "^8.23.1"
+  }
+}
