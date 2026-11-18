@@ -12,3 +12,6 @@ build/
 *.db-journal
 *.db-wal
 *.db-shm
+
+# Local presentation, viva prep & Overleaf build artifacts (never pushed)
+local_prep/
