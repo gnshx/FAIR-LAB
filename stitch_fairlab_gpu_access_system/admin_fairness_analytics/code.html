@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@500;700&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"outline":"#8c909f","primary":"#adc6ff","on-error":"#690005","secondary":"#4edea3","on-secondary-fixed":"#002113","on-primary-container":"#00285d","on-tertiary":"#472a00","error":"#ffb4ab","surface-tint":"#adc6ff","tertiary-container":"#ca8100","error-container":"#93000a","on-surface-variant":"#c2c6d6","on-primary-fixed":"#001a42","primary-fixed-dim":"#adc6ff","on-tertiary-fixed":"#2a1700","on-surface":"#dfe2ee","inverse-primary":"#005ac2","secondary-fixed-dim":"#4edea3","outline-variant":"#424754","tertiary":"#ffb95f","surface-bright":"#353942","secondary-container":"#00a572","surface-variant":"#31353e","on-error-container":"#ffdad6","secondary-fixed":"#6ffbbe","surface-container-low":"#181c24","on-secondary":"#003824","on-background":"#dfe2ee","background":"#0f131c","surface":"#0f131c","surface-dim":"#0f131c","inverse-surface":"#dfe2ee","on-secondary-container":"#00311f","surface-container-high":"#262a33","surface-container":"#1c2028","on-tertiary-fixed-variant":"#653e00","primary-fixed":"#d8e2ff","on-secondary-fixed-variant":"#005236","tertiary-fixed":"#ffddb8","tertiary-fixed-dim":"#ffb95f","on-tertiary-container":"#3e2400","surface-container-highest":"#31353e","inverse-on-surface":"#2c3039","surface-container-lowest":"#0a0e16","on-primary-fixed-variant":"#004395","primary-container":"#4d8eff","on-primary":"#002e6a"},borderRadius:{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},spacing:{"space-md":"0.75rem","space-lg":"1.25rem","margin-desktop":"2rem","gutter-desktop":"1.5rem","gutter":"1rem","space-sm":"0.5rem","margin":"1rem","space-xs":"0.25rem","space-xl":"2rem"},fontFamily:{"label-code-md":["JetBrains Mono"],"body-lg":["Inter"],"label-code-lg":["JetBrains Mono"],"label-code-sm":["JetBrains Mono"],"headline-lg-mobile":["Plus Jakarta Sans"],"body-sm":["Inter"],"headline-lg":["Plus Jakarta Sans"],"headline-xl-mobile":["Plus Jakarta Sans"],"label-metric":["JetBrains Mono"],"headline-xl":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"],"body-md":["Inter"]},fontSize:{"label-code-md":["12px",{"lineHeight":"16px","fontWeight":"500"}],"body-lg":["16px",{"lineHeight":"24px","fontWeight":"400"}],"label-code-lg":["14px",{"lineHeight":"20px","fontWeight":"500"}],"label-code-sm":["10px",{"lineHeight":"14px","fontWeight":"500"}],"headline-lg-mobile":["22px",{"lineHeight":"30px","fontWeight":"600"}],"body-sm":["12px",{"lineHeight":"16px","fontWeight":"400"}],"headline-lg":["28px",{"lineHeight":"36px","fontWeight":"600"}],"headline-xl-mobile":["28px",{"lineHeight":"36px","fontWeight":"700"}],"label-metric":["24px",{"lineHeight":"28px","fontWeight":"700"}],"headline-xl":["36px",{"lineHeight":"44px","fontWeight":"700"}],"headline-md":["20px",{"lineHeight":"28px","fontWeight":"600"}],"body-md":["14px",{"lineHeight":"20px","fontWeight":"400"}]}}}};</script></head><body class="bg-background font-body-md text-on-surface antialiased"><header class="fixed top-0 left-0 right-0 h-16 z-50 bg-surface-container-lowest/90 backdrop-blur-xl border-b border-outline-variant/30 flex items-center justify-between px-gutter-desktop"><div class="flex items-center gap-space-lg"><div class="flex items-center gap-space-md"><div class="w-8 h-8 rounded-lg bg-surface-container-high border border-outline-variant/50 flex items-center justify-center text-primary font-headline-md font-bold"><span class="material-symbols-outlined text-[20px]">memory</span></div><div><div class="flex items-center gap-space-xs"><span class="font-headline-md font-bold text-on-surface tracking-tight leading-none">FairGPU</span><span class="font-label-code-sm px-1.5 py-0.5 rounded bg-surface-container-high text-secondary border border-secondary/30 uppercase">IIT Bhilai</span></div><div class="font-label-code-sm text-on-surface-variant leading-none mt-1">Spring 2026 Semester · Active Cycle</div></div></div><div class="hidden xl:flex items-center gap-space-md pl-space-lg border-l border-outline-variant/30"><div class="flex items-center gap-2 px-space-md py-1 rounded bg-surface-container-low border border-outline-variant/40"><span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span><span class="font-label-code-md text-on-surface">L-106: 18/24 GPUs Online</span><span class="text-outline font-label-code-sm">·</span><span class="font-label-code-sm text-tertiary">87% Peak Demand</span></div></div></div><nav class="hidden lg:flex items-center gap-space-xs p-1 rounded-xl bg-surface-container-lowest border border-outline-variant/30" data-active-classes="bg-surface-container-high text-primary border border-outline-variant/60 shadow-[0_0_12px_rgba(77,142,255,0.15)]"><a class="px-space-md py-1.5 rounded-lg font-body-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all" data-path="student-booking-passes" href="#">Student Booking &amp; Passes</a><a class="px-space-md py-1.5 rounded-lg font-body-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all" data-path="lab-allocation-realtime-queue" href="#">Lab Allocation &amp; Real-time Queue</a><a class="px-space-md py-1.5 rounded-lg font-body-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all" data-path="watchman-guard-gate-verify" href="#">Watchman Guard Gate Verify</a><a aria-current="page" class="px-space-md py-1.5 rounded-lg font-body-sm transition-all bg-surface-container-high text-primary border border-outline-variant/60 shadow-[0_0_12px_rgba(77,142,255,0.15)]" data-path="admin-fairness-analytics" href="#">Admin Fairness Analytics</a></nav><div class="flex items-center gap-space-md"><button aria-label="Notifications" class="relative p-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary"></span></button><div class="hidden sm:flex items-center gap-space-xs px-2.5 py-1 rounded bg-secondary-container/20 border border-secondary/30"><span class="material-symbols-outlined text-secondary text-[16px]">verified</span><span class="font-label-code-sm text-secondary font-bold tracking-tight">100 PTS · MAX PRIORITY</span></div><div class="flex items-center gap-space-sm pl-space-sm"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-inner"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><aside class="fixed left-0 top-16 bottom-0 w-64 bg-surface-container-lowest border-r border-outline-variant/30 z-40 flex flex-col justify-between p-space-md"><div class="space-y-space-lg"><div class="px-space-sm"><div class="font-label-code-sm text-outline uppercase tracking-wider mb-2">Laboratory Control</div><nav class="space-y-1" data-active-classes="bg-surface-container-high text-primary border border-outline-variant/40"><a class="flex items-center gap-3 px-3 py-2 rounded-lg font-body-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="student-booking-passes" href="#"><span class="material-symbols-outlined text-[20px]">qr_code_scanner</span><span>My Access Pass</span></a><a class="flex items-center gap-3 px-3 py-2 rounded-lg font-body-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="lab-allocation-realtime-queue" href="#"><span class="material-symbols-outlined text-[20px]">grid_view</span><span>Workstation Telemetry</span></a><a class="flex items-center gap-3 px-3 py-2 rounded-lg font-body-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="queue-priority-engine" href="#"><span class="material-symbols-outlined text-[20px]">reorder</span><span>Fair-Share Queue</span></a><a class="flex items-center gap-3 px-3 py-2 rounded-lg font-body-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="hardware-rig-status" href="#"><span class="material-symbols-outlined text-[20px]">developer_board</span><span>GPU Health Matrix</span></a></nav></div><div class="px-space-sm"><div class="font-label-code-sm text-outline uppercase tracking-wider mb-2">Governance &amp; Guard</div><nav class="space-y-1" data-active-classes="bg-surface-container-high text-primary border border-outline-variant/40"><a class="flex items-center gap-3 px-3 py-2 rounded-lg font-body-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="watchman-guard-gate-verify" href="#"><span class="material-symbols-outlined text-[20px]">sensor_door</span><span>Turnstile Scanner</span></a><a aria-current="page" class="flex items-center gap-3 px-3 py-2 rounded-lg font-body-md transition-all bg-surface-container-high text-primary border border-outline-variant/40" data-path="admin-fairness-analytics" href="#"><span class="material-symbols-outlined text-[20px]">monitoring</span><span>Fairness Analytics</span></a><a class="flex items-center gap-3 px-3 py-2 rounded-lg font-body-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="lab-audit-logs" href="#"><span class="material-symbols-outlined text-[20px]">receipt_long</span><span>Incident &amp; Audit Log</span></a></nav></div></div><div class="p-space-md rounded-xl bg-surface-container-low border border-outline-variant/30"><div class="flex items-center justify-between mb-1"><span class="font-label-code-sm text-outline">FAIR-SHARE TIER</span><span class="font-label-code-sm text-secondary font-bold">ALPHA</span></div><div class="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden"><div class="bg-secondary h-full w-[92%]"></div></div><div class="mt-2 font-label-code-sm text-on-surface-variant flex justify-between"><span>Penalty Deductions</span><span class="text-on-surface">0.00 Pts</span></div></div></aside><div class="pl-64"><main class="relative pt-16 min-h-screen bg-background w-full px-gutter-desktop py-space-lg"><div class="flex flex-col w-full">
+<!-- Top Context Ribbon & Master System State -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md mb-space-xl">
+<div>
+<div class="flex items-center gap-space-sm mb-1">
+<span class="font-label-code-sm text-secondary uppercase tracking-widest px-2 py-0.5 rounded bg-surface-container-high">Institutional Governance</span>
+<span class="text-outline font-label-code-sm">/</span>
+<span class="font-label-code-sm text-outline">Lab L-106 High-Performance Rig Fleet</span>
+<span class="text-outline font-label-code-sm">/</span>
+<span class="font-label-code-sm text-primary">Fair-Share Algorithm v3.4.1</span>
+</div>
+<h1 class="font-headline-xl text-on-surface tracking-tight">Fairness Analytics &amp; Policy Lifecycle</h1>
+<p class="font-body-md text-on-surface-variant max-w-3xl mt-1">
+        Continuous algorithmic equilibrium engine governing IIT Bhilai Department of CSE graphics processors. Enforces zero-favoritism distribution among M.Tech and B.Tech thesis cohorts.
+      </p>
+</div>
+<!-- Quick Export / Senate Compliance Dispatch -->
+<div class="flex items-center gap-space-sm self-start lg:self-auto">
+<button class="px-space-md py-2.5 rounded-lg bg-surface-container-high hover:bg-surface-bright text-on-surface font-label-code-md flex items-center gap-2 transition-all shadow-sm" id="btn-simulate-modal">
+<span class="material-symbols-outlined text-[18px] text-tertiary">query_stats</span>
+<span>Run Monte Carlo</span>
+</button>
+<div class="relative inline-block text-left" id="export-dropdown-wrapper">
+<button class="px-space-lg py-2.5 rounded-lg bg-primary hover:bg-primary/90 text-on-primary font-label-code-md font-bold flex items-center gap-2 transition-all shadow-md" id="export-btn">
+<span class="material-symbols-outlined text-[18px]">verified_user</span>
+<span>Senate Audit Dossier</span>
+<span class="material-symbols-outlined text-[16px]">expand_more</span>
+</button>
+<div class="hidden absolute right-0 mt-2 w-56 rounded-xl bg-surface-container-high shadow-xl p-1 z-30" id="export-menu">
+<button class="w-full text-left px-3 py-2 rounded-lg font-body-sm text-on-surface hover:bg-surface-bright flex items-center gap-2 transition-colors" onclick="triggerDownload('PDF')">
+<span class="material-symbols-outlined text-[16px] text-error">picture_as_pdf</span>
+<span>Accreditation PDF (Signed)</span>
+</button>
+<button class="w-full text-left px-3 py-2 rounded-lg font-body-sm text-on-surface hover:bg-surface-bright flex items-center gap-2 transition-colors" onclick="triggerDownload('CSV')">
+<span class="material-symbols-outlined text-[16px] text-secondary">table_chart</span>
+<span>Raw Log Telemetry (CSV)</span>
+</button>
+<button class="w-full text-left px-3 py-2 rounded-lg font-body-sm text-on-surface hover:bg-surface-bright flex items-center gap-2 transition-colors" onclick="triggerDownload('JSON')">
+<span class="material-symbols-outlined text-[16px] text-primary">data_object</span>
+<span>Cryptographic Ledger JSON</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- SECTION 1: Executive KPI Summary Cards -->
+<section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-space-lg mb-space-xl">
+<!-- KPI 1 -->
+<div class="relative p-space-lg rounded-xl bg-surface-container-low shadow-sm flex flex-col justify-between overflow-hidden">
+<div class="absolute -right-4 -top-4 w-24 h-24 rounded-full bg-primary/5 blur-2xl pointer-events-none"></div>
+<div class="flex items-start justify-between">
+<div>
+<span class="font-label-code-sm text-outline uppercase tracking-wider">Aggregate Telemetry</span>
+<div class="font-headline-md text-on-surface mt-1">Lab Utilization</div>
+</div>
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[22px]">developer_board</span>
+</div>
+</div>
+<div class="my-space-md flex items-baseline gap-space-sm">
+<span class="font-label-metric text-on-surface text-[34px]">91.4%</span>
+<span class="font-label-code-sm text-secondary flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[14px]">arrow_upward</span> +3.8%
+        </span>
+</div>
+<!-- Micro Sparkline SVG -->
+<div class="space-y-1">
+<div class="flex justify-between font-label-code-sm text-on-surface-variant">
+<span>L-106 GPU Nodes (24 Total)</span>
+<span class="text-secondary font-bold">22 Active</span>
+</div>
+<svg class="w-full h-8 overflow-visible" preserveaspectratio="none" viewbox="0 0 200 32">
+<path class="text-primary" d="M0 24 L20 20 L40 22 L60 14 L80 18 L100 12 L120 15 L140 8 L160 10 L180 4 L200 6" fill="none" stroke="currentColor" stroke-width="2"></path>
+<path class="text-primary/10" d="M0 24 L20 20 L40 22 L60 14 L80 18 L100 12 L120 15 L140 8 L160 10 L180 4 L200 6 L200 32 L0 32 Z" fill="currentColor"></path>
+</svg>
+</div>
+</div>
+<!-- KPI 2 -->
+<div class="relative p-space-lg rounded-xl bg-surface-container-low shadow-sm flex flex-col justify-between overflow-hidden">
+<div class="absolute -right-4 -top-4 w-24 h-24 rounded-full bg-secondary/5 blur-2xl pointer-events-none"></div>
+<div class="flex items-start justify-between">
+<div>
+<span class="font-label-code-sm text-outline uppercase tracking-wider">Equity Index</span>
+<div class="font-headline-md text-on-surface mt-1">Gini Coefficient</div>
+</div>
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[22px]">balance</span>
+</div>
+</div>
+<div class="my-space-md flex items-baseline gap-space-sm">
+<span class="font-label-metric text-secondary text-[34px]">0.14</span>
+<span class="font-label-code-sm text-on-surface-variant font-medium">Optimal Equilibrium</span>
+</div>
+<div>
+<div class="w-full bg-surface-container-highest h-2 rounded-full overflow-hidden flex">
+<div class="bg-secondary h-full" style="width: 28%"></div>
+<div class="bg-primary h-full opacity-40" style="width: 40%"></div>
+<div class="bg-outline h-full opacity-20" style="width: 32%"></div>
+</div>
+<div class="mt-2 flex justify-between font-label-code-sm text-on-surface-variant">
+<span>0.00 Strict Equality</span>
+<span class="text-on-surface">Target &lt; 0.20</span>
+</div>
+</div>
+</div>
+<!-- KPI 3 -->
+<div class="relative p-space-lg rounded-xl bg-surface-container-low shadow-sm flex flex-col justify-between overflow-hidden">
+<div class="absolute -right-4 -top-4 w-24 h-24 rounded-full bg-tertiary/5 blur-2xl pointer-events-none"></div>
+<div class="flex items-start justify-between">
+<div>
+<span class="font-label-code-sm text-outline uppercase tracking-wider">Demographic Reach</span>
+<div class="font-headline-md text-on-surface mt-1">Serviced Scholars</div>
+</div>
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-[22px]">school</span>
+</div>
+</div>
+<div class="my-space-md flex items-baseline gap-space-sm">
+<span class="font-label-metric text-on-surface text-[34px]">412</span>
+<span class="font-label-code-sm text-outline">Distinct Accounts</span>
+</div>
+<div class="p-space-xs rounded bg-surface-container-high flex items-center justify-between text-on-surface-variant font-label-code-sm">
+<span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-primary"></span> 288 B.Tech</span>
+<span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-tertiary"></span> 104 M.Tech</span>
+<span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-secondary"></span> 20 Ph.D</span>
+</div>
+</div>
+<!-- KPI 4 -->
+<div class="relative p-space-lg rounded-xl bg-surface-container-low shadow-sm flex flex-col justify-between overflow-hidden">
+<div class="absolute -right-4 -top-4 w-24 h-24 rounded-full bg-error/5 blur-2xl pointer-events-none"></div>
+<div class="flex items-start justify-between">
+<div>
+<span class="font-label-code-sm text-outline uppercase tracking-wider">Enforcement Metrics</span>
+<div class="font-headline-md text-on-surface mt-1">No-Show Slippage</div>
+</div>
+<div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-error">
+<span class="material-symbols-outlined text-[22px]">event_busy</span>
+</div>
+</div>
+<div class="my-space-md flex items-baseline gap-space-sm">
+<span class="font-label-metric text-error text-[34px]">2.1%</span>
+<span class="font-label-code-sm text-on-surface-variant">Target ≤ 3.0%</span>
+</div>
+<div class="flex items-center justify-between text-on-surface-variant font-label-code-sm pt-2">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-tertiary">gavel</span>
+<span>34 Deductions Applied</span>
+</div>
+<span class="text-secondary font-bold">97.9% Turnout</span>
+</div>
+</div>
+</section>
+<!-- Split Panel Grid: Policy Controls + Semester Action Center -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg mb-space-xl">
+<!-- SECTION 2: Policy & Deduction Settings Panel (7 Cols) -->
+<div class="lg:col-span-7 rounded-xl bg-surface-container-low p-space-lg shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-space-md mb-space-md">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-primary text-[24px]">tune</span>
+<div>
+<h2 class="font-headline-md text-on-surface">Fairness Policy &amp; Deduction Engine</h2>
+<p class="font-body-sm text-on-surface-variant">Dynamically recomputed scoring rules across all scheduled lab cycles</p>
+</div>
+</div>
+<span class="font-label-code-sm px-2.5 py-1 rounded bg-secondary-container/20 text-secondary font-bold uppercase tracking-wider">Live Active v3.4</span>
+</div>
+<form class="space-y-space-md" id="policy-form" onsubmit="event.preventDefault(); triggerPolicySave();">
+<!-- Two Numeric Settings -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+<div class="p-space-md rounded-lg bg-surface-container-high">
+<label class="block font-label-code-sm text-outline uppercase tracking-wider mb-1.5">
+                Semester Starting Credit
+              </label>
+<div class="relative flex items-center">
+<input class="w-full bg-surface-container-lowest text-on-surface font-label-code-lg px-3 py-2 rounded focus:outline-none focus:ring-1 focus:ring-primary" id="start-score-input" max="500" min="50" type="number" value="100"/>
+<span class="absolute right-3 font-label-code-sm text-on-surface-variant">PTS</span>
+</div>
+<p class="font-body-sm text-on-surface-variant text-[11px] mt-1.5">Default allocation given to all enrolled credentials at start of term.</p>
+</div>
+<div class="p-space-md rounded-lg bg-surface-container-high">
+<label class="block font-label-code-sm text-outline uppercase tracking-wider mb-1.5">
+                Deduction per Completed Job
+              </label>
+<div class="relative flex items-center">
+<input class="w-full bg-surface-container-lowest text-on-surface font-label-code-lg px-3 py-2 rounded focus:outline-none focus:ring-1 focus:ring-primary" id="deduct-job-input" max="0" min="-50" type="number" value="-10"/>
+<span class="absolute right-3 font-label-code-sm text-error font-bold">PTS</span>
+</div>
+<p class="font-body-sm text-on-surface-variant text-[11px] mt-1.5">Graduated consumption tax prioritizing low-usage students.</p>
+</div>
+</div>
+<!-- Deduction Trigger Event (Radio Group) -->
+<div class="p-space-md rounded-lg bg-surface-container-high">
+<span class="block font-label-code-sm text-outline uppercase tracking-wider mb-2">
+              Deduction Trigger Lifecycle Event
+            </span>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-sm">
+<label class="flex items-start gap-3 p-3 rounded-lg bg-surface-container-lowest cursor-pointer hover:bg-surface-container transition-colors">
+<input checked="" class="mt-1 text-primary focus:ring-0" name="trigger_event" type="radio" value="exit"/>
+<div>
+<div class="font-label-code-md text-on-surface font-semibold">Guard Check-in &amp; Exit Verified</div>
+<div class="font-body-sm text-on-surface-variant text-[12px] mt-0.5">Deduction locked ONLY after physical RFID/QR departure verified at door turnstile.</div>
+</div>
+</label>
+<label class="flex items-start gap-3 p-3 rounded-lg bg-surface-container-lowest cursor-pointer hover:bg-surface-container transition-colors">
+<input class="mt-1 text-primary focus:ring-0" name="trigger_event" type="radio" value="confirm"/>
+<div>
+<div class="font-label-code-md text-on-surface font-semibold">On Booking Confirmation</div>
+<div class="font-body-sm text-on-surface-variant text-[12px] mt-0.5">Points deducted immediately upon calendar slot lock. Restored upon early cancellation.</div>
+</div>
+</label>
+</div>
+</div>
+<!-- Cancellation & Penalty Rules -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+<div class="p-space-md rounded-lg bg-surface-container-high">
+<label class="block font-label-code-sm text-outline uppercase tracking-wider mb-1.5">
+                Cancellation Grace Window
+              </label>
+<div class="relative flex items-center">
+<input class="w-full bg-surface-container-lowest text-on-surface font-label-code-lg px-3 py-2 rounded focus:outline-none focus:ring-1 focus:ring-primary" id="grace-period-input" max="180" min="5" type="number" value="30"/>
+<span class="absolute right-3 font-label-code-sm text-on-surface-variant">MINUTES</span>
+</div>
+<p class="font-body-sm text-on-surface-variant text-[11px] mt-1.5">Minimum notice before slot inception without incurring penalty.</p>
+</div>
+<div class="p-space-md rounded-lg bg-surface-container-high">
+<label class="block font-label-code-sm text-outline uppercase tracking-wider mb-1.5">
+                No-Show Penalty &amp; Cooldown
+              </label>
+<div class="flex items-center gap-space-sm">
+<div class="relative flex-1">
+<input class="w-full bg-surface-container-lowest text-error font-label-code-lg px-3 py-2 rounded focus:outline-none focus:ring-1 focus:ring-error" id="noshow-penalty-input" max="0" min="-100" type="number" value="-25"/>
+<span class="absolute right-3 font-label-code-sm text-error">PTS</span>
+</div>
+<div class="relative w-28">
+<input class="w-full bg-surface-container-lowest text-on-surface font-label-code-lg px-3 py-2 rounded focus:outline-none focus:ring-1 focus:ring-primary" max="30" min="1" type="number" value="7"/>
+<span class="absolute right-3 font-label-code-sm text-on-surface-variant">DAYS</span>
+</div>
+</div>
+<p class="font-body-sm text-on-surface-variant text-[11px] mt-1.5">Instant forfeiture + suspension cooldown across all Nvidia A100 rigs.</p>
+</div>
+</div>
+<!-- Panel Buttons -->
+<div class="pt-space-sm flex flex-wrap items-center justify-between gap-space-md">
+<button class="px-space-md py-2 rounded-lg bg-surface-container-high hover:bg-surface-bright text-primary font-label-code-md flex items-center gap-2 transition-colors" onclick="runSimulateCurves()" type="button">
+<span class="material-symbols-outlined text-[18px]">model_training</span>
+<span>Simulate Fairness Curve</span>
+</button>
+<div class="flex items-center gap-space-sm">
+<span class="font-label-code-sm text-secondary opacity-0 transition-opacity flex items-center gap-1" id="policy-save-feedback">
+<span class="material-symbols-outlined text-[16px]">check_circle</span> Saved to HashRing
+              </span>
+<button class="px-space-lg py-2 rounded-lg bg-primary hover:bg-primary/90 text-on-primary font-label-code-md font-bold transition-all shadow-sm" type="submit">
+                Save Policy Parameters
+              </button>
+</div>
+</div>
+</form>
+</div>
+</div>
+<!-- SECTION 3: Semester Lifecycle & Scoring Reset Action Center (5 Cols) -->
+<div class="lg:col-span-5 rounded-xl bg-surface-container-low p-space-lg shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-space-md mb-space-md">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-tertiary text-[24px]">history_edu</span>
+<div>
+<h2 class="font-headline-md text-on-surface">Lifecycle &amp; Term Roll</h2>
+<p class="font-body-sm text-on-surface-variant">Academic calendar boundaries &amp; ledger archives</p>
+</div>
+</div>
+<span class="w-3 h-3 rounded-full bg-secondary animate-pulse" title="Term Synchronized"></span>
+</div>
+<!-- Current Cycle Indicator -->
+<div class="p-space-md rounded-lg bg-surface-container-high mb-space-md">
+<div class="flex items-center justify-between mb-1">
+<span class="font-label-code-sm text-outline">CURRENT ACTIVE CYCLE</span>
+<span class="font-label-code-sm px-2 py-0.5 rounded bg-secondary-container/30 text-secondary font-bold">Week 11 of 16</span>
+</div>
+<div class="font-headline-md text-on-surface font-bold tracking-tight">Spring Semester 2026</div>
+<div class="font-label-code-sm text-on-surface-variant mt-1">Commenced: 05 Jan 2026 · Scheduled Term End: 08 May 2026</div>
+</div>
+<!-- Historical Archive Dropdown -->
+<div class="space-y-1.5 mb-space-md">
+<label class="block font-label-code-sm text-outline uppercase tracking-wider">
+            Historical Semesters &amp; Audited Snapshots
+          </label>
+<div class="relative">
+<select class="w-full bg-surface-container-high text-on-surface font-label-code-md px-3 py-2.5 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary pr-10">
+<option selected="" value="spring-2026">Spring 2026 (Active &amp; Mutable Ledger)</option>
+<option value="autumn-2025">Autumn 2025 (Archived — 418 Students — Gini 0.16)</option>
+<option value="spring-2025">Spring 2025 (Archived — 390 Students — Gini 0.18)</option>
+<option value="autumn-2024">Autumn 2024 (Archived — 342 Students — Gini 0.21)</option>
+</select>
+<span class="material-symbols-outlined text-[18px] text-outline absolute right-3 top-3 pointer-events-none">unfold_more</span>
+</div>
+</div>
+<!-- Compliance Archive Guarantee Notice -->
+<div class="p-space-md rounded-lg bg-surface-container-lowest/80 text-on-surface-variant space-y-1 mb-space-lg">
+<div class="flex items-center gap-1.5 text-primary font-label-code-sm font-semibold">
+<span class="material-symbols-outlined text-[16px]">verified</span>
+<span>Accreditation Audit Preservation</span>
+</div>
+<p class="font-body-sm text-[12px] leading-relaxed">
+            Prior term GPU traces, kernel times, and user score paths remain permanently committed in <code class="text-secondary font-label-code-sm">allocation_history</code> for NAAC/NBA criteria documentation.
+          </p>
+</div>
+</div>
+<!-- Protected Reset Action Button -->
+<div>
+<div class="p-space-sm rounded-lg bg-error-container/20 flex flex-col gap-2">
+<div class="flex items-center gap-2 text-error">
+<span class="material-symbols-outlined text-[20px]">warning</span>
+<span class="font-label-code-sm font-bold uppercase tracking-wider">Irreversible Action Guard</span>
+</div>
+<p class="font-body-sm text-[12px] text-on-surface-variant">
+            Resets all 412 scholar priority scores back to default (100 PTS) and clears live queue reservations.
+          </p>
+<button class="mt-1 w-full py-2.5 px-4 rounded-lg bg-error hover:bg-error/90 text-on-error font-label-code-md font-bold flex items-center justify-center gap-2 transition-all shadow-md" id="open-reset-modal-btn">
+<span class="material-symbols-outlined text-[18px]">lock_reset</span>
+<span>Execute Semester Score Reset</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- SECTION 4: Visual Data Charts & Analytics -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg mb-space-xl">
+<!-- Chart 1: Priority Score Distribution Histogram (7 Cols) -->
+<div class="lg:col-span-7 rounded-xl bg-surface-container-low p-space-lg shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-space-md mb-space-md">
+<div>
+<span class="font-label-code-sm text-outline uppercase tracking-wider">Cohort Distribution</span>
+<h3 class="font-headline-md text-on-surface">Student Priority Score Spectrum</h3>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-label-code-sm text-on-surface-variant">Population:</span>
+<span class="font-label-code-sm px-2 py-0.5 rounded bg-surface-container-high text-primary font-bold">N=412 Active</span>
+</div>
+</div>
+<p class="font-body-sm text-on-surface-variant mb-space-lg">
+          Right-skewed curve indicates healthy priority rejuvenation. Students with degraded scores naturally cycle back as high-priority candidates after the 7-day cooldown window.
+        </p>
+<!-- SVG Histogram Chart -->
+<div class="w-full bg-surface-container-high rounded-xl p-space-md">
+<div class="flex items-end justify-between h-48 gap-4 pt-6 px-4">
+<!-- Bin 1: 100 PTS -->
+<div class="flex-1 flex flex-col items-center h-full justify-end group">
+<div class="font-label-code-sm text-secondary font-bold mb-1.5 transition-transform group-hover:-translate-y-1">48%</div>
+<div class="w-full rounded-t-lg bg-secondary/80 group-hover:bg-secondary transition-all shadow-sm" style="height: 85%;"></div>
+<div class="font-label-code-sm text-on-surface mt-2 text-center whitespace-nowrap">100 PTS</div>
+<div class="font-label-code-sm text-outline text-[10px]">198 Students</div>
+</div>
+<!-- Bin 2: 90 - 80 PTS -->
+<div class="flex-1 flex flex-col items-center h-full justify-end group">
+<div class="font-label-code-sm text-primary font-bold mb-1.5 transition-transform group-hover:-translate-y-1">32%</div>
+<div class="w-full rounded-t-lg bg-primary/80 group-hover:bg-primary transition-all shadow-sm" style="height: 56%;"></div>
+<div class="font-label-code-sm text-on-surface mt-2 text-center whitespace-nowrap">90–80 PTS</div>
+<div class="font-label-code-sm text-outline text-[10px]">132 Students</div>
+</div>
+<!-- Bin 3: 70 - 50 PTS -->
+<div class="flex-1 flex flex-col items-center h-full justify-end group">
+<div class="font-label-code-sm text-tertiary font-bold mb-1.5 transition-transform group-hover:-translate-y-1">15%</div>
+<div class="w-full rounded-t-lg bg-tertiary/80 group-hover:bg-tertiary transition-all shadow-sm" style="height: 28%;"></div>
+<div class="font-label-code-sm text-on-surface mt-2 text-center whitespace-nowrap">70–50 PTS</div>
+<div class="font-label-code-sm text-outline text-[10px]">62 Students</div>
+</div>
+<!-- Bin 4: < 50 PTS -->
+<div class="flex-1 flex flex-col items-center h-full justify-end group">
+<div class="font-label-code-sm text-error font-bold mb-1.5 transition-transform group-hover:-translate-y-1">5%</div>
+<div class="w-full rounded-t-lg bg-error/80 group-hover:bg-error transition-all shadow-sm" style="height: 12%;"></div>
+<div class="font-label-code-sm text-on-surface mt-2 text-center whitespace-nowrap">&lt; 50 PTS</div>
+<div class="font-label-code-sm text-outline text-[10px]">20 Students</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Explanatory note -->
+<div class="mt-space-md flex items-center justify-between font-label-code-sm text-on-surface-variant">
+<span>Variance Index: ±4.2% from prior semester</span>
+<span class="text-secondary flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check</span> Zero Deadlock State
+        </span>
+</div>
+</div>
+<!-- Chart 2: GPU VRAM Hours by Research Domain (5 Cols) -->
+<div class="lg:col-span-5 rounded-xl bg-surface-container-low p-space-lg shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-space-md mb-space-md">
+<div>
+<span class="font-label-code-sm text-outline uppercase tracking-wider">Compute Utilization</span>
+<h3 class="font-headline-md text-on-surface">VRAM Hours by Research Field</h3>
+</div>
+<span class="font-label-code-sm text-outline">18,490 hrs total</span>
+</div>
+<!-- Donut & Breakdown Layout -->
+<div class="flex flex-col sm:flex-row items-center gap-space-lg my-space-sm">
+<!-- Donut SVG -->
+<div class="relative w-44 h-44 flex-shrink-0">
+<svg class="w-full h-full transform -rotate-90" viewbox="0 0 100 100">
+<!-- Background Circle Track -->
+<circle class="text-surface-container-highest" cx="50" cy="50" fill="none" r="38" stroke="currentColor" stroke-width="12"></circle>
+<!-- AI/LLM: 42% (dasharray ~ 100.28 on 238.76 circum) -->
+<circle class="text-primary" cx="50" cy="50" fill="none" r="38" stroke="currentColor" stroke-dasharray="100.28 238.76" stroke-dashoffset="0" stroke-width="12"></circle>
+<!-- CV: 31% (dasharray ~ 74.01) -->
+<circle class="text-secondary" cx="50" cy="50" fill="none" r="38" stroke="currentColor" stroke-dasharray="74.01 238.76" stroke-dashoffset="-100.28" stroke-width="12"></circle>
+<!-- Physics: 18% (dasharray ~ 42.97) -->
+<circle class="text-tertiary" cx="50" cy="50" fill="none" r="38" stroke="currentColor" stroke-dasharray="42.97 238.76" stroke-dashoffset="-174.29" stroke-width="12"></circle>
+<!-- RL: 9% (dasharray ~ 21.48) -->
+<circle class="text-error" cx="50" cy="50" fill="none" r="38" stroke="currentColor" stroke-dasharray="21.48 238.76" stroke-dashoffset="-217.26" stroke-width="12"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+<span class="font-label-metric text-[22px] text-on-surface">18.4k</span>
+<span class="font-label-code-sm text-outline">VRAM·HRS</span>
+</div>
+</div>
+<!-- Legend & Breakdown List -->
+<div class="w-full space-y-space-sm">
+<div class="flex items-center justify-between p-2 rounded bg-surface-container-high">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-sm bg-primary"></span>
+<span class="font-body-sm text-on-surface">AI &amp; LLM Fine-Tuning</span>
+</div>
+<span class="font-label-code-sm font-bold text-primary">42%</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded bg-surface-container-high">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-sm bg-secondary"></span>
+<span class="font-body-sm text-on-surface">Computer Vision</span>
+</div>
+<span class="font-label-code-sm font-bold text-secondary">31%</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded bg-surface-container-high">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-sm bg-tertiary"></span>
+<span class="font-body-sm text-on-surface">Physics Simulations</span>
+</div>
+<span class="font-label-code-sm font-bold text-tertiary">18%</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded bg-surface-container-high">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-sm bg-error"></span>
+<span class="font-body-sm text-on-surface">Reinforcement Learning</span>
+</div>
+<span class="font-label-code-sm font-bold text-error">9%</span>
+</div>
+</div>
+</div>
+</div>
+<div class="font-label-code-sm text-on-surface-variant flex items-center justify-between pt-space-xs">
+<span>Hardware Target: Ampere &amp; Hopper Nodes</span>
+<span class="text-primary">100% Workstation Bound</span>
+</div>
+</div>
+</section>
+<!-- SECTION 5: Real-Time Administrative Override & Audit Log -->
+<section class="rounded-xl bg-surface-container-low p-space-lg shadow-sm mb-space-xl">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-md pb-space-md mb-space-md">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-secondary text-[24px]">receipt_long</span>
+<div>
+<h2 class="font-headline-md text-on-surface">Administrative Override &amp; Compliance Audit Trail</h2>
+<p class="font-body-sm text-on-surface-variant">Immutable tamper-evident ledger for faculty actions and manual priority dispensations</p>
+</div>
+</div>
+<div class="flex items-center gap-space-sm">
+<div class="relative">
+<input class="bg-surface-container-high text-on-surface font-label-code-sm px-3 py-2 pl-9 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary w-64" id="log-search-input" onkeyup="filterLogs()" placeholder="Filter roll no, actor, reason..." type="text"/>
+<span class="material-symbols-outlined text-[16px] text-outline absolute left-2.5 top-2.5 pointer-events-none">search</span>
+</div>
+<button class="px-space-md py-2 rounded-lg bg-surface-container-high hover:bg-surface-bright text-primary font-label-code-md flex items-center gap-1.5 transition-colors" onclick="addNewOverridePrompt()">
+<span class="material-symbols-outlined text-[16px]">add_moderator</span>
+<span>Inject Override</span>
+</button>
+</div>
+</div>
+<!-- Data Table Container -->
+<div class="overflow-x-auto">
+<table class="w-full text-left font-body-sm">
+<thead>
+<tr class="font-label-code-sm text-outline uppercase tracking-wider bg-surface-container-high/60">
+<th class="py-3 px-4 rounded-l-lg">System Timestamp</th>
+<th class="py-3 px-4">Authorized Actor</th>
+<th class="py-3 px-4">Governance Action</th>
+<th class="py-3 px-4">Target Student / Rig</th>
+<th class="py-3 px-4">Statutory Justification &amp; Senate Ref</th>
+<th class="py-3 px-4 rounded-r-lg text-right">Verification</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-transparent" id="audit-table-body">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container transition-colors">
+<td class="py-3 px-4 font-label-code-sm text-on-surface-variant">2026-03-30 14:28:11 IST</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-2">
+<span class="w-6 h-6 rounded bg-primary/20 text-primary flex items-center justify-center font-label-code-sm font-bold">PS</span>
+<span class="font-body-sm text-on-surface font-medium">Prof. Sen (Admin)</span>
+</div>
+</td>
+<td class="py-3 px-4">
+<span class="px-2 py-0.5 rounded font-label-code-sm bg-primary/10 text-primary font-medium">Manual Slot Override</span>
+</td>
+<td class="py-3 px-4 font-label-code-md text-on-surface">
+              BT22CSE045 <span class="text-outline text-[11px]">(Node L106-PC-04)</span>
+</td>
+<td class="py-3 px-4 text-on-surface-variant">
+              Faculty Dean Thesis Exception <span class="text-tertiary font-label-code-sm">#402</span>
+</td>
+<td class="py-3 px-4 text-right">
+<span class="inline-flex items-center gap-1 text-secondary font-label-code-sm">
+<span class="material-symbols-outlined text-[14px]">lock</span> HMAC-SHA256
+              </span>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container transition-colors">
+<td class="py-3 px-4 font-label-code-sm text-on-surface-variant">2026-03-30 11:05:44 IST</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-2">
+<span class="w-6 h-6 rounded bg-secondary/20 text-secondary flex items-center justify-center font-label-code-sm font-bold">DA</span>
+<span class="font-body-sm text-on-surface font-medium">Dr. Anand (HOD CSE)</span>
+</div>
+</td>
+<td class="py-3 px-4">
+<span class="px-2 py-0.5 rounded font-label-code-sm bg-secondary/10 text-secondary font-medium">Priority Score Restoration</span>
+</td>
+<td class="py-3 px-4 font-label-code-md text-on-surface">
+              MT24CS012 <span class="text-outline text-[11px]">(+25 PTS Refund)</span>
+</td>
+<td class="py-3 px-4 text-on-surface-variant">
+              Medical Dispensary Slip Verification <span class="text-tertiary font-label-code-sm">#MED-881</span>
+</td>
+<td class="py-3 px-4 text-right">
+<span class="inline-flex items-center gap-1 text-secondary font-label-code-sm">
+<span class="material-symbols-outlined text-[14px]">lock</span> HMAC-SHA256
+              </span>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container transition-colors">
+<td class="py-3 px-4 font-label-code-sm text-on-surface-variant">2026-03-29 18:40:02 IST</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-2">
+<span class="w-6 h-6 rounded bg-error/20 text-error flex items-center justify-center font-label-code-sm font-bold">SYS</span>
+<span class="font-body-sm text-on-surface font-medium">Gate Daemon L-106</span>
+</div>
+</td>
+<td class="py-3 px-4">
+<span class="px-2 py-0.5 rounded font-label-code-sm bg-error/10 text-error font-medium">Automated No-Show Forfeit</span>
+</td>
+<td class="py-3 px-4 font-label-code-md text-on-surface">
+              BT23CSE089 <span class="text-outline text-[11px]">(-25 PTS &amp; Cooldown)</span>
+</td>
+<td class="py-3 px-4 text-on-surface-variant">
+              Unattended Slot Window Exceeded (15 min breach)
+            </td>
+<td class="py-3 px-4 text-right">
+<span class="inline-flex items-center gap-1 text-secondary font-label-code-sm">
+<span class="material-symbols-outlined text-[14px]">lock</span> HMAC-SHA256
+              </span>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container transition-colors">
+<td class="py-3 px-4 font-label-code-sm text-on-surface-variant">2026-03-29 09:12:30 IST</td>
+<td class="py-3 px-4">
+<div class="flex items-center gap-2">
+<span class="w-6 h-6 rounded bg-primary/20 text-primary flex items-center justify-center font-label-code-sm font-bold">PS</span>
+<span class="font-body-sm text-on-surface font-medium">Prof. Sen (Admin)</span>
+</div>
+</td>
+<td class="py-3 px-4">
+<span class="px-2 py-0.5 rounded font-label-code-sm bg-tertiary/10 text-tertiary font-medium">Node Quarantine Lockdown</span>
+</td>
+<td class="py-3 px-4 font-label-code-md text-on-surface">
+              Rig L106-PC-18 <span class="text-outline text-[11px]">(VRAM Temp 94°C)</span>
+</td>
+<td class="py-3 px-4 text-on-surface-variant">
+              Hardware Thermal Protection Intervention
+            </td>
+<td class="py-3 px-4 text-right">
+<span class="inline-flex items-center gap-1 text-secondary font-label-code-sm">
+<span class="material-symbols-outlined text-[14px]">lock</span> HMAC-SHA256
+              </span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Ledger Footer / Status Line -->
+<div class="mt-space-md pt-space-md flex flex-col sm:flex-row items-center justify-between gap-space-sm text-on-surface-variant font-label-code-sm">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span>Ledger Sync: Block #104,912 Validated by IIT Bhilai Identity Registry (LDAP)</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<span>Displaying latest 4 of 328 events</span>
+<a class="text-primary hover:underline font-bold" href="#">View Full Archive →</a>
+</div>
+</div>
+</section>
+<!-- MODAL 1: Dual-Confirmation Safeguard for Semester Score Reset -->
+<div class="hidden fixed inset-0 z-50 flex items-center justify-center bg-surface-container-lowest/80 backdrop-blur-md p-space-md" id="reset-modal">
+<div class="relative w-full max-w-xl rounded-2xl bg-surface-container-high p-space-xl shadow-2xl flex flex-col gap-space-lg">
+<div class="flex items-start gap-space-md">
+<div class="w-12 h-12 rounded-xl bg-error-container/30 text-error flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[28px]">lock_reset</span>
+</div>
+<div>
+<span class="font-label-code-sm text-error font-bold uppercase tracking-wider">Critical Administrative Procedure</span>
+<h2 class="font-headline-lg text-on-surface mt-1">Execute Semester Score Reset</h2>
+<p class="font-body-md text-on-surface-variant mt-2 leading-relaxed">
+            This action concludes <span class="text-on-surface font-semibold">Spring Semester 2026</span> scoring cycle. All 412 active students will have their priority scores re-seeded to 100 PTS. 
+          </p>
+</div>
+</div>
+<div class="p-space-md rounded-xl bg-surface-container-lowest space-y-2">
+<div class="flex items-center gap-2 text-secondary font-label-code-sm font-semibold">
+<span class="material-symbols-outlined text-[16px]">verified_user</span>
+<span>Compliance Safety Checks Confirmed</span>
+</div>
+<ul class="font-body-sm text-[12px] text-on-surface-variant space-y-1 list-disc pl-4">
+<li>Snapshot written to <code class="text-on-surface">allocation_history_sp26</code> table.</li>
+<li>Accreditation compliance audit hashes generated.</li>
+<li>All active laboratory passes will expire at 23:59:59 IST.</li>
+</ul>
+</div>
+<!-- Confirmation Safeguard Input -->
+<div>
+<label class="block font-label-code-sm text-outline uppercase tracking-wider mb-2">
+          Step 1: Type "<span class="text-error font-bold">RESET-SPRING-2026</span>" to unlock
+        </label>
+<input class="w-full bg-surface-container-lowest text-on-surface font-label-code-md px-4 py-2.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-error tracking-wider" id="reset-confirmation-input" placeholder="RESET-SPRING-2026" type="text"/>
+</div>
+<div class="flex items-center justify-end gap-space-sm pt-2">
+<button class="px-space-lg py-2.5 rounded-lg bg-surface-container hover:bg-surface-bright text-on-surface font-label-code-md transition-colors" id="close-reset-modal-btn" type="button">
+          Cancel &amp; Abort
+        </button>
+<button class="px-space-lg py-2.5 rounded-lg bg-error text-on-error opacity-40 cursor-not-allowed font-label-code-md font-bold transition-all shadow-md flex items-center gap-2" disabled="" id="execute-reset-btn" type="button">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+<span>Authorize Term Reset</span>
+</button>
+</div>
+</div>
+</div>
+<!-- MODAL 2: Fairness Curve Monte Carlo Simulation Inspector -->
+<div class="hidden fixed inset-0 z-50 flex items-center justify-center bg-surface-container-lowest/80 backdrop-blur-md p-space-md" id="sim-modal">
+<div class="relative w-full max-w-2xl rounded-2xl bg-surface-container-high p-space-xl shadow-2xl flex flex-col gap-space-md">
+<div class="flex items-center justify-between pb-space-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary text-[24px]">model_training</span>
+<h2 class="font-headline-md text-on-surface">Monte Carlo Fairness Simulation (1,000 Iterations)</h2>
+</div>
+<button class="p-1 rounded-lg text-outline hover:text-on-surface hover:bg-surface-container transition-colors" id="close-sim-modal">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<p class="font-body-sm text-on-surface-variant">
+        Synthetic model forecasting allocation starvation risk under current deduction policies across peak exam weeks.
+      </p>
+<div class="p-space-md rounded-xl bg-surface-container-lowest flex flex-col gap-space-sm">
+<div class="flex justify-between font-label-code-sm">
+<span class="text-outline">Projected Gini (Week 16):</span>
+<span class="text-secondary font-bold">0.152 (±0.011)</span>
+</div>
+<div class="flex justify-between font-label-code-sm">
+<span class="text-outline">Starvation Probability (&lt;20 PTS):</span>
+<span class="text-on-surface font-bold">0.038 (Low Risk)</span>
+</div>
+<div class="flex justify-between font-label-code-sm">
+<span class="text-outline">Queue Mean Latency:</span>
+<span class="text-primary font-bold">14.2 minutes</span>
+</div>
+<!-- Simulated curve SVG -->
+<div class="pt-2">
+<svg class="w-full h-32 overflow-visible" viewbox="0 0 300 80">
+<!-- Confidence Band -->
+<path class="text-tertiary/10" d="M0 60 Q 75 40 150 35 T 300 25 L 300 35 Q 225 45 150 50 T 0 70 Z" fill="currentColor"></path>
+<!-- Theoretical Perfect Equality line -->
+<line class="text-outline/40" stroke="currentColor" stroke-dasharray="4 4" stroke-width="1" x1="0" x2="300" y1="70" y2="10"></line>
+<!-- Policy Output Line -->
+<path class="text-tertiary" d="M0 65 Q 75 42 150 38 T 300 28" fill="none" stroke="currentColor" stroke-width="2.5"></path>
+</svg>
+<div class="flex justify-between font-label-code-sm text-outline mt-1">
+<span>Week 1 (Start)</span>
+<span>Week 8 (Mid-Terms)</span>
+<span>Week 16 (Thesis Defense)</span>
+</div>
+</div>
+</div>
+<div class="flex justify-end pt-2">
+<button class="px-space-lg py-2 rounded-lg bg-surface-container-highest hover:bg-surface-bright text-on-surface font-label-code-md" id="close-sim-btn">
+          Dismiss Projection
+        </button>
+</div>
+</div>
+</div>
+<!-- TOAST FEEDBACK NOTIFIER -->
+<div class="fixed bottom-6 right-6 z-50 hidden items-center gap-3 px-4 py-3 rounded-xl bg-surface-container-highest shadow-2xl text-on-surface" id="toast-banner">
+<span class="material-symbols-outlined text-secondary text-[20px]" id="toast-icon">check_circle</span>
+<span class="font-label-code-sm font-medium" id="toast-msg">Operation completed successfully.</span>
+</div>
+</div>
+<script>
+  // DOM Elements & Interactive State
+  const exportBtn = document.getElementById('export-btn');
+  const exportMenu = document.getElementById('export-menu');
+  const resetModal = document.getElementById('reset-modal');
+  const openResetBtn = document.getElementById('open-reset-modal-btn');
+  const closeResetBtn = document.getElementById('close-reset-modal-btn');
+  const confirmInput = document.getElementById('reset-confirmation-input');
+  const executeResetBtn = document.getElementById('execute-reset-btn');
+  const simModal = document.getElementById('sim-modal');
+  const btnSimulate = document.getElementById('btn-simulate-modal');
+  const closeSimModal = document.getElementById('close-sim-modal');
+  const closeSimBtn = document.getElementById('close-sim-btn');
+  const toastBanner = document.getElementById('toast-banner');
+  const toastMsg = document.getElementById('toast-msg');
+  const toastIcon = document.getElementById('toast-icon');
+
+  // Toggle Senate Export Menu
+  if (exportBtn && exportMenu) {
+    exportBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      exportMenu.classList.toggle('hidden');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!exportMenu.contains(e.target) && e.target !== exportBtn) {
+        exportMenu.classList.add('hidden');
+      }
+    });
+  }
+
+  // Toast Helper
+  function showToast(message, isSuccess = true) {
+    if (!toastBanner || !toastMsg || !toastIcon) return;
+    toastMsg.textContent = message;
+    toastIcon.textContent = isSuccess ? 'check_circle' : 'info';
+    toastIcon.className = isSuccess ? 'material-symbols-outlined text-secondary text-[20px]' : 'material-symbols-outlined text-primary text-[20px]';
+    toastBanner.classList.remove('hidden');
+    toastBanner.classList.add('flex');
+    setTimeout(() => {
+      toastBanner.classList.add('hidden');
+      toastBanner.classList.remove('flex');
+    }, 3800);
+  }
+
+  // Export Download Trigger
+  function triggerDownload(format) {
+    exportMenu.classList.add('hidden');
+    showToast(`Compiled IIT Bhilai Senate Audit Dossier (${format}) prepared for dispatch.`, true);
+  }
+
+  // Policy Save Handler
+  function triggerPolicySave() {
+    const feedback = document.getElementById('policy-save-feedback');
+    if (feedback) {
+      feedback.classList.remove('opacity-0');
+      setTimeout(() => feedback.classList.add('opacity-0'), 2500);
+    }
+    showToast('Fairness Policy weights synchronized to allocation nodes.', true);
+  }
+
+  // Monte Carlo Simulation Inspector Triggers
+  function runSimulateCurves() {
+    if (simModal) simModal.classList.remove('hidden');
+  }
+
+  if (btnSimulate) {
+    btnSimulate.addEventListener('click', runSimulateCurves);
+  }
+
+  if (closeSimModal) {
+    closeSimModal.addEventListener('click', () => simModal.classList.add('hidden'));
+  }
+  if (closeSimBtn) {
+    closeSimBtn.addEventListener('click', () => simModal.classList.add('hidden'));
+  }
+
+  // Reset Modal Lifecycle Safeguards
+  if (openResetBtn && resetModal) {
+    openResetBtn.addEventListener('click', () => {
+      confirmInput.value = '';
+      executeResetBtn.disabled = true;
+      executeResetBtn.classList.add('opacity-40', 'cursor-not-allowed');
+      resetModal.classList.remove('hidden');
+    });
+  }
+
+  if (closeResetBtn && resetModal) {
+    closeResetBtn.addEventListener('click', () => resetModal.classList.add('hidden'));
+  }
+
+  if (confirmInput && executeResetBtn) {
+    confirmInput.addEventListener('input', (e) => {
+      if (e.target.value.trim().toUpperCase() === 'RESET-SPRING-2026') {
+        executeResetBtn.disabled = false;
+        executeResetBtn.classList.remove('opacity-40', 'cursor-not-allowed');
+      } else {
+        executeResetBtn.disabled = true;
+        executeResetBtn.classList.add('opacity-40', 'cursor-not-allowed');
+      }
+    });
+
+    executeResetBtn.addEventListener('click', () => {
+      resetModal.classList.add('hidden');
+      showToast('Term Cycle Rolled. Spring 2026 committed to allocation_history table.', true);
+    });
+  }
+
+  // Audit Log Search / Filter
+  function filterLogs() {
+    const input = document.getElementById('log-search-input');
+    if (!input) return;
+    const filter = input.value.toLowerCase();
+    const rows = document.querySelectorAll('#audit-table-body tr');
+    rows.forEach(row => {
+      const text = row.textContent.toLowerCase();
+      row.style.display = text.includes(filter) ? '' : 'none';
+    });
+  }
+
+  // Administrative Override Insertion Prompt
+  function addNewOverridePrompt() {
+    const student = prompt("Enter Student Roll No (e.g. BT22CSE099):", "BT22CSE099");
+    if (!student) return;
+    const reason = prompt("Enter Senate Justification Ref:", "Dean Special Dispensation #405");
+    if (!reason) return;
+
+    const tbody = document.getElementById('audit-table-body');
+    if (tbody) {
+      const tr = document.createElement('tr');
+      tr.className = 'hover:bg-surface-container transition-colors';
+      tr.innerHTML = `
+        <td class="py-3 px-4 font-label-code-sm text-on-surface-variant">Just Now</td>
+        <td class="py-3 px-4">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded bg-primary/20 text-primary flex items-center justify-center font-label-code-sm font-bold">PS</span>
+            <span class="font-body-sm text-on-surface font-medium">Prof. Sen (Admin)</span>
+          </div>
+        </td>
+        <td class="py-3 px-4">
+          <span class="px-2 py-0.5 rounded font-label-code-sm bg-primary/10 text-primary font-medium">Manual Slot Override</span>
+        </td>
+        <td class="py-3 px-4 font-label-code-md text-on-surface">
+          ${student} <span class="text-outline text-[11px]">(Node L106-PC-01)</span>
+        </td>
+        <td class="py-3 px-4 text-on-surface-variant">
+          ${reason}
+        </td>
+        <td class="py-3 px-4 text-right">
+          <span class="inline-flex items-center gap-1 text-secondary font-label-code-sm">
+            <span class="material-symbols-outlined text-[14px]">lock</span> HMAC-SHA256
+          </span>
+        </td>
+      `;
+      tbody.insertBefore(tr, tbody.firstChild);
+      showToast(`Administrative Override committed for ${student}.`, true);
+    }
+  }
+</script></main></div></body></html>

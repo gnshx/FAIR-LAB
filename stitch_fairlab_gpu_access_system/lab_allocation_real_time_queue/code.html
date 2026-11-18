@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@500;700&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"outline":"#8c909f","primary":"#adc6ff","on-error":"#690005","secondary":"#4edea3","on-secondary-fixed":"#002113","on-primary-container":"#00285d","on-tertiary":"#472a00","error":"#ffb4ab","surface-tint":"#adc6ff","tertiary-container":"#ca8100","error-container":"#93000a","on-surface-variant":"#c2c6d6","on-primary-fixed":"#001a42","primary-fixed-dim":"#adc6ff","on-tertiary-fixed":"#2a1700","on-surface":"#dfe2ee","inverse-primary":"#005ac2","secondary-fixed-dim":"#4edea3","outline-variant":"#424754","tertiary":"#ffb95f","surface-bright":"#353942","secondary-container":"#00a572","surface-variant":"#31353e","on-error-container":"#ffdad6","secondary-fixed":"#6ffbbe","surface-container-low":"#181c24","on-secondary":"#003824","on-background":"#dfe2ee","background":"#0f131c","surface":"#0f131c","surface-dim":"#0f131c","inverse-surface":"#dfe2ee","on-secondary-container":"#00311f","surface-container-high":"#262a33","surface-container":"#1c2028","on-tertiary-fixed-variant":"#653e00","primary-fixed":"#d8e2ff","on-secondary-fixed-variant":"#005236","tertiary-fixed":"#ffddb8","tertiary-fixed-dim":"#ffb95f","on-tertiary-container":"#3e2400","surface-container-highest":"#31353e","inverse-on-surface":"#2c3039","surface-container-lowest":"#0a0e16","on-primary-fixed-variant":"#004395","primary-container":"#4d8eff","on-primary":"#002e6a"},borderRadius:{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},spacing:{"space-md":"0.75rem","space-lg":"1.25rem","margin-desktop":"2rem","gutter-desktop":"1.5rem","gutter":"1rem","space-sm":"0.5rem","margin":"1rem","space-xs":"0.25rem","space-xl":"2rem"},fontFamily:{"label-code-md":["JetBrains Mono"],"body-lg":["Inter"],"label-code-lg":["JetBrains Mono"],"label-code-sm":["JetBrains Mono"],"headline-lg-mobile":["Plus Jakarta Sans"],"body-sm":["Inter"],"headline-lg":["Plus Jakarta Sans"],"headline-xl-mobile":["Plus Jakarta Sans"],"label-metric":["JetBrains Mono"],"headline-xl":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"],"body-md":["Inter"]},fontSize:{"label-code-md":["12px",{"lineHeight":"16px","fontWeight":"500"}],"body-lg":["16px",{"lineHeight":"24px","fontWeight":"400"}],"label-code-lg":["14px",{"lineHeight":"20px","fontWeight":"500"}],"label-code-sm":["10px",{"lineHeight":"14px","fontWeight":"500"}],"headline-lg-mobile":["22px",{"lineHeight":"30px","fontWeight":"600"}],"body-sm":["12px",{"lineHeight":"16px","fontWeight":"400"}],"headline-lg":["28px",{"lineHeight":"36px","fontWeight":"600"}],"headline-xl-mobile":["28px",{"lineHeight":"36px","fontWeight":"700"}],"label-metric":["24px",{"lineHeight":"28px","fontWeight":"700"}],"headline-xl":["36px",{"lineHeight":"44px","fontWeight":"700"}],"headline-md":["20px",{"lineHeight":"28px","fontWeight":"600"}],"body-md":["14px",{"lineHeight":"20px","fontWeight":"400"}]}}}};</script></head><body class="bg-background font-body-md text-on-surface antialiased"><header class="fixed top-0 left-0 right-0 h-16 z-50 bg-surface-container-lowest/90 backdrop-blur-xl border-b border-outline-variant/30 flex items-center justify-between px-gutter-desktop"><div class="flex items-center gap-space-lg"><div class="flex items-center gap-space-md"><div class="w-8 h-8 rounded-lg bg-surface-container-high border border-outline-variant/50 flex items-center justify-center text-primary font-headline-md font-bold"><span class="material-symbols-outlined text-[20px]">memory</span></div><div><div class="flex items-center gap-space-xs"><span class="font-headline-md font-bold text-on-surface tracking-tight leading-none">FairGPU</span><span class="font-label-code-sm px-1.5 py-0.5 rounded bg-surface-container-high text-secondary border border-secondary/30 uppercase">IIT Bhilai</span></div><div class="font-label-code-sm text-on-surface-variant leading-none mt-1">Spring 2026 Semester · Active Cycle</div></div></div><div class="hidden xl:flex items-center gap-space-md pl-space-lg border-l border-outline-variant/30"><div class="flex items-center gap-2 px-space-md py-1 rounded bg-surface-container-low border border-outline-variant/40"><span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span><span class="font-label-code-md text-on-surface">L-106: 18/24 GPUs Online</span><span class="text-outline font-label-code-sm">·</span><span class="font-label-code-sm text-tertiary">87% Peak Demand</span></div></div></div><nav class="hidden lg:flex items-center gap-space-xs p-1 rounded-xl bg-surface-container-lowest border border-outline-variant/30" data-active-classes="bg-surface-container-high text-primary border border-outline-variant/60 shadow-[0_0_12px_rgba(77,142,255,0.15)]"><a class="px-space-md py-1.5 rounded-lg font-body-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all" data-path="student-booking-passes" href="#">Student Booking &amp; Passes</a><a class="px-space-md py-1.5 rounded-lg font-body-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all" data-path="lab-allocation-realtime-queue" href="#">Lab Allocation &amp; Real-time Queue</a><a class="px-space-md py-1.5 rounded-lg font-body-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all" data-path="watchman-guard-gate-verify" href="#">Watchman Guard Gate Verify</a><a class="px-space-md py-1.5 rounded-lg font-body-sm text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all" data-path="admin-fairness-analytics" href="#">Admin Fairness Analytics</a></nav><div class="flex items-center gap-space-md"><button aria-label="Notifications" class="relative p-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors" type="button"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary"></span></button><div class="hidden sm:flex items-center gap-space-xs px-2.5 py-1 rounded bg-secondary-container/20 border border-secondary/30"><span class="material-symbols-outlined text-secondary text-[16px]">verified</span><span class="font-label-code-sm text-secondary font-bold tracking-tight">100 PTS · MAX PRIORITY</span></div><div class="flex items-center gap-space-sm pl-space-sm"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shadow-inner"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><aside class="fixed left-0 top-16 bottom-0 w-64 bg-surface-container-lowest border-r border-outline-variant/30 z-40 flex flex-col justify-between p-space-md"><div class="space-y-space-lg"><div class="px-space-sm"><div class="font-label-code-sm text-outline uppercase tracking-wider mb-2">Laboratory Control</div><nav class="space-y-1" data-active-classes="bg-surface-container-high text-primary border border-outline-variant/40"><a class="flex items-center gap-3 px-3 py-2 rounded-lg font-body-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="student-booking-passes" href="#"><span class="material-symbols-outlined text-[20px]">qr_code_scanner</span><span>My Access Pass</span></a><a class="flex items-center gap-3 px-3 py-2 rounded-lg font-body-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="lab-allocation-realtime-queue" href="#"><span class="material-symbols-outlined text-[20px]">grid_view</span><span>Workstation Telemetry</span></a><a class="flex items-center gap-3 px-3 py-2 rounded-lg font-body-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="queue-priority-engine" href="#"><span class="material-symbols-outlined text-[20px]">reorder</span><span>Fair-Share Queue</span></a><a class="flex items-center gap-3 px-3 py-2 rounded-lg font-body-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="hardware-rig-status" href="#"><span class="material-symbols-outlined text-[20px]">developer_board</span><span>GPU Health Matrix</span></a></nav></div><div class="px-space-sm"><div class="font-label-code-sm text-outline uppercase tracking-wider mb-2">Governance &amp; Guard</div><nav class="space-y-1" data-active-classes="bg-surface-container-high text-primary border border-outline-variant/40"><a class="flex items-center gap-3 px-3 py-2 rounded-lg font-body-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="watchman-guard-gate-verify" href="#"><span class="material-symbols-outlined text-[20px]">sensor_door</span><span>Turnstile Scanner</span></a><a class="flex items-center gap-3 px-3 py-2 rounded-lg font-body-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="admin-fairness-analytics" href="#"><span class="material-symbols-outlined text-[20px]">monitoring</span><span>Fairness Analytics</span></a><a class="flex items-center gap-3 px-3 py-2 rounded-lg font-body-md text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all" data-path="lab-audit-logs" href="#"><span class="material-symbols-outlined text-[20px]">receipt_long</span><span>Incident &amp; Audit Log</span></a></nav></div></div><div class="p-space-md rounded-xl bg-surface-container-low border border-outline-variant/30"><div class="flex items-center justify-between mb-1"><span class="font-label-code-sm text-outline">FAIR-SHARE TIER</span><span class="font-label-code-sm text-secondary font-bold">ALPHA</span></div><div class="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden"><div class="bg-secondary h-full w-[92%]"></div></div><div class="mt-2 font-label-code-sm text-on-surface-variant flex justify-between"><span>Penalty Deductions</span><span class="text-on-surface">0.00 Pts</span></div></div></aside><div class="pl-64"><main class="relative pt-16 min-h-screen bg-background w-full px-gutter-desktop py-space-lg"><div class="flex flex-col w-full gap-space-lg text-on-surface">
+<!-- TOP ENGINE BANNER -->
+<div class="relative overflow-hidden rounded-xl bg-surface-container-low p-space-lg shadow-xl">
+<div class="absolute -right-24 -top-24 w-96 h-96 rounded-full bg-primary/10 blur-3xl pointer-events-none"></div>
+<div class="absolute -left-20 -bottom-20 w-80 h-80 rounded-full bg-secondary/10 blur-3xl pointer-events-none"></div>
+<div class="relative z-10 flex flex-col xl:flex-row items-start xl:items-center justify-between gap-space-lg">
+<div class="space-y-space-xs max-w-3xl">
+<div class="flex flex-wrap items-center gap-space-sm">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-secondary-container/20 text-secondary font-label-code-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary animate-ping"></span>
+            ATOMIC TRANSACTION COMMITTED
+          </span>
+<span class="px-2.5 py-1 rounded bg-surface-container-high text-on-surface-variant font-label-code-sm">
+            CYCLE ID: #R4-L106-20260329
+          </span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container-highest text-primary font-label-code-sm">
+<span class="material-symbols-outlined text-[14px]">lock_clock</span>
+            PostgreSQL Row-Lock Atomic Batch
+          </span>
+</div>
+<div class="flex items-baseline gap-space-md pt-1">
+<h2 class="font-headline-xl text-on-surface tracking-tight">Round 4: 02:00 PM – 04:00 PM Slot</h2>
+<span class="font-label-code-md text-tertiary px-2 py-0.5 rounded bg-tertiary-container/20">LIVE ENGINE RUN</span>
+</div>
+<p class="font-body-md text-on-surface-variant leading-relaxed">
+          High-contention scheduling phase initialized for Laboratory L-106. Rigorous anti-hoarding fairness constraints applied across all active multi-tenant batch workloads.
+        </p>
+</div>
+<!-- Quick Metrics Ribbon -->
+<div class="grid grid-cols-2 sm:grid-cols-3 gap-space-sm w-full xl:w-auto shrink-0">
+<div class="p-space-md rounded-lg bg-surface-container-high shadow-sm">
+<div class="font-label-code-sm text-outline">TOTAL REQUESTS</div>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="font-label-metric text-on-surface">14</span>
+<span class="font-label-code-sm text-tertiary">Students</span>
+</div>
+<div class="font-body-sm text-on-surface-variant mt-1">1.75x Oversubscribed</div>
+</div>
+<div class="p-space-md rounded-lg bg-surface-container-high shadow-sm">
+<div class="font-label-code-sm text-outline">AVAILABLE NODES</div>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="font-label-metric text-secondary">08</span>
+<span class="font-label-code-sm text-on-surface-variant">/ 24</span>
+</div>
+<div class="font-body-sm text-secondary mt-1">12 GB VRAM GDDR6X</div>
+</div>
+<div class="p-space-md rounded-lg bg-surface-container-high col-span-2 sm:col-span-1 shadow-sm">
+<div class="font-label-code-sm text-outline">LATENCY BUDGET</div>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="font-label-metric text-primary">1.82</span>
+<span class="font-label-code-sm text-on-surface-variant">ms</span>
+</div>
+<div class="font-body-sm text-on-surface-variant mt-1">pg_advisory_xact_lock</div>
+</div>
+</div>
+</div>
+<!-- Live Telemetry Ticker -->
+<div class="relative z-10 mt-space-lg pt-space-md bg-surface-container/60 rounded-lg p-space-sm flex flex-wrap items-center justify-between gap-y-2 gap-x-4">
+<div class="flex items-center gap-space-md font-label-code-sm">
+<div class="flex items-center gap-1.5 text-secondary">
+<span class="material-symbols-outlined text-[16px]">sensors</span>
+<span>Connected to Redis Live Queue Cache</span>
+</div>
+<span class="text-outline">·</span>
+<span class="text-on-surface-variant">Channel: <code class="text-primary font-label-code-sm">pubsub:l106_allocations</code></span>
+<span class="text-outline hidden md:inline">·</span>
+<span class="text-on-surface-variant hidden md:inline">Sync Offset: <code class="text-secondary font-label-code-sm">0.004s</code></span>
+</div>
+<div class="flex items-center gap-space-sm">
+<span class="font-label-code-sm text-outline">Auto-refresh stream</span>
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+</div>
+</div>
+</div>
+<!-- MAIN DUAL COLUMN: QUEUE & LAB FLOOR -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-lg">
+<!-- LEFT COLUMN: FAIRNESS PRIORITY QUEUE (7 Cols) -->
+<div class="xl:col-span-7 flex flex-col gap-space-md">
+<div class="flex items-center justify-between p-space-md rounded-xl bg-surface-container-low shadow-sm">
+<div class="flex items-center gap-space-sm">
+<div class="w-7 h-7 rounded bg-primary/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">format_list_numbered</span>
+</div>
+<div>
+<h3 class="font-headline-md text-on-surface leading-tight">Fairness Priority Ranking Queue</h3>
+<p class="font-label-code-sm text-on-surface-variant">Deterministically evaluated via FairGPU Micro-Alloc Engine v3.1</p>
+</div>
+</div>
+<div class="flex items-center gap-space-xs font-label-code-sm">
+<span class="px-2 py-1 rounded bg-secondary/15 text-secondary">8 Allocated</span>
+<span class="px-2 py-1 rounded bg-tertiary/15 text-tertiary">6 Standby Waitlist</span>
+</div>
+</div>
+<!-- Queue Table Container -->
+<div class="rounded-xl bg-surface-container-low overflow-hidden shadow-sm flex flex-col">
+<div class="overflow-x-auto">
+<table class="w-full text-left font-body-sm">
+<thead>
+<tr class="bg-surface-container font-label-code-sm text-outline uppercase tracking-wider">
+<th class="py-space-sm px-space-md">Rank</th>
+<th class="py-space-sm px-space-md">Applicant &amp; Prior Runs</th>
+<th class="py-space-sm px-space-md">Fairness Metric</th>
+<th class="py-space-sm px-space-md">Tiebreak Factor</th>
+<th class="py-space-sm px-space-md text-right">Outcome / Target</th>
+</tr>
+</thead>
+<tbody class="divide-y-0">
+<!-- Rank 1 -->
+<tr class="bg-surface-container-high/40 hover:bg-surface-container-high transition-colors">
+<td class="py-space-sm px-space-md font-label-code-md text-secondary font-bold">#01</td>
+<td class="py-space-sm px-space-md">
+<div class="font-body-md font-semibold text-on-surface">Aarav Sharma</div>
+<div class="font-label-code-sm text-outline">0 previous bookings this week</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="inline-flex items-center gap-1 font-label-code-md px-2 py-0.5 rounded bg-secondary/20 text-secondary">
+<span class="material-symbols-outlined text-[14px]">shield</span> 100 PTS
+                  </span>
+</td>
+<td class="py-space-sm px-space-md font-label-code-sm text-on-surface-variant">Default Zero-Allocation Tier</td>
+<td class="py-space-sm px-space-md text-right">
+<span class="inline-flex items-center gap-1 font-label-code-sm px-2.5 py-1 rounded bg-secondary-container/20 text-secondary font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> L106-PC-01
+                  </span>
+</td>
+</tr>
+<!-- Rank 2 -->
+<tr class="bg-surface-container-low hover:bg-surface-container-high/60 transition-colors">
+<td class="py-space-sm px-space-md font-label-code-md text-secondary font-bold">#02</td>
+<td class="py-space-sm px-space-md">
+<div class="font-body-md font-semibold text-on-surface">Ganesh Kumar</div>
+<div class="font-label-code-sm text-outline">1 previous booking</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="inline-flex items-center gap-1 font-label-code-md px-2 py-0.5 rounded bg-primary/20 text-primary">
+                    90 PTS
+                  </span>
+</td>
+<td class="py-space-sm px-space-md font-label-code-sm text-on-surface-variant">Wait delta +14m</td>
+<td class="py-space-sm px-space-md text-right">
+<span class="inline-flex items-center gap-1 font-label-code-sm px-2.5 py-1 rounded bg-secondary-container/20 text-secondary font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> L106-PC-03
+                  </span>
+</td>
+</tr>
+<!-- Rank 3 (Tiebreak) -->
+<tr class="bg-surface-container-high/20 hover:bg-surface-container-high/60 transition-colors">
+<td class="py-space-sm px-space-md font-label-code-md text-secondary font-bold">#03</td>
+<td class="py-space-sm px-space-md">
+<div class="font-body-md font-semibold text-on-surface">Priya Patel</div>
+<div class="font-label-code-sm text-outline">1 previous booking</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="inline-flex items-center gap-1 font-label-code-md px-2 py-0.5 rounded bg-primary/20 text-primary">
+                    90 PTS
+                  </span>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="font-label-code-sm text-secondary bg-secondary/10 px-1.5 py-0.5 rounded inline-flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">schedule</span> 09:12:04 AM TS
+                  </span>
+</td>
+<td class="py-space-sm px-space-md text-right">
+<span class="inline-flex items-center gap-1 font-label-code-sm px-2.5 py-1 rounded bg-secondary-container/20 text-secondary font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> L106-PC-05
+                  </span>
+</td>
+</tr>
+<!-- Rank 4 -->
+<tr class="bg-surface-container-low hover:bg-surface-container-high/60 transition-colors">
+<td class="py-space-sm px-space-md font-label-code-md text-secondary font-bold">#04</td>
+<td class="py-space-sm px-space-md">
+<div class="font-body-md font-semibold text-on-surface">Rohan Verma</div>
+<div class="font-label-code-sm text-outline">2 previous bookings</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="inline-flex items-center gap-1 font-label-code-md px-2 py-0.5 rounded bg-primary/10 text-primary">
+                    80 PTS
+                  </span>
+</td>
+<td class="py-space-sm px-space-md font-label-code-sm text-on-surface-variant">Cumulative wait: 42m</td>
+<td class="py-space-sm px-space-md text-right">
+<span class="inline-flex items-center gap-1 font-label-code-sm px-2.5 py-1 rounded bg-secondary-container/20 text-secondary font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> L106-PC-07
+                  </span>
+</td>
+</tr>
+<!-- Rank 5 -->
+<tr class="bg-surface-container-high/20 hover:bg-surface-container-high/60 transition-colors">
+<td class="py-space-sm px-space-md font-label-code-md text-secondary font-bold">#05</td>
+<td class="py-space-sm px-space-md">
+<div class="font-body-md font-semibold text-on-surface">Sneha Rao</div>
+<div class="font-label-code-sm text-outline">3 previous bookings</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="inline-flex items-center gap-1 font-label-code-md px-2 py-0.5 rounded bg-tertiary-container/30 text-tertiary">
+                    70 PTS
+                  </span>
+</td>
+<td class="py-space-sm px-space-md font-label-code-sm text-on-surface-variant">Timestamp 09:14:22 AM</td>
+<td class="py-space-sm px-space-md text-right">
+<span class="inline-flex items-center gap-1 font-label-code-sm px-2.5 py-1 rounded bg-secondary-container/20 text-secondary font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> L106-PC-08
+                  </span>
+</td>
+</tr>
+<!-- Rank 6 to 8 Compact Row Representation -->
+<tr class="bg-surface-container-low hover:bg-surface-container-high/60 transition-colors">
+<td class="py-space-sm px-space-md font-label-code-md text-secondary font-bold">#06</td>
+<td class="py-space-sm px-space-md">
+<div class="font-body-md font-semibold text-on-surface">Tanmay Joshi</div>
+<div class="font-label-code-sm text-outline">3 bookings (Thesis Research flag)</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="inline-flex items-center gap-1 font-label-code-md px-2 py-0.5 rounded bg-tertiary-container/30 text-tertiary">
+                    70 PTS
+                  </span>
+</td>
+<td class="py-space-sm px-space-md font-label-code-sm text-on-surface-variant">Timestamp 09:15:10 AM</td>
+<td class="py-space-sm px-space-md text-right">
+<span class="inline-flex items-center gap-1 font-label-code-sm px-2.5 py-1 rounded bg-secondary-container/20 text-secondary font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> L106-PC-11
+                  </span>
+</td>
+</tr>
+<tr class="bg-surface-container-high/20 hover:bg-surface-container-high/60 transition-colors">
+<td class="py-space-sm px-space-md font-label-code-md text-secondary font-bold">#07</td>
+<td class="py-space-sm px-space-md">
+<div class="font-body-md font-semibold text-on-surface">Divya Soni</div>
+<div class="font-label-code-sm text-outline">4 previous bookings</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="inline-flex items-center gap-1 font-label-code-md px-2 py-0.5 rounded bg-outline-variant/50 text-on-surface">
+                    60 PTS
+                  </span>
+</td>
+<td class="py-space-sm px-space-md font-label-code-sm text-on-surface-variant">Cumulative wait: 58m</td>
+<td class="py-space-sm px-space-md text-right">
+<span class="inline-flex items-center gap-1 font-label-code-sm px-2.5 py-1 rounded bg-secondary-container/20 text-secondary font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> L106-PC-14
+                  </span>
+</td>
+</tr>
+<tr class="bg-surface-container-low hover:bg-surface-container-high/60 transition-colors">
+<td class="py-space-sm px-space-md font-label-code-md text-secondary font-bold">#08</td>
+<td class="py-space-sm px-space-md">
+<div class="font-body-md font-semibold text-on-surface">Ananya Sengupta</div>
+<div class="font-label-code-sm text-outline">4 bookings · No penalty mark</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="inline-flex items-center gap-1 font-label-code-md px-2 py-0.5 rounded bg-outline-variant/50 text-on-surface">
+                    60 PTS
+                  </span>
+</td>
+<td class="py-space-sm px-space-md font-label-code-sm text-on-surface-variant">Timestamp 09:18:41 AM</td>
+<td class="py-space-sm px-space-md text-right">
+<span class="inline-flex items-center gap-1 font-label-code-sm px-2.5 py-1 rounded bg-secondary-container/20 text-secondary font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> L106-PC-19
+                  </span>
+</td>
+</tr>
+<!-- CUTOFF DIVIDER -->
+<tr class="bg-surface-container-highest/80">
+<td class="py-2 px-space-md text-center" colspan="5">
+<div class="flex items-center justify-center gap-2 font-label-code-sm text-tertiary tracking-wider font-semibold">
+<span class="material-symbols-outlined text-[16px]">call_split</span>
+                    SLOT CAPACITY LIMIT REACHED (TOP 8 SLOTS COMMITTED)
+                    <span class="material-symbols-outlined text-[16px]">call_split</span>
+</div>
+</td>
+</tr>
+<!-- STANDBY QUEUE: RANKS 9 - 14 -->
+<tr class="bg-surface-container-low/70 hover:bg-surface-container-high/40 transition-colors">
+<td class="py-space-sm px-space-md font-label-code-md text-tertiary">#09</td>
+<td class="py-space-sm px-space-md">
+<div class="font-body-md font-medium text-on-surface">Karthik Raja</div>
+<div class="font-label-code-sm text-outline">5 previous bookings</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="font-label-code-md px-2 py-0.5 rounded bg-surface-container-highest text-on-surface-variant">50 PTS</span>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="font-label-code-sm text-secondary font-medium">89% Odds (Bump #1)</span>
+</td>
+<td class="py-space-sm px-space-md text-right">
+<span class="font-label-code-sm text-tertiary px-2 py-0.5 rounded bg-tertiary-container/20">Standby #1</span>
+</td>
+</tr>
+<tr class="bg-surface-container-low/50 hover:bg-surface-container-high/40 transition-colors">
+<td class="py-space-sm px-space-md font-label-code-md text-tertiary">#10</td>
+<td class="py-space-sm px-space-md">
+<div class="font-body-md font-medium text-on-surface">Meera Nambiar</div>
+<div class="font-label-code-sm text-outline">5 bookings · Prior 12m idle flag</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="font-label-code-md px-2 py-0.5 rounded bg-surface-container-highest text-on-surface-variant">50 PTS</span>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="font-label-code-sm text-tertiary font-medium">64% Odds</span>
+</td>
+<td class="py-space-sm px-space-md text-right">
+<span class="font-label-code-sm text-tertiary px-2 py-0.5 rounded bg-tertiary-container/20">Standby #2</span>
+</td>
+</tr>
+<tr class="bg-surface-container-low/30 hover:bg-surface-container-high/40 transition-colors">
+<td class="py-space-sm px-space-md font-label-code-md text-outline">#11</td>
+<td class="py-space-sm px-space-md">
+<div class="font-body-md font-medium text-on-surface-variant">Vikram Bhatt</div>
+<div class="font-label-code-sm text-outline">6 previous bookings</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="font-label-code-md px-2 py-0.5 rounded bg-surface-container-highest text-on-surface-variant">40 PTS</span>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="font-label-code-sm text-outline">41% Odds</span>
+</td>
+<td class="py-space-sm px-space-md text-right">
+<span class="font-label-code-sm text-on-surface-variant px-2 py-0.5 rounded bg-surface-container-highest">Standby #3</span>
+</td>
+</tr>
+<tr class="bg-surface-container-low/30 hover:bg-surface-container-high/40 transition-colors">
+<td class="py-space-sm px-space-md font-label-code-md text-outline">#12</td>
+<td class="py-space-sm px-space-md">
+<div class="font-body-md font-medium text-on-surface-variant">Pooja Nair</div>
+<div class="font-label-code-sm text-outline">6 previous bookings</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="font-label-code-md px-2 py-0.5 rounded bg-surface-container-highest text-on-surface-variant">40 PTS</span>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="font-label-code-sm text-outline">28% Odds</span>
+</td>
+<td class="py-space-sm px-space-md text-right">
+<span class="font-label-code-sm text-on-surface-variant px-2 py-0.5 rounded bg-surface-container-highest">Standby #4</span>
+</td>
+</tr>
+<tr class="bg-surface-container-low/20 hover:bg-surface-container-high/40 transition-colors">
+<td class="py-space-sm px-space-md font-label-code-md text-outline">#13</td>
+<td class="py-space-sm px-space-md">
+<div class="font-body-md font-medium text-on-surface-variant">Aditya Kulkarni</div>
+<div class="font-label-code-sm text-outline">7 previous bookings</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="font-label-code-md px-2 py-0.5 rounded bg-surface-container-highest text-outline">30 PTS</span>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="font-label-code-sm text-outline">12% Odds</span>
+</td>
+<td class="py-space-sm px-space-md text-right">
+<span class="font-label-code-sm text-outline px-2 py-0.5 rounded bg-surface-container-highest">Standby #5</span>
+</td>
+</tr>
+<tr class="bg-surface-container-low/20 hover:bg-surface-container-high/40 transition-colors">
+<td class="py-space-sm px-space-md font-label-code-md text-outline">#14</td>
+<td class="py-space-sm px-space-md">
+<div class="font-body-md font-medium text-on-surface-variant">Harshita Das</div>
+<div class="font-label-code-sm text-outline">8 bookings (Max saturation)</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="font-label-code-md px-2 py-0.5 rounded bg-surface-container-highest text-outline">30 PTS</span>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="font-label-code-sm text-outline">&lt;5% Odds</span>
+</td>
+<td class="py-space-sm px-space-md text-right">
+<span class="font-label-code-sm text-outline px-2 py-0.5 rounded bg-surface-container-highest">Standby #6</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Standby Auto-Bump Notice footer -->
+<div class="p-space-md bg-surface-container flex items-center justify-between text-on-surface-variant text-body-sm">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-secondary text-[20px]">bolt</span>
+<span><strong>Instant Auto-Bump Enabled:</strong> If any allocated user fails biometric gate-in within 10 minutes of round opening (02:10 PM), Node ownership immediately shifts to Rank #9 (Karthik Raja).</span>
+</div>
+<button class="shrink-0 px-3 py-1.5 rounded bg-surface-container-high text-on-surface hover:bg-surface-bright font-label-code-sm transition-colors" type="button">
+            Audit Calculation
+          </button>
+</div>
+</div>
+</div>
+<!-- RIGHT COLUMN: L-106 PHYSICAL MAP & TELEMETRY (5 Cols) -->
+<div class="xl:col-span-5 flex flex-col gap-space-md">
+<!-- Interactive Map Title Card -->
+<div class="flex items-center justify-between p-space-md rounded-xl bg-surface-container-low shadow-sm">
+<div>
+<h3 class="font-headline-md text-on-surface leading-tight">L-106 Physical Floor Map</h3>
+<p class="font-label-code-sm text-on-surface-variant">24 Workstation Pods · 4 Bay Clusters</p>
+</div>
+<div class="flex items-center gap-1 font-label-code-sm text-primary bg-primary/10 px-2 py-1 rounded">
+<span class="material-symbols-outlined text-[14px]">grid_view</span>
+          Bay Architecture
+        </div>
+</div>
+<!-- Map Legend -->
+<div class="grid grid-cols-3 sm:grid-cols-5 gap-1.5 p-space-sm rounded-lg bg-surface-container font-label-code-sm">
+<div class="flex items-center gap-1.5 text-secondary">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary shrink-0"></span>
+<span class="truncate">Active In-Use</span>
+</div>
+<div class="flex items-center gap-1.5 text-primary">
+<span class="w-2.5 h-2.5 rounded-full bg-primary shrink-0"></span>
+<span class="truncate">Reserved R4</span>
+</div>
+<div class="flex items-center gap-1.5 text-tertiary">
+<span class="w-2.5 h-2.5 rounded-full bg-tertiary shrink-0"></span>
+<span class="truncate">Queued</span>
+</div>
+<div class="flex items-center gap-1.5 text-outline">
+<span class="w-2.5 h-2.5 rounded-full bg-surface-bright shrink-0"></span>
+<span class="truncate">Off-Hours</span>
+</div>
+<div class="flex items-center gap-1.5 text-error">
+<span class="w-2.5 h-2.5 rounded-full bg-error shrink-0"></span>
+<span class="truncate">Maintenance</span>
+</div>
+</div>
+<!-- Interactive 24-Workstation Rig Grid -->
+<div class="p-space-md rounded-xl bg-surface-container-low shadow-md space-y-space-md">
+<!-- Bay Cluster A & B -->
+<div class="grid grid-cols-2 gap-space-md">
+<!-- Bay 01 (Left) -->
+<div class="space-y-2">
+<div class="flex items-center justify-between font-label-code-sm text-outline px-1">
+<span>BAY-A (NORTH-WEST)</span>
+<span class="text-secondary">4/6 Active</span>
+</div>
+<div class="grid grid-cols-3 gap-2">
+<!-- PC-01: Aarav Sharma (Allocated / Ready) -->
+<div class="p-2 rounded bg-surface-container-high hover:bg-surface-bright cursor-pointer transition-all group relative">
+<div class="flex items-center justify-between">
+<span class="font-label-code-sm text-secondary font-bold">PC-01</span>
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+</div>
+<div class="font-label-code-sm text-on-surface truncate mt-1">A. Sharma</div>
+<div class="text-[9px] text-outline font-label-code-sm">12GB · RT4070</div>
+</div>
+<!-- PC-02: Maintenance -->
+<div class="p-2 rounded bg-error-container/20 cursor-not-allowed">
+<div class="flex items-center justify-between">
+<span class="font-label-code-sm text-error font-bold">PC-02</span>
+<span class="material-symbols-outlined text-error text-[12px]">build</span>
+</div>
+<div class="font-label-code-sm text-error truncate mt-1">Driver ERR</div>
+<div class="text-[9px] text-error/80 font-label-code-sm">CUDA 12.4 Fail</div>
+</div>
+<!-- PC-03: Ganesh Kumar (Target Telemetry Node with Highlight) -->
+<div class="p-2 rounded bg-secondary-container/20 ring-1 ring-secondary cursor-pointer relative shadow-lg" id="target-rig">
+<div class="flex items-center justify-between">
+<span class="font-label-code-sm text-secondary font-bold">PC-03</span>
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+</div>
+<div class="font-label-code-sm text-secondary truncate mt-1 font-semibold">G. Kumar</div>
+<div class="text-[9px] text-secondary/80 font-label-code-sm">INSPECTION PIN</div>
+</div>
+<!-- PC-04: Off-hours idle -->
+<div class="p-2 rounded bg-surface-container opacity-60">
+<div class="flex items-center justify-between">
+<span class="font-label-code-sm text-outline font-bold">PC-04</span>
+<span class="w-2 h-2 rounded-full bg-outline-variant"></span>
+</div>
+<div class="font-label-code-sm text-outline truncate mt-1">Unassigned</div>
+<div class="text-[9px] text-outline font-label-code-sm">Cooling State</div>
+</div>
+<!-- PC-05: Priya Patel -->
+<div class="p-2 rounded bg-surface-container-high hover:bg-surface-bright cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-label-code-sm text-secondary font-bold">PC-05</span>
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+</div>
+<div class="font-label-code-sm text-on-surface truncate mt-1">P. Patel</div>
+<div class="text-[9px] text-outline font-label-code-sm">Tiebreak Win</div>
+</div>
+<!-- PC-06: Off-Hours -->
+<div class="p-2 rounded bg-surface-container opacity-60">
+<div class="flex items-center justify-between">
+<span class="font-label-code-sm text-outline font-bold">PC-06</span>
+<span class="w-2 h-2 rounded-full bg-outline-variant"></span>
+</div>
+<div class="font-label-code-sm text-outline truncate mt-1">Reserved R5</div>
+<div class="text-[9px] text-outline font-label-code-sm">Ready 04 PM</div>
+</div>
+</div>
+</div>
+<!-- Bay 02 (Right) -->
+<div class="space-y-2">
+<div class="flex items-center justify-between font-label-code-sm text-outline px-1">
+<span>BAY-B (NORTH-EAST)</span>
+<span class="text-primary">2/6 Active</span>
+</div>
+<div class="grid grid-cols-3 gap-2">
+<!-- PC-07: Rohan Verma -->
+<div class="p-2 rounded bg-surface-container-high hover:bg-surface-bright cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-label-code-sm text-secondary font-bold">PC-07</span>
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+</div>
+<div class="font-label-code-sm text-on-surface truncate mt-1">R. Verma</div>
+<div class="text-[9px] text-outline font-label-code-sm">12GB Allocated</div>
+</div>
+<!-- PC-08: Sneha Rao -->
+<div class="p-2 rounded bg-surface-container-high hover:bg-surface-bright cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-label-code-sm text-secondary font-bold">PC-08</span>
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+</div>
+<div class="font-label-code-sm text-on-surface truncate mt-1">S. Rao</div>
+<div class="text-[9px] text-outline font-label-code-sm">12GB Allocated</div>
+</div>
+<!-- PC-09: Queued Standby Hold -->
+<div class="p-2 rounded bg-tertiary-container/15">
+<div class="flex items-center justify-between">
+<span class="font-label-code-sm text-tertiary font-bold">PC-09</span>
+<span class="material-symbols-outlined text-tertiary text-[12px]">hourglass_empty</span>
+</div>
+<div class="font-label-code-sm text-tertiary truncate mt-1">Hold Pool</div>
+<div class="text-[9px] text-tertiary font-label-code-sm">Auto-Bump #1</div>
+</div>
+<!-- PC-10: Off -->
+<div class="p-2 rounded bg-surface-container opacity-60">
+<div class="flex items-center justify-between">
+<span class="font-label-code-sm text-outline font-bold">PC-10</span>
+<span class="w-2 h-2 rounded-full bg-outline-variant"></span>
+</div>
+<div class="font-label-code-sm text-outline truncate mt-1">Unassigned</div>
+<div class="text-[9px] text-outline font-label-code-sm">Standby</div>
+</div>
+<!-- PC-11: Tanmay Joshi -->
+<div class="p-2 rounded bg-surface-container-high hover:bg-surface-bright cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-label-code-sm text-secondary font-bold">PC-11</span>
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+</div>
+<div class="font-label-code-sm text-on-surface truncate mt-1">T. Joshi</div>
+<div class="text-[9px] text-outline font-label-code-sm">Allocated</div>
+</div>
+<!-- PC-12: Reserved by Faculty Admin -->
+<div class="p-2 rounded bg-primary-container/20">
+<div class="flex items-center justify-between">
+<span class="font-label-code-sm text-primary font-bold">PC-12</span>
+<span class="material-symbols-outlined text-primary text-[12px]">verified_user</span>
+</div>
+<div class="font-label-code-sm text-primary truncate mt-1">Faculty TA</div>
+<div class="text-[9px] text-primary/80 font-label-code-sm">Reserved Base</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Gangway Passage Corridor -->
+<div class="flex items-center justify-between py-1 px-3 bg-surface-container rounded font-label-code-sm text-outline">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px]">door_front</span>
+<span>NORTH ENTRY TURNSTILE</span>
+</div>
+<span class="tracking-widest">CENTRAL GANGWAY AISLE</span>
+<div class="flex items-center gap-2">
+<span>EMERGENCY EGRESS</span>
+<span class="material-symbols-outlined text-[14px]">logout</span>
+</div>
+</div>
+<!-- Bay Cluster C & D -->
+<div class="grid grid-cols-2 gap-space-md">
+<!-- Bay 03 (South-West) -->
+<div class="space-y-2">
+<div class="flex items-center justify-between font-label-code-sm text-outline px-1">
+<span>BAY-C (SOUTH-WEST)</span>
+<span class="text-secondary">2/6 Active</span>
+</div>
+<div class="grid grid-cols-3 gap-2">
+<div class="p-2 rounded bg-surface-container opacity-60">
+<div class="flex items-center justify-between">
+<span class="font-label-code-sm text-outline font-bold">PC-13</span>
+<span class="w-2 h-2 rounded-full bg-outline-variant"></span>
+</div>
+<div class="font-label-code-sm text-outline truncate mt-1">Unassigned</div>
+<div class="text-[9px] text-outline font-label-code-sm">Thermal Test</div>
+</div>
+<!-- PC-14: Divya Soni -->
+<div class="p-2 rounded bg-surface-container-high hover:bg-surface-bright cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-label-code-sm text-secondary font-bold">PC-14</span>
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+</div>
+<div class="font-label-code-sm text-on-surface truncate mt-1">D. Soni</div>
+<div class="text-[9px] text-outline font-label-code-sm">Allocated</div>
+</div>
+<div class="p-2 rounded bg-surface-container opacity-60">
+<div class="flex items-center justify-between">
+<span class="font-label-code-sm text-outline font-bold">PC-15</span>
+<span class="w-2 h-2 rounded-full bg-outline-variant"></span>
+</div>
+<div class="font-label-code-sm text-outline truncate mt-1">Unassigned</div>
+<div class="text-[9px] text-outline font-label-code-sm">Available R5</div>
+</div>
+<div class="p-2 rounded bg-surface-container opacity-60">
+<div class="flex items-center justify-between">
+<span class="font-label-code-sm text-outline font-bold">PC-16</span>
+<span class="w-2 h-2 rounded-full bg-outline-variant"></span>
+</div>
+<div class="font-label-code-sm text-outline truncate mt-1">Unassigned</div>
+<div class="text-[9px] text-outline font-label-code-sm">Idle Cycle</div>
+</div>
+<div class="p-2 rounded bg-surface-container opacity-60">
+<div class="flex items-center justify-between">
+<span class="font-label-code-sm text-outline font-bold">PC-17</span>
+<span class="w-2 h-2 rounded-full bg-outline-variant"></span>
+</div>
+<div class="font-label-code-sm text-outline truncate mt-1">Unassigned</div>
+<div class="text-[9px] text-outline font-label-code-sm">Available R5</div>
+</div>
+<div class="p-2 rounded bg-error-container/20">
+<div class="flex items-center justify-between">
+<span class="font-label-code-sm text-error font-bold">PC-18</span>
+<span class="material-symbols-outlined text-error text-[12px]">thermostat</span>
+</div>
+<div class="font-label-code-sm text-error truncate mt-1">Thermal High</div>
+<div class="text-[9px] text-error/80 font-label-code-sm">Fan Throttled</div>
+</div>
+</div>
+</div>
+<!-- Bay 04 (South-East) -->
+<div class="space-y-2">
+<div class="flex items-center justify-between font-label-code-sm text-outline px-1">
+<span>BAY-D (SOUTH-EAST)</span>
+<span class="text-secondary">1/6 Active</span>
+</div>
+<div class="grid grid-cols-3 gap-2">
+<!-- PC-19: Ananya Sengupta -->
+<div class="p-2 rounded bg-surface-container-high hover:bg-surface-bright cursor-pointer transition-all">
+<div class="flex items-center justify-between">
+<span class="font-label-code-sm text-secondary font-bold">PC-19</span>
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+</div>
+<div class="font-label-code-sm text-on-surface truncate mt-1">A. Sengupta</div>
+<div class="text-[9px] text-outline font-label-code-sm">Allocated</div>
+</div>
+<div class="p-2 rounded bg-surface-container opacity-60">
+<div class="flex items-center justify-between">
+<span class="font-label-code-sm text-outline font-bold">PC-20</span>
+<span class="w-2 h-2 rounded-full bg-outline-variant"></span>
+</div>
+<div class="font-label-code-sm text-outline truncate mt-1">Unassigned</div>
+<div class="text-[9px] text-outline font-label-code-sm">Standby</div>
+</div>
+<div class="p-2 rounded bg-surface-container opacity-60">
+<div class="flex items-center justify-between">
+<span class="font-label-code-sm text-outline font-bold">PC-21</span>
+<span class="w-2 h-2 rounded-full bg-outline-variant"></span>
+</div>
+<div class="font-label-code-sm text-outline truncate mt-1">Unassigned</div>
+<div class="text-[9px] text-outline font-label-code-sm">Standby</div>
+</div>
+<div class="p-2 rounded bg-surface-container opacity-60">
+<div class="flex items-center justify-between">
+<span class="font-label-code-sm text-outline font-bold">PC-22</span>
+<span class="w-2 h-2 rounded-full bg-outline-variant"></span>
+</div>
+<div class="font-label-code-sm text-outline truncate mt-1">Unassigned</div>
+<div class="text-[9px] text-outline font-label-code-sm">Standby</div>
+</div>
+<div class="p-2 rounded bg-surface-container opacity-60">
+<div class="flex items-center justify-between">
+<span class="font-label-code-sm text-outline font-bold">PC-23</span>
+<span class="w-2 h-2 rounded-full bg-outline-variant"></span>
+</div>
+<div class="font-label-code-sm text-outline truncate mt-1">Unassigned</div>
+<div class="text-[9px] text-outline font-label-code-sm">Standby</div>
+</div>
+<div class="p-2 rounded bg-surface-container opacity-60">
+<div class="flex items-center justify-between">
+<span class="font-label-code-sm text-outline font-bold">PC-24</span>
+<span class="w-2 h-2 rounded-full bg-outline-variant"></span>
+</div>
+<div class="font-label-code-sm text-outline truncate mt-1">Unassigned</div>
+<div class="text-[9px] text-outline font-label-code-sm">Standby</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- WORKSTATION TELEMETRY INSPECTOR FOR L106-PC-03 -->
+<div class="p-space-md rounded-xl bg-surface-container-high shadow-lg space-y-space-md">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-space-sm">
+<div class="w-9 h-9 rounded-lg bg-secondary/15 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[22px]">developer_board</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h4 class="font-headline-md text-on-surface">L106-PC-03 Telemetry</h4>
+<span class="px-2 py-0.5 rounded bg-secondary/20 text-secondary font-label-code-sm font-bold">ASSIGNED: GANESH KUMAR</span>
+</div>
+<p class="font-label-code-sm text-on-surface-variant">Round 4 Execution Workstation Specification Profile</p>
+</div>
+</div>
+<span class="font-label-code-sm text-outline">MAC: 00:1A:2B:3C:4D:5E</span>
+</div>
+<!-- Hardware Specs Specs Grid -->
+<div class="grid grid-cols-2 gap-space-sm">
+<div class="p-space-sm rounded bg-surface-container-low">
+<div class="font-label-code-sm text-outline">COMPUTE GPU</div>
+<div class="font-body-md font-semibold text-on-surface mt-0.5">NVIDIA RTX 4070</div>
+<div class="font-label-code-sm text-secondary">12 GB VRAM GDDR6X · PCIe 4.0</div>
+</div>
+<div class="p-space-sm rounded bg-surface-container-low">
+<div class="font-label-code-sm text-outline">HOST CPU &amp; RAM</div>
+<div class="font-body-md font-semibold text-on-surface mt-0.5">Intel Core i7-14700K</div>
+<div class="font-label-code-sm text-on-surface-variant">64 GB DDR5 5600 MT/s</div>
+</div>
+<div class="p-space-sm rounded bg-surface-container-low col-span-2">
+<div class="font-label-code-sm text-outline">RUNTIME ENVIRONMENT</div>
+<div class="font-label-code-md text-primary mt-0.5">Ubuntu 24.04 LTS · PyTorch 2.3 · CUDA 12.4.1</div>
+<div class="font-label-code-sm text-on-surface-variant mt-1">Docker Daemon v26.0.0 · TensorRT 10.0 Pre-warmed</div>
+</div>
+</div>
+<!-- Live VRAM Real-Time Utilization Graphic -->
+<div class="space-y-1.5 pt-1">
+<div class="flex items-center justify-between font-label-code-sm">
+<span class="text-on-surface-variant">Allocated VRAM Buffer</span>
+<span class="text-on-surface"><strong class="text-secondary">0.42 GB</strong> / 12.00 GB (Idle Reservation)</span>
+</div>
+<!-- 12 Segmented VRAM blocks -->
+<div class="grid grid-cols-12 gap-1 h-3">
+<div class="rounded-sm bg-secondary"></div>
+<div class="rounded-sm bg-surface-container-lowest"></div>
+<div class="rounded-sm bg-surface-container-lowest"></div>
+<div class="rounded-sm bg-surface-container-lowest"></div>
+<div class="rounded-sm bg-surface-container-lowest"></div>
+<div class="rounded-sm bg-surface-container-lowest"></div>
+<div class="rounded-sm bg-surface-container-lowest"></div>
+<div class="rounded-sm bg-surface-container-lowest"></div>
+<div class="rounded-sm bg-surface-container-lowest"></div>
+<div class="rounded-sm bg-surface-container-lowest"></div>
+<div class="rounded-sm bg-surface-container-lowest"></div>
+<div class="rounded-sm bg-surface-container-lowest"></div>
+</div>
+<div class="flex justify-between text-[10px] text-outline font-label-code-sm">
+<span>0 GB</span>
+<span>6 GB</span>
+<span>12 GB MAX</span>
+</div>
+</div>
+<!-- Session Status Action Bar -->
+<div class="flex items-center justify-between pt-space-xs font-label-code-sm">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="text-on-surface">Digital Lockout: Disengaged</span>
+</div>
+<div class="flex items-center gap-space-xs">
+<button class="px-2.5 py-1 rounded bg-surface-container text-on-surface hover:bg-surface-bright transition-colors" type="button">
+              Reset CUDA Rig
+            </button>
+<button class="px-2.5 py-1 rounded bg-primary text-on-primary font-semibold hover:bg-primary/90 transition-colors" type="button">
+              Pass QR Direct
+            </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- BOTTOM SECTION: TIE-BREAKING ALGORITHM & FAIRNESS INSPECTOR -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-space-lg p-space-lg rounded-xl bg-surface-container-low shadow-xl">
+<div class="lg:col-span-1 space-y-space-sm">
+<div class="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-primary/10 text-primary font-label-code-sm">
+<span class="material-symbols-outlined text-[16px]">account_tree</span>
+<span>DETERMINISTIC PIPELINE</span>
+</div>
+<h3 class="font-headline-lg text-on-surface">Tie-Breaking &amp; Fairness Logic</h3>
+<p class="font-body-md text-on-surface-variant">
+        FairGPU eliminates student seniority bias through a 3-tier immutable consensus engine, guaranteeing verifiable equality across all engineering cohorts.
+      </p>
+<div class="p-space-md rounded-lg bg-surface-container space-y-2 mt-space-md">
+<div class="font-label-code-sm text-outline">ACADEMIC AUDIT SIGNATURE</div>
+<div class="font-label-code-sm text-on-surface break-all bg-surface-container-lowest p-2 rounded">
+          SHA256: 9f8a3c8e4d2b1a77c3d18e9a6f00192e448bca6145df0189a87d091e
+        </div>
+<div class="flex items-center justify-between text-body-sm text-secondary font-label-code-sm pt-1">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+            Mathematical Invariant Proven
+          </span>
+<span class="text-outline">v3.12</span>
+</div>
+</div>
+</div>
+<!-- 3 Step Algorithm Visualizer -->
+<div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-space-md">
+<!-- Step 1 -->
+<div class="p-space-md rounded-lg bg-surface-container space-y-space-sm relative overflow-hidden flex flex-col justify-between">
+<div class="space-y-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-label-code-lg text-secondary font-bold">STEP 01</span>
+<span class="px-2 py-0.5 rounded bg-secondary/15 text-secondary font-label-code-sm">Weight: 70%</span>
+</div>
+<h4 class="font-headline-md text-on-surface">Base Score (P<sub>u</sub>)</h4>
+<p class="font-body-sm text-on-surface-variant">
+            Evaluates raw prior consumption in the current 7-day rolling window. Students with 0 allocations start at maximum 100 points, decaying by 10 points per historical hour.
+          </p>
+</div>
+<div class="p-2 rounded bg-surface-container-low font-label-code-sm text-outline space-y-1">
+<div>P<sub>u</sub> = 100 - (10 × Hours<sub>Allocated</sub>)</div>
+<div class="text-secondary font-semibold">Priority 100 &gt; 90 &gt; 80</div>
+</div>
+</div>
+<!-- Step 2 -->
+<div class="p-space-md rounded-lg bg-surface-container space-y-space-sm relative overflow-hidden flex flex-col justify-between">
+<div class="space-y-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-label-code-lg text-primary font-bold">STEP 02</span>
+<span class="px-2 py-0.5 rounded bg-primary/15 text-primary font-label-code-sm">Tiebreak 1</span>
+</div>
+<h4 class="font-headline-md text-on-surface">Cumulative Wait (Δw)</h4>
+<p class="font-body-sm text-on-surface-variant">
+            When multiple candidates share identical base scores (e.g., Priya Patel and Ganesh Kumar at 90 PTS), total accumulated wait time across previous rejected requests breaks deadlock.
+          </p>
+</div>
+<div class="p-2 rounded bg-surface-container-low font-label-code-sm text-outline space-y-1">
+<div>Δw = ∑ (Slot<sub>Requested</sub> - Slot<sub>Rejected</sub>)</div>
+<div class="text-primary font-semibold">Longer Queuer Wins First</div>
+</div>
+</div>
+<!-- Step 3 -->
+<div class="p-space-md rounded-lg bg-surface-container space-y-space-sm relative overflow-hidden flex flex-col justify-between">
+<div class="space-y-space-xs">
+<div class="flex items-center justify-between">
+<span class="font-label-code-lg text-tertiary font-bold">STEP 03</span>
+<span class="px-2 py-0.5 rounded bg-tertiary/15 text-tertiary font-label-code-sm">Final Arbiter</span>
+</div>
+<h4 class="font-headline-md text-on-surface">Atomic Timestamp (t<sub>req</sub>)</h4>
+<p class="font-body-sm text-on-surface-variant">
+            If both priority points and historical wait deltas match precisely, the round-lock ordering falls back to nanosecond-accurate hardware RPC request submission timestamps.
+          </p>
+</div>
+<div class="p-2 rounded bg-surface-container-low font-label-code-sm text-outline space-y-1">
+<div>ORDER BY t<sub>req</sub> ASC</div>
+<div class="text-tertiary font-semibold">09:12:04 AM &lt; 09:14:22 AM</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Client Micro-Interactions Script -->
+<script>
+  // Simple hover telemetry switcher simulation
+  document.querySelectorAll('[id^="target-rig"]').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      el.classList.add('scale-[1.02]');
+    });
+    el.addEventListener('mouseleave', () => {
+      el.classList.remove('scale-[1.02]');
+    });
+  });
+</script></main></div></body></html>
