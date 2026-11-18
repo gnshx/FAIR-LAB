@@ -15,7 +15,9 @@ const {
 const {
   submitHybridBookingRequest,
   cancelBookingRequest,
-  publishPendingOutboxEvents
+  publishPendingOutboxEvents,
+  getLatestOutboxRowId,
+  tailOutboxEventsSince
 } = require('./services/bookingService');
 const { validateBody, z } = require('./middleware/validation');
 const { requireUser, createRateLimiter } = require('./middleware/auth');
@@ -83,9 +85,20 @@ wss.on('connection', (ws) => {
   });
 });
 
+const recentlyEmittedEventIds = new Set();
+
 function broadcast(type, payload, meta = {}) {
+  const eventId = meta.eventId || (payload && payload.eventId) || null;
+  if (eventId) {
+    if (recentlyEmittedEventIds.has(eventId)) return; // Avoid re-emitting on originating replica during cross-replica tail
+    recentlyEmittedEventIds.add(eventId);
+    if (recentlyEmittedEventIds.size > 500) {
+      const oldest = recentlyEmittedEventIds.values().next().value;
+      recentlyEmittedEventIds.delete(oldest);
+    }
+  }
   const data = JSON.stringify({
-    eventId: meta.eventId || (payload && payload.eventId) || null,
+    eventId,
     type,
     payload,
     version: getStateVersion(),
@@ -321,9 +334,20 @@ const outboxInterval = setInterval(() => {
   }
 }, 5000);
 
+// Cross-Replica Event Tailer: propagates newly committed outbox events across replicas every 1s
+let outboxTailCursor = getLatestOutboxRowId();
+const crossReplicaTailInterval = setInterval(() => {
+  try {
+    outboxTailCursor = tailOutboxEventsSince(outboxTailCursor, broadcast);
+  } catch {
+    // non-fatal cross-replica sync
+  }
+}, 1000);
+
 function shutdown() {
   console.log('\n[FairLab] Shutting down gracefully...');
   clearInterval(outboxInterval);
+  clearInterval(crossReplicaTailInterval);
   server.close(() => {
     try {
       if (db) db.close();

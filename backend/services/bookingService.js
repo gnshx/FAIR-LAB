@@ -1290,11 +1290,10 @@ function getQueueForSlot(slotId, bookingDate = null) {
 }
 
 /**
- * Transactional Outbox Publisher (At-Least-Once Delivery + Idempotent Event IDs):
- * Reads PENDING events committed to outbox_events, emits them via WebSocket broadcast
- * tagged with their deterministic `eventId`, and marks them PUBLISHED.
- * If the process crashes after broadcast and before the DB update, the next recovery sweep
- * redelivers the same `eventId`, and WebSocket consumers deduplicate by `eventId`.
+ * Transactional Outbox Publisher (Atomic Claim + At-Least-Once Delivery + Idempotent Event IDs):
+ * Atomically claims PENDING events (`WHERE status = 'PENDING'`) so multiple replicas cannot
+ * double-process the same pending row, emits them via WebSocket broadcast tagged with `eventId`,
+ * and supports cross-replica event tailing via `tailOutboxEventsSince`.
  */
 function publishPendingOutboxEvents(broadcastFn) {
   if (typeof broadcastFn !== 'function') return 0;
@@ -1309,19 +1308,60 @@ function publishPendingOutboxEvents(broadcastFn) {
 
   if (pending.length === 0) return 0;
 
-  const markPublished = db.prepare("UPDATE outbox_events SET status = 'PUBLISHED' WHERE event_id = ?");
+  const claimStmt = db.prepare("UPDATE outbox_events SET status = 'PUBLISHED' WHERE event_id = ? AND status = 'PENDING'");
+  const revertStmt = db.prepare("UPDATE outbox_events SET status = 'PENDING' WHERE event_id = ?");
   let count = 0;
   for (const evt of pending) {
+    const claimed = claimStmt.run(evt.event_id);
+    if (claimed.changes !== 1) continue; // Another replica already claimed this event
     try {
       const parsed = JSON.parse(evt.payload);
       broadcastFn(evt.event_type, { ...parsed, eventId: evt.event_id }, { eventId: evt.event_id });
-      markPublished.run(evt.event_id);
       count++;
     } catch {
-      // Leave PENDING for next retry sweep
+      revertStmt.run(evt.event_id); // Revert to PENDING for next retry sweep
     }
   }
   return count;
+}
+
+function getLatestOutboxRowId() {
+  const db = getDb();
+  const row = db.prepare('SELECT COALESCE(MAX(rowid), 0) AS maxId FROM outbox_events').get();
+  return row ? Number(row.maxId) : 0;
+}
+
+/**
+ * Cross-Replica Outbox Tailer:
+ * Allows every backend replica sharing the database to observe newly committed events
+ * from sibling replicas within ~1s, invalidate its local availability cache, and fan out
+ * WebSocket updates to clients connected to that replica (deduplicated by `eventId`).
+ */
+function tailOutboxEventsSince(lastRowId, broadcastFn) {
+  if (typeof broadcastFn !== 'function') return lastRowId;
+  const db = getDb();
+  const rows = db.prepare(`
+    SELECT rowid, event_id, event_type, payload
+    FROM outbox_events
+    WHERE rowid > ?
+    ORDER BY rowid ASC
+    LIMIT 100
+  `).all(lastRowId);
+
+  if (rows.length === 0) return lastRowId;
+
+  let cursor = lastRowId;
+  invalidateAvailabilityCache();
+  for (const evt of rows) {
+    cursor = Number(evt.rowid);
+    try {
+      const parsed = JSON.parse(evt.payload);
+      broadcastFn(evt.event_type, { ...parsed, eventId: evt.event_id }, { eventId: evt.event_id });
+    } catch {
+      // ignore malformed historical row
+    }
+  }
+  return cursor;
 }
 
 module.exports = {
@@ -1333,5 +1373,7 @@ module.exports = {
   cancelBooking,
   processNoShows,
   getQueueForSlot,
-  publishPendingOutboxEvents
+  publishPendingOutboxEvents,
+  getLatestOutboxRowId,
+  tailOutboxEventsSince
 };

@@ -69,7 +69,26 @@ Every login requires an `@iitbhilai.ac.in` account and issues a signed **HS256 J
 
 ---
 
-## 3. Timed Demonstration Tracks
+## 3. Recommended 8-Step Live CSD Presentation Flow (Campus VM: `http://10.1.75.40:3500`)
+
+For the live professor evaluation on Group 10's deployed VM (`stu130_sys1`, `10.1.75.40`), demonstrate these **8 steps in exact order**:
+
+1. **Student Login & 84-Workstation Map** — Open `http://10.1.75.40:3500`, test `@gmail.com` rejection (`403`), then sign in as **Priya Sharma** (`priya.s@iitbhilai.ac.in`) and show the 84-seat map (Block A `6×10` + Block B `4×6`).
+2. **Two Students Compete for a Workstation** — Submit competing requests for the same window and same preferred seat (`L106-PC-01`) from **Ananya** (score `70`, submits first) and **Priya** (score `100`, submits second). Show that contention atomically queues requests instead of allowing immediate fairness bypass.
+3. **Fairness Allocation Determines the Winner** — Sign in as **Dr. A. K. Sharma** (`aksharma@iitbhilai.ac.in`), run the Allocation Round, and show **Priya** winning Rank #1 and her `#1` seat preference despite submitting after Ananya.
+4. **Booking Generates a Cryptographic QR Access Pass** — Open Priya's **My Bookings & QR Pass** view to show the zero-PII HMAC-SHA256 pass (`FAIRPASS:<bookingId>:<hmac16>`).
+5. **Authorized Gate Operator Checks the Student In** — Sign in as **Ram Singh (`accessdesk.l106@iitbhilai.ac.in`, `admin` + `ACCESS_OPERATOR`)**, verify the QR (`ENTRY_AUTHORIZED`), check in, show replay rejection on re-scan (`ALREADY_CHECKED_IN`), and check out (`100 → 95` score deduction). *(Optional contrast: show `ssen@iitbhilai.ac.in` receiving `403` at gate check-in.)*
+6. **Admin Marks a Workstation Under Maintenance** — As **Dr. Sharma**, toggle an occupied/booked seat to **Maintenance** → show automatic reallocation of active bookings to a healthy seat and honest `—` GPU telemetry labeling.
+7. **Load Balancer Distributing Requests Across 2 Replicas** — Hit `http://10.1.75.40:3500/health` repeatedly (or open `http://10.1.75.40:4500/lb-status`) to show Nginx `least_conn` routing across **`fairlab-api-1` (`:5000`)** and **`fairlab-api-2` (`:6000`)** with cross-replica JWT verification and cross-replica WebSocket event propagation.
+8. **Databases & Live Operations Dashboard** — Open **`http://10.1.75.40:7500`** to show live status of Nginx LB, both PM2 replicas, **SQLite WAL** (active shared runtime store for both replicas), and **PostgreSQL 16.15** (`fairlab_db`, 18 tables + `btree_gist` verified via `tests/test-postgres.js`).
+
+> **Transparency Notes for Evaluation:**
+> - **Storage Architecture Honesty:** The two live Node.js replicas (`fairlab-api-1` & `fairlab-api-2`) share the synchronous **SQLite WAL** database (`fairlab.db`, `busy_timeout=5000`, overlap triggers, atomic outbox claiming, and 1s cross-replica outbox tailing). **PostgreSQL 16.15** (`fairlab_db`, 18 tables, `btree_gist` `EXCLUDE USING gist`) runs live on the same VM and passes all PostgreSQL verification tests (`tests/test-postgres.js` — `8/8`), ready for full async `pg`-pool runtime cutover.
+> - **HTTPS & Demo Accounts:** Campus URLs (`http://10.1.75.40:3500`) use plain HTTP on the private campus network for academic demonstration only; production rollout requires Nginx TLS/HTTPS termination and IIT Bhilai Google Workspace OAuth (`hd=iitbhilai.ac.in`) / LDAP SSO rather than demo passwords.
+
+---
+
+## 3B. Timed Demonstration Tracks
 
 ### Track A — 3-Minute Executive Demo (Core Value Proposition)
 
