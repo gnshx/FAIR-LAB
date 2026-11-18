@@ -284,9 +284,9 @@ async function seedDatabase() {
       10,     // min_priority_floor
       10,     // deduction_per_booking (legacy compat)
       5.0,    // deduction_per_hour (normal)
-      10.0,   // high_demand_deduction_per_hour (peak)
+      0.0,    // high_demand_deduction_per_hour (developed & configurable, disabled by default)
       1.5,    // high_demand_threshold (DemandRatio)
-      25,     // no_show_penalty
+      5,      // no_show_penalty (+5 pts)
       2.0,    // cancellation_window_hours
       15,     // grace_period_minutes
       '09:00',// lab_open_time

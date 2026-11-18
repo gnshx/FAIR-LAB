@@ -247,9 +247,9 @@ CREATE TABLE IF NOT EXISTS policy_config (
   min_priority_floor INT NOT NULL DEFAULT 10,
   deduction_per_booking INT NOT NULL DEFAULT 10,
   deduction_per_hour NUMERIC(5, 2) NOT NULL DEFAULT 5.0,
-  high_demand_deduction_per_hour NUMERIC(5, 2) NOT NULL DEFAULT 10.0,
+  high_demand_deduction_per_hour NUMERIC(5, 2) NOT NULL DEFAULT 0.0,
   high_demand_threshold NUMERIC(5, 2) NOT NULL DEFAULT 1.5,
-  no_show_penalty INT NOT NULL DEFAULT 25,
+  no_show_penalty INT NOT NULL DEFAULT 5,
   cancellation_window_hours NUMERIC(4, 1) NOT NULL DEFAULT 2.0,
   grace_period_minutes INT NOT NULL DEFAULT 15,
   lab_open_time VARCHAR(8) NOT NULL DEFAULT '09:00',
@@ -291,7 +291,7 @@ ALTER TABLE allocation_history ADD COLUMN IF NOT EXISTS completed BOOLEAN NOT NU
 
 ALTER TABLE policy_config ADD COLUMN IF NOT EXISTS min_priority_floor INT NOT NULL DEFAULT 10;
 ALTER TABLE policy_config ADD COLUMN IF NOT EXISTS deduction_per_hour NUMERIC(5, 2) NOT NULL DEFAULT 5.0;
-ALTER TABLE policy_config ADD COLUMN IF NOT EXISTS high_demand_deduction_per_hour NUMERIC(5, 2) NOT NULL DEFAULT 10.0;
+ALTER TABLE policy_config ADD COLUMN IF NOT EXISTS high_demand_deduction_per_hour NUMERIC(5, 2) NOT NULL DEFAULT 0.0;
 ALTER TABLE policy_config ADD COLUMN IF NOT EXISTS high_demand_threshold NUMERIC(5, 2) NOT NULL DEFAULT 1.5;
 ALTER TABLE policy_config ADD COLUMN IF NOT EXISTS lab_open_time VARCHAR(8) NOT NULL DEFAULT '09:00';
 ALTER TABLE policy_config ADD COLUMN IF NOT EXISTS lab_close_time VARCHAR(8) NOT NULL DEFAULT '18:00';

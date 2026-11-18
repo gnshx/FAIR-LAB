@@ -10,9 +10,9 @@ export default function AdminSettingsView() {
     min_priority_floor: 10,
     deduction_per_booking: 10,
     deduction_per_hour: 5,
-    high_demand_deduction_per_hour: 10,
+    high_demand_deduction_per_hour: 0,
     high_demand_threshold: 1.5,
-    no_show_penalty: 25,
+    no_show_penalty: 5,
     cancellation_window_hours: 2,
     grace_period_minutes: 15,
     lab_open_time: '09:00',
@@ -240,7 +240,7 @@ export default function AdminSettingsView() {
                 type="number"
                 step="0.5"
                 value={policy.high_demand_deduction_per_hour}
-                onChange={(e) => setPolicy({ ...policy, high_demand_deduction_per_hour: parseFloat(e.target.value) || 10 })}
+                onChange={(e) => setPolicy({ ...policy, high_demand_deduction_per_hour: Number.isFinite(parseFloat(e.target.value)) ? parseFloat(e.target.value) : 0 })}
                 className={fieldCls}
               />
             </div>
@@ -261,7 +261,7 @@ export default function AdminSettingsView() {
               <input
                 type="number"
                 value={policy.no_show_penalty}
-                onChange={(e) => setPolicy({ ...policy, no_show_penalty: parseInt(e.target.value, 10) || 25 })}
+                onChange={(e) => setPolicy({ ...policy, no_show_penalty: Number.isFinite(parseInt(e.target.value, 10)) ? parseInt(e.target.value, 10) : 0 })}
                 className={fieldCls}
               />
             </div>

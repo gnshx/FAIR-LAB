@@ -221,7 +221,7 @@ function recordCheckOut(bookingOrPassId, operatorId = 'usr-watchman-ram', notes 
       base_score: 100,
       min_priority_floor: 10,
       deduction_per_hour: 5.0,
-      high_demand_deduction_per_hour: 10.0
+      high_demand_deduction_per_hour: 0.0
     };
 
     if (booking.pass_id) {
@@ -271,8 +271,8 @@ function recordCheckOut(bookingOrPassId, operatorId = 'usr-watchman-ram', notes 
       minFloor: policy.min_priority_floor || 10,
       totalHoursUsed: newTotalHours,
       highDemandHours: newHighDemandHours,
-      deductionPerHour: Number(policy.deduction_per_hour) || 5.0,
-      highDemandDeductionPerHour: Number(policy.high_demand_deduction_per_hour) || 10.0,
+      deductionPerHour: policy.deduction_per_hour != null ? Number(policy.deduction_per_hour) : 5.0,
+      highDemandDeductionPerHour: policy.high_demand_deduction_per_hour != null ? Number(policy.high_demand_deduction_per_hour) : 0.0,
       penaltyPoints: Number(booking.penalty_points) || 0
     });
 

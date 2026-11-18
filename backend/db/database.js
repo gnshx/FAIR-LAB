@@ -277,9 +277,9 @@ function initializeSchema(database) {
       min_priority_floor INTEGER NOT NULL DEFAULT 10,
       deduction_per_booking INTEGER NOT NULL DEFAULT 10,
       deduction_per_hour REAL NOT NULL DEFAULT 5.0,
-      high_demand_deduction_per_hour REAL NOT NULL DEFAULT 10.0,
+      high_demand_deduction_per_hour REAL NOT NULL DEFAULT 0.0,
       high_demand_threshold REAL NOT NULL DEFAULT 1.5,
-      no_show_penalty INTEGER NOT NULL DEFAULT 25,
+      no_show_penalty INTEGER NOT NULL DEFAULT 5,
       cancellation_window_hours REAL NOT NULL DEFAULT 2.0,
       grace_period_minutes INTEGER NOT NULL DEFAULT 15,
       lab_open_time TEXT NOT NULL DEFAULT '09:00',
@@ -407,7 +407,7 @@ function initializeSchema(database) {
   addColumnIfMissing(database, 'policy_config', 'policy_version', "TEXT NOT NULL DEFAULT 'fairlab-v2'");
   addColumnIfMissing(database, 'policy_config', 'min_priority_floor', 'INTEGER NOT NULL DEFAULT 10');
   addColumnIfMissing(database, 'policy_config', 'deduction_per_hour', 'REAL NOT NULL DEFAULT 5.0');
-  addColumnIfMissing(database, 'policy_config', 'high_demand_deduction_per_hour', 'REAL NOT NULL DEFAULT 10.0');
+  addColumnIfMissing(database, 'policy_config', 'high_demand_deduction_per_hour', 'REAL NOT NULL DEFAULT 0.0');
   addColumnIfMissing(database, 'policy_config', 'high_demand_threshold', 'REAL NOT NULL DEFAULT 1.5');
   addColumnIfMissing(database, 'policy_config', 'lab_open_time', "TEXT NOT NULL DEFAULT '09:00'");
   addColumnIfMissing(database, 'policy_config', 'lab_close_time', "TEXT NOT NULL DEFAULT '18:00'");

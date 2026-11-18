@@ -21,7 +21,8 @@ module.exports = {
   DEFAULT_POLICY: {
     baseScore: 100,
     deductionPerBooking: 10,
-    noShowPenalty: 25,
+    noShowPenalty: 5,
+    highDemandDeductionPerHour: 0,
     cancellationWindowHours: 2,
     gracePeriodMinutes: 15,
     allocationMode: 'BATCH_ROUND'

@@ -664,7 +664,7 @@ async function runWindowAllocationRound({
     base_score: 100,
     min_priority_floor: 10,
     deduction_per_hour: 5.0,
-    high_demand_deduction_per_hour: 10.0,
+    high_demand_deduction_per_hour: 0.0,
     high_demand_threshold: 1.5
   };
 
@@ -1070,8 +1070,8 @@ async function processNoShows({ bookingId = null, slotId = null, bookingDate = n
     base_score: 100,
     min_priority_floor: 10,
     deduction_per_hour: 5.0,
-    high_demand_deduction_per_hour: 10.0,
-    no_show_penalty: 25,
+    high_demand_deduction_per_hour: 0.0,
+    no_show_penalty: 5,
     grace_period_minutes: 15
   };
 
@@ -1104,7 +1104,7 @@ async function processNoShows({ bookingId = null, slotId = null, bookingDate = n
   const now = new Date();
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
   const grace = Number(policy.grace_period_minutes) || 15;
-  const penalty = Number(policy.no_show_penalty) || 25;
+  const penalty = policy.no_show_penalty != null ? Number(policy.no_show_penalty) : 5;
 
   const processed = [];
   const affectedWindows = new Map();
@@ -1145,8 +1145,8 @@ async function processNoShows({ bookingId = null, slotId = null, bookingDate = n
           minFloor: policy.min_priority_floor || 10,
           totalHoursUsed: sf.total_hours_used || 0,
           highDemandHours: sf.high_demand_hours || 0,
-          deductionPerHour: policy.deduction_per_hour || 5,
-          highDemandDeductionPerHour: policy.high_demand_deduction_per_hour || 10,
+          deductionPerHour: policy.deduction_per_hour != null ? Number(policy.deduction_per_hour) : 5,
+          highDemandDeductionPerHour: policy.high_demand_deduction_per_hour != null ? Number(policy.high_demand_deduction_per_hour) : 0,
           penaltyPoints: newPenalty
         });
         db.prepare(`

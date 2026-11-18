@@ -152,13 +152,13 @@ async function runSuite() {
     assert.strictEqual(round1.allocations[0].preferenceHonored, true);
     console.log('  PASS: 100-pt student beat earlier 65-pt student, won preferred seat L106-PC-83, DemandRatio=2.0 -> HIGH_DEMAND.');
 
-    // Verify checkout deducts both normal + high-demand hours (-5 - 10 = -15 pts for 1h HIGH_DEMAND)
+    // Verify checkout under active default policy (high_demand_deduction_per_hour=0 -> uniform 5 pts/hr)
     const coRes = recordCheckOut(round1.allocations[0].bookingId, 'usr-watchman-ram');
     assert.strictEqual(coRes.durationHours, 1);
     assert.strictEqual(coRes.demandLevel, 'HIGH_DEMAND');
     assert.strictEqual(coRes.scoreBefore, 100);
-    assert.strictEqual(coRes.scoreAfter, 85, '1h HIGH_DEMAND checkout must deduct 5 + 10 = 15 pts (100 -> 85)');
-    console.log('  PASS: 1h HIGH_DEMAND checkout deducted 15 pts (100 -> 85) and recorded total_hours=1, high_demand_hours=1.');
+    assert.strictEqual(coRes.scoreAfter, 95, '1h checkout under default policy (peak surcharge=0) must deduct 5 pts (100 -> 95)');
+    console.log('  PASS: 1h checkout deducted 5 pts (100 -> 95) with high-demand surcharge disabled (0 pts/hr) by default.');
 
     // -----------------------------------------------------------------------
     // TEST 5: Daily Max Limit Enforcement (2.0h / 2 bookings max per day)
@@ -209,10 +209,10 @@ async function runSuite() {
 
     const nsRes = await processNoShows({ bookingId: nsBookingId, force: true });
     assert.strictEqual(nsRes.noShowCount, 1);
-    assert.strictEqual(nsRes.processed[0].penaltyApplied, 25);
+    assert.strictEqual(nsRes.processed[0].penaltyApplied, 5);
     assert.strictEqual(nsRes.promotedCount, 1, 'Waitlisted student must be automatically promoted when no-show releases seat!');
     assert.strictEqual(nsRes.promotions[0].userId, 'usr-v2-low');
-    console.log(`  PASS: No-show marked (-25 pts), seat freed, and waitlisted student (${nsRes.promotions[0].userId}) auto-promoted.`);
+    console.log(`  PASS: No-show marked (-5 pts), seat freed, and waitlisted student (${nsRes.promotions[0].userId}) auto-promoted.`);
 
     // -----------------------------------------------------------------------
     // TEST 8: Configurable Lab Schedule Sync (30-min intervals -> restore 60-min)

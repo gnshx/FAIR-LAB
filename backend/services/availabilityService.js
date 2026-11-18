@@ -202,7 +202,7 @@ function getLabAvailability(labId = 'lab-l106', dateStr = null, slotId = null, r
     max_daily_bookings: 2,
     high_demand_threshold: 1.5,
     deduction_per_hour: 5.0,
-    high_demand_deduction_per_hour: 10.0,
+    high_demand_deduction_per_hour: 0.0,
     min_priority_floor: 10
   };
 
@@ -483,8 +483,8 @@ function getLabAvailability(labId = 'lab-l106', dateStr = null, slotId = null, r
       maxPreferencesPerRequest: Number(policy.max_preferences_per_request) || 3,
       maxDailyHours: Number(policy.max_daily_hours) || 2.0,
       maxDailyBookings: Number(policy.max_daily_bookings) || 2,
-      deductionPerHour: Number(policy.deduction_per_hour) || 5.0,
-      highDemandDeductionPerHour: Number(policy.high_demand_deduction_per_hour) || 10.0,
+      deductionPerHour: policy.deduction_per_hour != null ? Number(policy.deduction_per_hour) : 5.0,
+      highDemandDeductionPerHour: policy.high_demand_deduction_per_hour != null ? Number(policy.high_demand_deduction_per_hour) : 0.0,
       highDemandThreshold: Number(policy.high_demand_threshold) || 1.5,
       requireTicketRelease: Boolean(policy.require_ticket_release),
       totalBookableMinutes

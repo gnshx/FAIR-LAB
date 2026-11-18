@@ -37,7 +37,7 @@ export default function StudentFairnessView() {
   const baseScore = policy?.base_score ?? 100;
   const minFloor = policy?.min_priority_floor ?? 10;
   const normalRate = policy?.deduction_per_hour ?? 5;
-  const peakRate = policy?.high_demand_deduction_per_hour ?? 10;
+  const peakRate = policy?.high_demand_deduction_per_hour ?? 0;
 
   const score = fairness?.currentScore ?? profile?.fairness?.current_score ?? baseScore;
   const completedCount = fairness?.completedBookings ?? 0;
@@ -129,7 +129,9 @@ export default function StudentFairnessView() {
           <div>
             <h2 className="text-[14px] font-bold text-[#0F172A]">Priority over completed sessions</h2>
             <p className="text-xs font-mono text-[#64748B] mt-0.5">
-              P = max({minFloor}, {baseScore} − {normalRate}T − {peakRate}H)
+              {peakRate > 0
+                ? `P = max(${minFloor}, ${baseScore} − ${normalRate}T − ${peakRate}H − Penalties)`
+                : `P = max(${minFloor}, ${baseScore} − ${normalRate}T − Penalties)`}
             </p>
 
             {/* Vertical Rounded Bars */}

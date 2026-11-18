@@ -109,7 +109,7 @@ router.put('/policy', requireAdmin, validateBody(policyUpdateSchema), (req, res)
       req.body.min_priority_floor != null ? req.body.min_priority_floor : (current.min_priority_floor ?? 10),
       req.body.deduction_per_booking != null ? req.body.deduction_per_booking : (current.deduction_per_booking ?? 10),
       req.body.deduction_per_hour != null ? req.body.deduction_per_hour : (current.deduction_per_hour ?? 5.0),
-      req.body.high_demand_deduction_per_hour != null ? req.body.high_demand_deduction_per_hour : (current.high_demand_deduction_per_hour ?? 10.0),
+      req.body.high_demand_deduction_per_hour != null ? req.body.high_demand_deduction_per_hour : (current.high_demand_deduction_per_hour ?? 0.0),
       req.body.high_demand_threshold != null ? req.body.high_demand_threshold : (current.high_demand_threshold ?? 1.5),
       req.body.no_show_penalty,
       req.body.cancellation_window_hours,

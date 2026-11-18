@@ -19,9 +19,9 @@ router.get('/me', (req, res) => {
     min_priority_floor: 10,
     deduction_per_booking: 10,
     deduction_per_hour: 5.0,
-    high_demand_deduction_per_hour: 10.0,
+    high_demand_deduction_per_hour: 0.0,
     high_demand_threshold: 1.5,
-    no_show_penalty: 25,
+    no_show_penalty: 5,
     max_daily_hours: 2.0,
     max_daily_bookings: 2,
     slot_interval_minutes: 60
@@ -66,13 +66,15 @@ router.get('/me', (req, res) => {
     highDemandHours,
     penaltyPoints: penalties,
     dailyQuota,
-    formula: `P_u = max(${policy.min_priority_floor || 10}, ${policy.base_score} - ${policy.deduction_per_hour || 5}×T_u - ${policy.high_demand_deduction_per_hour || 10}×T_H)`,
+    formula: (Number(policy.high_demand_deduction_per_hour) || 0) > 0
+      ? `P_u = max(${policy.min_priority_floor || 10}, ${policy.base_score} - ${policy.deduction_per_hour ?? 5}×T_u - ${policy.high_demand_deduction_per_hour}×T_H - Penalties)`
+      : `P_u = max(${policy.min_priority_floor || 10}, ${policy.base_score} - ${policy.deduction_per_hour ?? 5}×T_u - Penalties)`,
     formulaVariables: {
       P_u: score,
       Base: policy.base_score,
       Floor: policy.min_priority_floor || 10,
-      RatePerHour: policy.deduction_per_hour || 5,
-      HighDemandRatePerHour: policy.high_demand_deduction_per_hour || 10,
+      RatePerHour: policy.deduction_per_hour ?? 5,
+      HighDemandRatePerHour: policy.high_demand_deduction_per_hour ?? 0,
       T_u: totalHours,
       T_H: highDemandHours,
       B_u: bookings,
