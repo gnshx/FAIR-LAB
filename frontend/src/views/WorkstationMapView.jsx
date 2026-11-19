@@ -611,9 +611,15 @@ export default function WorkstationMapView({ onNavigateToPass }) {
             <div className="space-y-4">
               {/* Block A · 60 workstations */}
               <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-bold text-[#0F172A]">Block A</span>
-                  <span className="text-xs text-[#94A3B8]">60 workstations</span>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-[#0F172A]">Block A</span>
+                    <span className="text-xs text-[#94A3B8]">60 workstations</span>
+                  </div>
+                  <span className="sm:hidden text-[10.5px] text-[#4F46E5] font-medium flex items-center gap-0.5">
+                    <span className="material-symbols-outlined text-[13px]">swipe</span>
+                    <span>Swipe for all seats</span>
+                  </span>
                 </div>
                 <div className="space-y-1 overflow-x-auto pt-3.5 px-2.5 pb-2.5">
                   {[1, 2, 3, 4, 5, 6].map(r => (
@@ -629,13 +635,19 @@ export default function WorkstationMapView({ onNavigateToPass }) {
 
               {/* Block B · 24 workstations */}
               <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-bold text-[#0F172A]">Block B</span>
-                  <span className="text-xs text-[#94A3B8]">24 workstations</span>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-[#0F172A]">Block B</span>
+                    <span className="text-xs text-[#94A3B8]">24 workstations</span>
+                  </div>
+                  <span className="sm:hidden text-[10.5px] text-[#4F46E5] font-medium flex items-center gap-0.5">
+                    <span className="material-symbols-outlined text-[13px]">swipe</span>
+                    <span>Swipe for all seats</span>
+                  </span>
                 </div>
                 <div className="space-y-1 overflow-x-auto pt-3.5 px-2.5 pb-2.5">
                   {[1, 2, 3, 4].map(r => (
-                    <div key={r} className="flex items-center gap-2 min-w-[340px] max-w-[62%] py-1">
+                    <div key={r} className="flex items-center gap-2 min-w-[340px] xl:max-w-[62%] py-1">
                       <span className="w-6 text-[11px] font-medium text-[#94A3B8] shrink-0">R{r}</span>
                       <div className="grid grid-cols-6 gap-1.5 flex-1 overflow-visible">
                         {(rowsB[r] || []).map(ws => renderTile(ws))}
@@ -835,6 +847,29 @@ export default function WorkstationMapView({ onNavigateToPass }) {
           </div>
         </aside>
       </div>
+
+      {/* Mobile Sticky Booking Action Bar */}
+      {selectedMachineIds.length > 0 && (
+        <div className="sm:hidden fixed bottom-3 left-3 right-3 z-30 p-3 rounded-2xl shadow-2xl border-2 border-[#4F46E5] bg-[#0F172A] text-white flex items-center justify-between gap-3 animate-in slide-in-from-bottom duration-200">
+          <div className="min-w-0 flex-1">
+            <div className="text-xs font-bold text-white flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
+              <span>{selectedMachineIds.length} seat{selectedMachineIds.length > 1 ? 's' : ''} selected</span>
+            </div>
+            <div className="text-[10px] text-[#94A3B8] font-mono truncate mt-0.5">
+              {startTime}–{endTime} · {selectedObjects.map(o => o.display_label || o.machine_id).join(', ')}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={submitting || durationLabel === 'Invalid' || exceedsMax2Hrs || tooShort || scheduleBlocked || Boolean(error)}
+            className="min-h-[40px] px-4 py-2 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] active:bg-[#3730A3] text-white font-bold text-xs shrink-0 shadow-brand transition-colors"
+          >
+            {submitting ? 'Submitting...' : 'Submit'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

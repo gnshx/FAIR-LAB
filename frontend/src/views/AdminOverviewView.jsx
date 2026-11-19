@@ -233,7 +233,7 @@ export default function AdminOverviewView({ onNavigate }) {
             {Object.entries(blockRows).map(([rowNum, seats]) => (
               <div
                 key={rowNum}
-                className={`flex items-center gap-2 ${blockTab === 'A' ? 'min-w-[540px]' : 'min-w-[340px] max-w-[62%]'}`}
+                className={`flex items-center gap-2 ${blockTab === 'A' ? 'min-w-[540px]' : 'min-w-[340px] xl:max-w-[62%]'}`}
               >
                 <span className="w-6 text-[11px] font-medium text-[#94A3B8] shrink-0">R{rowNum}</span>
                 <div className={`grid gap-2 flex-1 ${blockTab === 'A' ? 'grid-cols-10' : 'grid-cols-6'}`}>

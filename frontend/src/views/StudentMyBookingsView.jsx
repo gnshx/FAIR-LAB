@@ -423,7 +423,12 @@ export default function StudentMyBookingsView({ onNavigateToBook, onNavigate }) 
         </section>
 
         {/* Right: QR Access Pass Panel */}
-        <aside id="printable-pass-card" className="xl:col-span-4 fl-card p-6 flex flex-col justify-between">
+        <aside
+          id="printable-pass-card"
+          className={`xl:col-span-4 fl-card p-4 sm:p-6 flex flex-col justify-between ${
+            isPassDisplayable ? 'order-first xl:order-last' : ''
+          }`}
+        >
           {isPassDisplayable ? (
             <>
               <div>
@@ -585,7 +590,7 @@ export default function StudentMyBookingsView({ onNavigateToBook, onNavigate }) 
             {/* High-Resolution QR Container */}
             <div
               onDoubleClick={() => setIsQrMaximized(false)}
-              className="my-5 p-5 bg-white rounded-3xl border-2 border-[#0F172A] shadow-lg flex items-center justify-center w-72 h-72 sm:w-80 sm:h-80 cursor-zoom-out"
+              className="my-5 p-4 sm:p-5 bg-white rounded-3xl border-2 border-[#0F172A] shadow-lg flex items-center justify-center w-64 h-64 sm:w-80 sm:h-80 max-w-[78vw] max-h-[78vw] cursor-zoom-out"
               title="Double-click to minimize"
             >
               {activePass.qrDataUrl ? (

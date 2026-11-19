@@ -147,31 +147,31 @@ export default function AdminWorkstationsView() {
       )}
 
       {/* 4 Status KPI Cards */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-        <div className="fl-card p-5">
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-5">
+        <div className="fl-card p-4 sm:p-5">
           <span className="text-xs text-[#64748B]">Online</span>
-          <div className="text-[32px] font-bold text-[#0F172A] tabular-nums leading-tight mt-1">{counts.online}</div>
+          <div className="text-2xl sm:text-[32px] font-bold text-[#0F172A] tabular-nums leading-tight mt-1">{counts.online}</div>
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-[#DCFCE7] text-[#15803D] mt-2">
             ONLINE
           </span>
         </div>
-        <div className="fl-card p-5">
+        <div className="fl-card p-4 sm:p-5">
           <span className="text-xs text-[#64748B]">Offline</span>
-          <div className="text-[32px] font-bold text-[#0F172A] tabular-nums leading-tight mt-1">{counts.offline}</div>
+          <div className="text-2xl sm:text-[32px] font-bold text-[#0F172A] tabular-nums leading-tight mt-1">{counts.offline}</div>
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-[#FEE2E2] text-[#DC2626] mt-2">
             OFFLINE
           </span>
         </div>
-        <div className="fl-card p-5">
+        <div className="fl-card p-4 sm:p-5">
           <span className="text-xs text-[#64748B]">Maintenance</span>
-          <div className="text-[32px] font-bold text-[#0F172A] tabular-nums leading-tight mt-1">{counts.maint}</div>
+          <div className="text-2xl sm:text-[32px] font-bold text-[#0F172A] tabular-nums leading-tight mt-1">{counts.maint}</div>
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-[#FEF3C7] text-[#B45309] mt-2">
             MAINTENANCE
           </span>
         </div>
-        <div className="fl-card p-5">
+        <div className="fl-card p-4 sm:p-5">
           <span className="text-xs text-[#64748B]">Unknown</span>
-          <div className="text-[32px] font-bold text-[#0F172A] tabular-nums leading-tight mt-1">0</div>
+          <div className="text-2xl sm:text-[32px] font-bold text-[#0F172A] tabular-nums leading-tight mt-1">0</div>
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-[#F1F5F9] text-[#64748B] mt-2">
             UNKNOWN
           </span>

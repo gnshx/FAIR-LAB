@@ -310,16 +310,16 @@ export default function AdminAccessControlView() {
       {/* Main Split: QR Scanner (7 cols) + Verification Result (5 cols) */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-stretch">
         {/* Left: QR Scanner Card */}
-        <section className="xl:col-span-7 fl-card p-6 flex flex-col justify-between gap-4">
+        <section className="xl:col-span-7 fl-card p-4 sm:p-6 flex flex-col justify-between gap-4">
           <div>
             <h2 className="text-[14px] font-bold text-[#0F172A]">QR scanner</h2>
             <p className="text-xs text-[#64748B] mt-0.5">
-              Hold the student&apos;s pass in front of the camera
+              Hold the student&apos;s pass in front of the camera or snap a photo
             </p>
 
             {/* Dark Navy Optical Frame with Live Camera Stream & Turnstile Relay */}
             <div
-              className={`mt-4 w-full aspect-[16/9] rounded-2xl flex flex-col items-center justify-center relative overflow-hidden transition-all duration-300 ${
+              className={`mt-4 w-full h-72 sm:h-auto sm:aspect-[16/9] rounded-2xl flex flex-col items-center justify-center relative overflow-hidden transition-all duration-300 ${
                 gateRelayPulse
                   ? 'bg-[#064E3B] border-2 border-[#10B981] shadow-[0_0_30px_rgba(16,185,129,0.35)]'
                   : 'bg-[#0B1120]'
@@ -372,28 +372,28 @@ export default function AdminAccessControlView() {
                     <div className="absolute bottom-1.5 right-1.5 w-3.5 h-3.5 border-b-2 border-r-2 border-white/70 rounded-br-sm pointer-events-none" />
 
                     {!cameraActive && (
-                      <div className="flex flex-col items-center gap-1.5 pointer-events-auto">
+                      <div className="flex flex-col items-center gap-2 pointer-events-auto">
                         <button
                           type="button"
                           onClick={startCamera}
-                          className="px-3 py-1.5 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] text-white text-[11px] font-semibold flex items-center gap-1 shadow-sm transition-all"
+                          className="min-h-[38px] px-3.5 py-1.5 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] active:bg-[#3730A3] text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all"
                         >
-                          <span className="material-symbols-outlined text-[15px]">videocam</span>
+                          <span className="material-symbols-outlined text-[16px]">videocam</span>
                           <span>Start camera</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => fileInputRef.current?.click()}
-                          className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-[#E2E8F0] text-[10px] font-medium flex items-center gap-1 transition-colors"
+                          className="min-h-[36px] px-3 py-1 rounded-xl bg-white/10 hover:bg-white/20 active:bg-white/25 text-[#E2E8F0] text-xs font-medium flex items-center gap-1.5 transition-colors"
                         >
-                          <span className="material-symbols-outlined text-[13px]">photo_camera</span>
+                          <span className="material-symbols-outlined text-[15px]">photo_camera</span>
                           <span>Snap QR photo</span>
                         </button>
                       </div>
                     )}
                   </div>
 
-                  <span className="text-xs text-[#E2E8F0] mt-3 font-mono bg-black/60 px-3 py-1 rounded-full backdrop-blur-sm shadow-sm pointer-events-none">
+                  <span className="text-[11px] sm:text-xs text-[#E2E8F0] mt-3 font-mono bg-black/60 px-3 py-1 rounded-full backdrop-blur-sm shadow-sm pointer-events-none text-center max-w-[90%]">
                     {verdict?.authorized
                       ? 'Pass verified · Ready for turnstile check-in'
                       : cameraActive
@@ -415,27 +415,27 @@ export default function AdminAccessControlView() {
             />
 
             {/* Camera Control & Permission Toolbar */}
-            <div className="flex items-center justify-between text-xs pt-1.5">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs pt-2">
               <div className="flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full ${cameraActive ? 'bg-[#10B981] animate-ping' : 'bg-[#94A3B8]'}`} />
+                <span className={`w-2.5 h-2.5 rounded-full ${cameraActive ? 'bg-[#10B981] animate-ping' : 'bg-[#94A3B8]'}`} />
                 <span className="text-[#64748B] font-medium text-[11px]">
-                  {cameraActive ? 'Live webcam optical feed active' : 'Webcam standby'}
+                  {cameraActive ? 'Live optical scanner active' : 'Webcam standby'}
                 </span>
               </div>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="px-2 py-1 rounded-lg border border-[#E2E8F0] hover:bg-[#F8FAFC] text-[#475569] font-medium text-[11px] flex items-center gap-1 transition-colors"
+                  className="min-h-[36px] px-2.5 py-1 rounded-lg border border-[#E2E8F0] hover:bg-[#F8FAFC] active:bg-[#F1F5F9] text-[#0F172A] font-semibold text-[11px] flex items-center gap-1 transition-colors shadow-xs"
                   title="Snap photo with camera or choose screenshot"
                 >
-                  <span className="material-symbols-outlined text-[14px]">photo_camera</span>
+                  <span className="material-symbols-outlined text-[15px] text-[#4F46E5]">photo_camera</span>
                   <span>Snap photo</span>
                 </button>
                 <button
                   type="button"
                   onClick={cameraActive ? stopCamera : startCamera}
-                  className="px-2.5 py-1 rounded-lg border border-[#E2E8F0] hover:bg-[#F8FAFC] text-[#475569] font-medium text-[11px] flex items-center gap-1.5 transition-colors"
+                  className="min-h-[36px] px-2.5 py-1 rounded-lg border border-[#E2E8F0] hover:bg-[#F8FAFC] active:bg-[#F1F5F9] text-[#475569] font-medium text-[11px] flex items-center gap-1.5 transition-colors"
                 >
                   <span className="material-symbols-outlined text-[14px]">
                     {cameraActive ? 'videocam_off' : 'videocam'}
@@ -522,7 +522,7 @@ export default function AdminAccessControlView() {
         </section>
 
         {/* Right: Verification Result Card */}
-        <aside className="xl:col-span-5 fl-card p-6 flex flex-col justify-between">
+        <aside className="xl:col-span-5 fl-card p-4 sm:p-6 flex flex-col justify-between">
           <div>
             <h2 className="text-[14px] font-bold text-[#0F172A]">Verification result</h2>
             <p className="text-xs text-[#64748B] mt-0.5">Last scan · just now</p>
@@ -583,25 +583,28 @@ export default function AdminAccessControlView() {
                 <button
                   type="button"
                   onClick={handleCheckIn}
-                  className="h-10 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] text-white font-semibold text-xs shadow-brand transition-colors"
+                  className="min-h-[44px] h-11 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] active:bg-[#3730A3] text-white font-bold text-xs shadow-brand transition-colors flex items-center justify-center gap-1.5"
                 >
-                  Confirm check-in
+                  <span className="material-symbols-outlined text-[17px]">door_front</span>
+                  <span>Confirm check-in</span>
                 </button>
               ) : isCheckedIn ? (
                 <button
                   type="button"
                   onClick={handleCheckOut}
-                  className="h-10 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] text-white font-semibold text-xs shadow-brand transition-colors"
+                  className="min-h-[44px] h-11 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] active:bg-[#3730A3] text-white font-bold text-xs shadow-brand transition-colors flex items-center justify-center gap-1.5"
                 >
-                  Confirm check-out
+                  <span className="material-symbols-outlined text-[17px]">logout</span>
+                  <span>Confirm check-out</span>
                 </button>
               ) : (
                 <button
                   type="button"
                   disabled
-                  className="h-10 rounded-xl bg-[#E2E8F0] text-[#94A3B8] font-semibold text-xs cursor-not-allowed"
+                  className="min-h-[44px] h-11 rounded-xl bg-[#E2E8F0] text-[#94A3B8] font-semibold text-xs cursor-not-allowed flex items-center justify-center gap-1.5"
                 >
-                  Confirm check-in
+                  <span className="material-symbols-outlined text-[17px]">door_front</span>
+                  <span>Confirm check-in</span>
                 </button>
               )}
 
@@ -610,9 +613,10 @@ export default function AdminAccessControlView() {
                 onClick={() => {
                   setVerdict({ authorized: false, code: 'OPERATOR_REJECTED', message: 'Entry rejected by desk operator.' });
                 }}
-                className="h-10 rounded-xl bg-white hover:bg-[#F8FAFC] border border-[#E5E7EB] text-[#0F172A] font-semibold text-xs transition-colors"
+                className="min-h-[44px] h-11 rounded-xl bg-white hover:bg-[#F8FAFC] active:bg-[#F1F5F9] border border-[#E5E7EB] text-[#0F172A] font-semibold text-xs transition-colors flex items-center justify-center gap-1.5"
               >
-                Reject
+                <span className="material-symbols-outlined text-[17px] text-[#DC2626]">block</span>
+                <span>Reject</span>
               </button>
             </div>
           </div>
