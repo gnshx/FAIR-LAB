@@ -265,11 +265,9 @@ async function runSuite() {
     console.log('================================================================');
   } finally {
     cleanup();
-  const { ensureTodayBookingsSeeded } = require('../backend/db/seed');
-  ensureTodayBookingsSeeded(db);
-  // Ensure seed bookings for PC-05 are in CONFIRMED status for occupancy calculation
-  db.prepare("UPDATE bookings SET status = 'CONFIRMED' WHERE machine_id = 'L106-PC-05' AND booking_id LIKE 'L106-SEED-%'").run();
-  invalidateAvailabilityCache();
+    const { ensureTodayBookingsSeeded } = require('../backend/db/seed');
+    ensureTodayBookingsSeeded(db);
+    invalidateAvailabilityCache();
   }
 }
 
