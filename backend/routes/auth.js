@@ -8,7 +8,8 @@ const {
   clearSessionCookie,
   resolveAuthenticatedUser,
   parsePermissions,
-  createRateLimiter
+  createRateLimiter,
+  isAllowedLoginPassword
 } = require('../middleware/auth');
 
 const ALLOWED_EMAIL_DOMAIN = '@iitbhilai.ac.in';
@@ -32,6 +33,7 @@ const loginSchema = z.object({
 // Strict IIT Bhilai institute login (@iitbhilai.ac.in ONLY) -> issues verified HS256 JWT + HttpOnly session cookie
 router.post('/login', loginRateLimiter, validateBody(loginSchema), (req, res) => {
   const email = req.body.email.trim().toLowerCase();
+  const rawPassword = req.body.password;
 
   if (!isValidIITBhilaiEmail(email)) {
     return res.status(403).json({
@@ -42,7 +44,7 @@ router.post('/login', loginRateLimiter, validateBody(loginSchema), (req, res) =>
 
   const db = getDb();
   const user = db.prepare(`
-    SELECT user_id, name, roll_no, email, role, permissions, department
+    SELECT user_id, name, roll_no, email, role, permissions, department, password_hash
     FROM users
     WHERE LOWER(email) = ?
     LIMIT 1
@@ -62,8 +64,17 @@ router.post('/login', loginRateLimiter, validateBody(loginSchema), (req, res) =>
     });
   }
 
+  // Constant-time cryptographic verification of student/faculty/admin password
+  if (!isAllowedLoginPassword(rawPassword, user.password_hash)) {
+    return res.status(401).json({
+      error: 'Invalid password. Please verify your @iitbhilai.ac.in credentials.',
+      code: 'INVALID_CREDENTIALS'
+    });
+  }
+
+  const { password_hash, ...safeUserData } = user;
   const normalizedUser = {
-    ...user,
+    ...safeUserData,
     permissions: parsePermissions(user.permissions)
   };
   const token = signAuthToken(normalizedUser);

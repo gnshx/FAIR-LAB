@@ -29,14 +29,37 @@ const {
 const { generateAccessPass } = require('../services/passService');
 const { getTodayDateString, parseTimeToMinutes } = require('../db/seed');
 
-// Every admin read and write route is restricted to an authenticated admin.
-router.use(requireAdmin);
-
 // Get Policy
-router.get('/policy', (req, res) => {
+router.get('/policy', requireAdmin, (req, res) => {
   const db = getDb();
   const policy = db.prepare('SELECT * FROM policy_config WHERE id = 1').get();
   res.json(policy);
+});
+
+// Settings endpoint alias
+router.get('/settings', requireAdmin, (req, res) => {
+  const db = getDb();
+  const policy = db.prepare('SELECT * FROM policy_config WHERE id = 1').get();
+  res.json(policy);
+});
+
+// Admin Overview aggregated summary
+router.get('/overview', requireAdmin, (req, res) => {
+  try {
+    const db = getDb();
+    const activeSem = db.prepare("SELECT * FROM semesters WHERE status = 'active' LIMIT 1").get();
+    const policy = db.prepare('SELECT * FROM policy_config WHERE id = 1').get();
+    const workstations = db.prepare('SELECT status, COUNT(*) as cnt FROM workstations WHERE lab_id = "lab-l106" GROUP BY status').all();
+    const recentAudit = db.prepare('SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT 10').all();
+    res.json({
+      activeSemester: activeSem,
+      policy,
+      workstations,
+      recentAudit
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 const policyUpdateSchema = z.object({
@@ -191,7 +214,7 @@ router.post('/allocation-rounds', requireAdmin, validateBody(allocRoundSchema), 
 });
 
 // List recent allocation rounds for auditability
-router.get('/allocation-rounds', (req, res) => {
+router.get('/allocation-rounds', requireAdmin, (req, res) => {
   const db = getDb();
   try {
     const rounds = db.prepare('SELECT * FROM allocation_rounds ORDER BY executed_at DESC LIMIT 30').all();
@@ -302,11 +325,11 @@ function handleAnalyticsReport(req, res) {
   }
 }
 
-router.get('/fairness-report', handleAnalyticsReport);
-router.get('/analytics', handleAnalyticsReport);
+router.get('/fairness-report', requireAdmin, handleAnalyticsReport);
+router.get('/analytics', requireAdmin, handleAnalyticsReport);
 
 // Workstation operational health overview by block
-router.get('/workstation-health', (req, res) => {
+router.get('/workstation-health', requireAdmin, (req, res) => {
   try {
     const date = req.query.date || getTodayDateString();
     const availability = getLabAvailability('lab-l106', date);
@@ -330,7 +353,7 @@ router.get('/workstation-health', (req, res) => {
 });
 
 // Audit Logs
-router.get('/audit-logs', (req, res) => {
+router.get('/audit-logs', requireAdmin, (req, res) => {
   const db = getDb();
   try {
     const logs = db.prepare(`

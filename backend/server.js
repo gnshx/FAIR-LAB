@@ -154,6 +154,20 @@ const hybridRequestSchema = z.object({
 // Unified API Router mounted at both /api and /api/v1 (HLD Section 9)
 const apiRouter = express.Router();
 
+apiRouter.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    instance: INSTANCE_ID,
+    port: Number(config.PORT),
+    lab: 'IIT Bhilai L-106',
+    system: 'FairLab Workstation Booking & Fairness System',
+    workstations: 84,
+    version: getStateVersion(),
+    clientsConnected: clients.size,
+    time: new Date().toISOString()
+  });
+});
+
 apiRouter.use('/auth', authRoutes);
 apiRouter.use('/labs', labRoutes);
 apiRouter.use('/bookings', bookingRoutes);

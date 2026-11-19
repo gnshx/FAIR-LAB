@@ -1,6 +1,7 @@
 const { getDb } = require('./database');
 const crypto = require('crypto');
 const config = require('../config');
+const { hashPassword } = require('../middleware/auth');
 
 function getTodayDateString(date = new Date()) {
   try {
@@ -195,6 +196,10 @@ async function seedDatabase() {
   const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
   if (userCount > 0) {
     ensureLayoutUpgraded(db);
+    try {
+      const defaultHash = hashPassword('demo');
+      db.prepare('UPDATE users SET password_hash = ? WHERE password_hash IS NULL').run(defaultHash);
+    } catch {}
     console.log('[Seed] Database already populated (84 workstations verified).');
     return;
   }
@@ -204,8 +209,8 @@ async function seedDatabase() {
   const today = getTodayDateString();
 
   const insertUser = db.prepare(`
-    INSERT INTO users (user_id, name, roll_no, email, role, permissions, department, avatar_url)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO users (user_id, name, roll_no, email, role, permissions, department, avatar_url, password_hash)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const insertSemester = db.prepare(`
@@ -381,8 +386,9 @@ async function seedDatabase() {
       'Bhavna Chawla', 'Deepak Chauhan', 'Gauri Kulkarni', 'Yashwant Singh', 'Ritika Jain'
     ];
 
+    const demoHash = hashPassword('demo');
     for (const u of primaryUsers) {
-      insertUser.run(u.id, u.name, u.roll, u.email, u.role, JSON.stringify(u.permissions || []), u.dept, null);
+      insertUser.run(u.id, u.name, u.roll, u.email, u.role, JSON.stringify(u.permissions || []), u.dept, null, demoHash);
       if (u.role === 'student') {
         insertFairness.run(
           `fair-${u.id}-${semId}`, u.id, semId, 100, u.score,
@@ -401,7 +407,7 @@ async function seedDatabase() {
       const normalHrs = bookings - highCnt;
       const highHrs = highCnt;
       const score = Math.max(10, 100 - normalHrs * 5 - highHrs * 10);
-      insertUser.run(uid, name, roll, email, 'student', '[]', 'B.Tech Computer Science & Engineering', null);
+      insertUser.run(uid, name, roll, email, 'student', '[]', 'B.Tech Computer Science & Engineering', null, demoHash);
       insertFairness.run(
         `fair-${uid}-${semId}`, uid, semId, 100, score,
         bookings, bookings, highCnt, highHrs, (idx % 5) * 300, 0

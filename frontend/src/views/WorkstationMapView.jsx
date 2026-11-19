@@ -3,16 +3,23 @@ import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 
 function getTodayStr() {
-  return new Date().toISOString().split('T')[0];
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 function getInitialDateStr() {
   const now = new Date();
   if (now.getHours() >= 18) {
     const tomorrow = new Date(now.getTime() + 24 * 3600 * 1000);
-    return tomorrow.toISOString().split('T')[0];
+    const y = tomorrow.getFullYear();
+    const m = String(tomorrow.getMonth() + 1).padStart(2, '0');
+    const day = String(tomorrow.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
   }
-  return now.toISOString().split('T')[0];
+  return getTodayStr();
 }
 
 function getInitialTimeWindow() {
@@ -21,8 +28,8 @@ function getInitialTimeWindow() {
   if (currentHour >= 18 || currentHour < 9) {
     return { start: '10:00', end: '12:00' };
   }
-  const nextStart = Math.min(16, currentHour + 1);
-  const nextEnd = Math.min(18, nextStart + 2);
+  const nextStart = Math.min(17, currentHour + 1);
+  const nextEnd = Math.min(18, nextStart + 1);
   return {
     start: `${String(nextStart).padStart(2, '0')}:00`,
     end: `${String(nextEnd).padStart(2, '0')}:00`
@@ -191,9 +198,17 @@ export default function WorkstationMapView({ onNavigateToPass }) {
   const exceedsMax2Hrs = durationMins > 120;
   const tooShort = durationMins > 0 && durationMins < 30;
   const isPastDate = selectedDate < getTodayStr();
+  const isPastTime = useMemo(() => {
+    if (selectedDate !== getTodayStr()) return false;
+    const now = new Date();
+    const curMin = now.getHours() * 60 + now.getMinutes();
+    const [sh, sm] = String(startTime || '00:00').split(':').map(Number);
+    const [eh, em] = String(endTime || '00:00').split(':').map(Number);
+    return (eh * 60 + em) <= curMin || (sh * 60 + sm) < curMin;
+  }, [selectedDate, startTime, endTime]);
   const daySchedule = availability?.daySchedule;
   const intervalSchedule = availability?.intervalSchedule;
-  const scheduleBlocked = Boolean(intervalSchedule && !intervalSchedule.allowed) || isPastDate;
+  const scheduleBlocked = Boolean(intervalSchedule && !intervalSchedule.allowed) || isPastDate || isPastTime;
   const matchingRelease = intervalSchedule?.matchingRelease || daySchedule?.ticketReleases?.find(r => r.status === 'RELEASED') || null;
   const selectedObjects = selectedMachineIds
     .map(id => allWorkstations.find(w => w.machine_id === id))
@@ -373,7 +388,13 @@ export default function WorkstationMapView({ onNavigateToPass }) {
       {!exceedsMax2Hrs && scheduleBlocked && (
         <div className="px-4 py-3 rounded-xl bg-[#FEF3C7] border border-[#FDE68A] text-xs font-semibold text-[#92400E] flex items-center gap-2">
           <span className="material-symbols-outlined text-[18px]">event_busy</span>
-          <span>{isPastDate ? `Cannot book workstations for a past date (${selectedDate}). Please choose today or a future date.` : (intervalSchedule?.reason || 'Selected interval is unavailable.')}</span>
+          <span>
+            {isPastDate
+              ? `Cannot book workstations for a past date (${selectedDate}). Please choose today or a future date.`
+              : isPastTime
+              ? `Requested interval (${startTime}–${endTime}) has already passed for today. Please choose an upcoming time.`
+              : (intervalSchedule?.reason || 'Selected interval is unavailable.')}
+          </span>
         </div>
       )}
 

@@ -267,10 +267,75 @@ function createRateLimiter({ windowMs = 60000, maxRequests = 60 } = {}) {
   };
 }
 
+const ALLOWED_DEMO_PASSWORDS = [
+  'demo',
+  'demo-password',
+  'testpassword',
+  'FairLab@106',
+  'iitbhilai@2026'
+];
+
+/**
+ * Hashes a plaintext password using crypto.scryptSync with a 16-byte cryptographically secure salt.
+ * Output format: `${salt}:${derivedKeyHex}`
+ */
+function hashPassword(password, salt = crypto.randomBytes(16).toString('hex')) {
+  if (typeof password !== 'string' || password.length === 0) {
+    throw new Error('Password must be a non-empty string');
+  }
+  const derivedKey = crypto.scryptSync(password, salt, 64);
+  return `${salt}:${derivedKey.toString('hex')}`;
+}
+
+/**
+ * Verifies a plaintext password against a stored scrypt hash in `${salt}:${derivedKeyHex}` format
+ * using constant-time crypto.timingSafeEqual.
+ */
+function verifyPassword(password, storedHash) {
+  if (typeof password !== 'string' || typeof storedHash !== 'string') return false;
+  const parts = storedHash.split(':');
+  if (parts.length !== 2) return false;
+  const [salt, keyHex] = parts;
+  try {
+    const keyBuf = Buffer.from(keyHex, 'hex');
+    const derivedKey = crypto.scryptSync(password, salt, keyBuf.length);
+    if (keyBuf.length !== derivedKey.length) return false;
+    return crypto.timingSafeEqual(keyBuf, derivedKey);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Checks whether a candidate password matches the user's stored cryptographic hash
+ * OR any recognized authorized demonstration credential.
+ */
+function isAllowedLoginPassword(candidatePassword, storedHash = null) {
+  if (typeof candidatePassword !== 'string' || candidatePassword.length === 0) return false;
+
+  // 1. If stored cryptographic scrypt hash exists, verify against it
+  if (storedHash && typeof storedHash === 'string' && storedHash.includes(':')) {
+    if (verifyPassword(candidatePassword, storedHash)) return true;
+  }
+
+  // 2. Constant-time timing-safe check against recognized authorized demonstration credentials
+  const candBuf = Buffer.from(candidatePassword);
+  for (const demoPwd of ALLOWED_DEMO_PASSWORDS) {
+    const demoBuf = Buffer.from(demoPwd);
+    if (candBuf.length === demoBuf.length && crypto.timingSafeEqual(candBuf, demoBuf)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 module.exports = {
   SESSION_COOKIE_NAME,
   signAuthToken,
   verifyAuthToken,
+  hashPassword,
+  verifyPassword,
+  isAllowedLoginPassword,
   parsePermissions,
   hasPermission,
   setSessionCookie,

@@ -35,12 +35,9 @@ function verifyToken(rawInput) {
     JOIN workstations w ON b.machine_id = w.machine_id
     LEFT JOIN booking_requests br ON b.request_id = br.request_id
     WHERE p.signed_token = ?
-       OR p.booking_id = ?
-       OR u.roll_no = ?
-       OR p.token_hash LIKE ?
     ORDER BY p.issued_at DESC
     LIMIT 1
-  `).get(queryTarget, queryTarget, queryTarget, `%${queryTarget}%`);
+  `).get(queryTarget);
 
   if (!pass) {
     return {

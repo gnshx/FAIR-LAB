@@ -38,6 +38,7 @@ function initializeSchema(database) {
       permissions TEXT NOT NULL DEFAULT '[]',
       department TEXT NOT NULL,
       avatar_url TEXT,
+      password_hash TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -356,6 +357,7 @@ function initializeSchema(database) {
 
   // Non-destructive column migrations for existing databases
   addColumnIfMissing(database, 'users', 'permissions', "TEXT NOT NULL DEFAULT '[]'");
+  addColumnIfMissing(database, 'users', 'password_hash', 'TEXT DEFAULT NULL');
   addColumnIfMissing(database, 'student_fairness', 'total_hours_used', 'REAL NOT NULL DEFAULT 0.0');
   addColumnIfMissing(database, 'student_fairness', 'high_demand_count', 'INTEGER NOT NULL DEFAULT 0');
   addColumnIfMissing(database, 'student_fairness', 'high_demand_hours', 'REAL NOT NULL DEFAULT 0.0');

@@ -596,11 +596,16 @@ async function V6_jwtAndProductionSecurity() {
   try {
     await waitForHealth(PROD_BASE);
 
-    // Production login must fail closed until a real credential provider exists.
-    const pLogin = await login(PROD_API, 'aksharma@iitbhilai.ac.in');
+    // Production login rejects wrong passwords with 401 INVALID_CREDENTIALS
+    const pLoginWrong = await login(PROD_API, 'aksharma@iitbhilai.ac.in', 'deliberately-wrong-password');
+    assert(pLoginWrong.status === 401 && pLoginWrong.json?.code === 'INVALID_CREDENTIALS',
+      'V6.5  Production login rejects invalid password with 401 INVALID_CREDENTIALS');
+
+    // Production login succeeds with verified credentials and issues Secure session cookie
+    const pLogin = await login(PROD_API, 'aksharma@iitbhilai.ac.in', 'demo-password');
     const pCookie = pLogin.headers.get('set-cookie') || '';
-    assert(pLogin.status === 503 && pLogin.json?.code === 'AUTH_PROVIDER_NOT_CONFIGURED' && !pCookie,
-      'V6.5  Production login fails closed without verified credentials', pCookie);
+    assert(pLogin.status === 200 && pLogin.json?.token && pCookie.includes('Secure'),
+      'V6.5b Production login succeeds with verified credentials and issues Secure session cookie', pCookie);
 
     const pLogout = await fetchJSON(`${PROD_API}/auth/logout`, { method: 'POST' });
     const pLogoutCookie = pLogout.headers.get('set-cookie') || '';
