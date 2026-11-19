@@ -53,11 +53,12 @@ export default function StudentMyBookingsView({ onNavigateToBook, onNavigate }) 
         setBookings(bList);
         setPendingRequests(rList);
 
-        const defaultActive = bList.find(b => b.status === 'CONFIRMED' || b.status === 'CHECKED_IN') || bList[0];
+        const defaultActive = bList.find(b => b.status === 'CONFIRMED' || b.status === 'CHECKED_IN');
         if (defaultActive) {
-          setSelectedBookingId(prev => prev || defaultActive.booking_id);
+          setSelectedBookingId(prev => (bList.some(b => b.booking_id === prev && (b.status === 'CONFIRMED' || b.status === 'CHECKED_IN')) ? prev : defaultActive.booking_id));
           await loadPass(defaultActive.booking_id);
         } else {
+          setSelectedBookingId(null);
           setActivePass(null);
         }
       }
@@ -86,10 +87,30 @@ export default function StudentMyBookingsView({ onNavigateToBook, onNavigate }) 
     return () => unsubs.forEach(fn => fn && fn());
   }, [subscribe, fetchData, refreshProfile]);
 
+  const handleFilterChange = (tabId) => {
+    setFilter(tabId);
+    if (tabId === 'UPCOMING') {
+      const active = bookings.find(b => b.status === 'CONFIRMED' || b.status === 'CHECKED_IN');
+      if (active) {
+        setSelectedBookingId(active.booking_id);
+        loadPass(active.booking_id);
+      } else {
+        setSelectedBookingId(null);
+        setActivePass(null);
+      }
+    } else if (tabId === 'PENDING') {
+      setSelectedBookingId(null);
+      setActivePass(null);
+    }
+  };
+
   const handleSelectRow = (row) => {
     if (row.kind === 'BOOKING') {
       setSelectedBookingId(row.id);
       loadPass(row.id);
+    } else {
+      setSelectedBookingId(row.id);
+      setActivePass(null);
     }
   };
 
@@ -244,7 +265,7 @@ export default function StudentMyBookingsView({ onNavigateToBook, onNavigate }) 
             <button
               key={tab.id}
               type="button"
-              onClick={() => setFilter(tab.id)}
+              onClick={() => handleFilterChange(tab.id)}
               className={`h-8 px-4 rounded-full text-xs font-semibold transition-colors ${
                 active
                   ? 'bg-[#4F46E5] text-white'
@@ -372,7 +393,15 @@ export default function StudentMyBookingsView({ onNavigateToBook, onNavigate }) 
                   <div className="flex items-center justify-between py-2 border-b border-[#F1F5F9]">
                     <span className="text-[#64748B]">Status</span>
                     <strong className="text-[#0F172A] font-semibold">
-                      {activePass.status === 'CHECKED_IN' ? 'Checked in · active' : 'Valid · unused'}
+                      {activePass.booking_status === 'CHECKED_IN' || activePass.status === 'CHECKED_IN'
+                        ? 'Checked in · active'
+                        : activePass.booking_status === 'COMPLETED' || activePass.status === 'USED'
+                        ? 'Completed'
+                        : activePass.booking_status === 'CANCELLED' || activePass.status === 'REVOKED'
+                        ? 'Cancelled'
+                        : activePass.booking_status === 'NO_SHOW' || activePass.status === 'EXPIRED'
+                        ? 'No-show / expired'
+                        : 'Valid · unused'}
                     </strong>
                   </div>
                   <div className="flex items-center justify-between py-2 border-b border-[#F1F5F9]">
@@ -389,15 +418,17 @@ export default function StudentMyBookingsView({ onNavigateToBook, onNavigate }) 
               </div>
 
               <div className="mt-7 space-y-2.5">
-                <button
-                  type="button"
-                  onClick={handleOpenInGateDesk}
-                  className="w-full h-10 rounded-xl bg-[#10B981] hover:bg-[#059669] text-white font-semibold text-xs shadow-brand flex items-center justify-center gap-1.5 transition-colors"
-                  title="Verify this digital pass at the physical Lab L-106 Turnstile Gate Scanner"
-                >
-                  <span className="material-symbols-outlined text-[16px]">qr_code_scanner</span>
-                  <span>Verify at Turnstile Gate (Demo)</span>
-                </button>
+                {(activePass.booking_status === 'CONFIRMED' || activePass.booking_status === 'CHECKED_IN') && (
+                  <button
+                    type="button"
+                    onClick={handleOpenInGateDesk}
+                    className="w-full h-10 rounded-xl bg-[#10B981] hover:bg-[#059669] text-white font-semibold text-xs shadow-brand flex items-center justify-center gap-1.5 transition-colors"
+                    title="Verify this digital pass at the physical Lab L-106 Turnstile Gate Scanner"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">qr_code_scanner</span>
+                    <span>Verify at Turnstile Gate (Demo)</span>
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={handleDownloadPass}
@@ -405,13 +436,15 @@ export default function StudentMyBookingsView({ onNavigateToBook, onNavigate }) 
                 >
                   Download pass
                 </button>
-                <button
-                  type="button"
-                  onClick={() => handleCancelBooking(activePass.booking_id)}
-                  className="w-full h-10 rounded-xl bg-white hover:bg-[#FEF2F2] border border-[#E5E7EB] hover:border-[#FECACA] text-[#0F172A] hover:text-[#DC2626] font-semibold text-xs transition-colors"
-                >
-                  Cancel reservation
-                </button>
+                {activePass.booking_status === 'CONFIRMED' && (
+                  <button
+                    type="button"
+                    onClick={() => handleCancelBooking(activePass.booking_id)}
+                    className="w-full h-10 rounded-xl bg-white hover:bg-[#FEF2F2] border border-[#E5E7EB] hover:border-[#FECACA] text-[#0F172A] hover:text-[#DC2626] font-semibold text-xs transition-colors"
+                  >
+                    Cancel reservation
+                  </button>
+                )}
               </div>
             </>
           ) : (

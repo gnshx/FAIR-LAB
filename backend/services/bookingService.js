@@ -245,7 +245,7 @@ function submitBookingRequest({
     );
     const primaryPrefId = prefRigs.length > 0 ? prefRigs[0].machine_id : null;
 
-    // 4. Student half-open [start, end) overlap check across both QUEUED/ALLOCATED requests and active bookings
+    // 4. Student half-open [start, end) overlap check across queued requests and active bookings
     const existingReq = db.prepare(`
       SELECT r.request_id, r.status,
              COALESCE(r.start_time, s.start_time) as eff_start,
@@ -255,14 +255,14 @@ function submitBookingRequest({
       LEFT JOIN lab_slots s ON r.slot_id = s.slot_id
       WHERE r.user_id = ?
         AND r.booking_date = ?
-        AND r.status IN ('QUEUED', 'ALLOCATED')
+        AND r.status = 'QUEUED'
         AND COALESCE(r.start_time, s.start_time) < ?
         AND ? < COALESCE(r.end_time, s.end_time)
       LIMIT 1
     `).get(userId, interval.bookingDate, interval.endTime, interval.startTime);
 
     if (existingReq) {
-      throw new Error(`You already have an active request or confirmed booking overlapping ${existingReq.eff_start} – ${existingReq.eff_end} (${existingReq.slot_name}) on ${interval.bookingDate}`);
+      throw new Error(`You already have a pending booking request overlapping ${existingReq.eff_start} – ${existingReq.eff_end} (${existingReq.slot_name}) on ${interval.bookingDate}`);
     }
 
     const existingBooking = db.prepare(`
