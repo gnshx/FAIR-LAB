@@ -42,6 +42,9 @@ async function runConcurrencyTest() {
   const db = getDb();
 
   // Clean up prior concurrency test data across users, slots, and requests
+  db.prepare("DELETE FROM booking_preferences WHERE request_id IN (SELECT request_id FROM booking_requests WHERE user_id LIKE 'usr-test-conc-%')").run();
+  db.prepare("DELETE FROM waitlist_entries WHERE user_id LIKE 'usr-test-conc-%'").run();
+  db.prepare("DELETE FROM allocation_history WHERE user_id LIKE 'usr-test-conc-%'").run();
   db.prepare("DELETE FROM access_passes WHERE user_id LIKE 'usr-test-conc-%'").run();
   db.prepare("DELETE FROM bookings WHERE user_id LIKE 'usr-test-conc-%'").run();
   db.prepare("DELETE FROM booking_requests WHERE user_id LIKE 'usr-test-conc-%'").run();
@@ -189,6 +192,9 @@ async function runConcurrencyTest() {
   } finally {
     try {
       db.prepare("DELETE FROM ticket_releases WHERE release_id = ?").run(`rel-conc-${testDate}`);
+      db.prepare("DELETE FROM booking_preferences WHERE request_id IN (SELECT request_id FROM booking_requests WHERE slot_id = ?)").run(testSlotId);
+      db.prepare("DELETE FROM waitlist_entries WHERE slot_id = ?").run(testSlotId);
+      db.prepare("DELETE FROM allocation_history WHERE slot_id = ?").run(testSlotId);
       db.prepare("DELETE FROM access_passes WHERE booking_id IN (SELECT booking_id FROM bookings WHERE slot_id = ?)").run(testSlotId);
       db.prepare("DELETE FROM bookings WHERE slot_id = ?").run(testSlotId);
       db.prepare("DELETE FROM booking_requests WHERE slot_id = ?").run(testSlotId);
