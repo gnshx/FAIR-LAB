@@ -6,11 +6,13 @@ export default function AdminAccessControlView() {
   const { currentUser } = useAuth();
   const { subscribe } = useSocket();
 
-  const [tokenInput, setTokenInput] = useState('L106-2026-00125');
+  const [sampleToken, setSampleToken] = useState('');
+  const [tokenInput, setTokenInput] = useState('');
   const [verdict, setVerdict] = useState(null);
   const [loading, setLoading] = useState(false);
   const [shiftLogs, setShiftLogs] = useState([]);
   const [banner, setBanner] = useState(null);
+  const [gateRelayPulse, setGateRelayPulse] = useState(false);
 
   const fetchShiftLogs = async () => {
     try {
@@ -42,7 +44,26 @@ export default function AdminAccessControlView() {
 
   useEffect(() => {
     fetchShiftLogs();
-    handleVerify('L106-2026-00125');
+
+    const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const urlToken = searchParams ? searchParams.get('token') : null;
+
+    if (urlToken) {
+      setTokenInput(urlToken);
+      handleVerify(urlToken);
+    } else {
+      // Fetch active sample pass for immediate 1-click testing
+      fetch('/api/access/sample-pass')
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data?.signed_token) {
+            setSampleToken(data.signed_token);
+            setTokenInput(data.signed_token);
+            handleVerify(data.signed_token);
+          }
+        })
+        .catch(() => {});
+    }
   }, []);
 
   useEffect(() => {
@@ -55,11 +76,16 @@ export default function AdminAccessControlView() {
     const res = await fetch('/api/access/check-in', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-user-id': currentUser },
-      body: JSON.stringify({ passId: verdict.pass.pass_id, notes: 'Verified at L-106 access desk' })
+      body: JSON.stringify({ passId: verdict.pass.pass_id, notes: 'Physical turnstile relay momentary pulse (500ms)' })
     });
     const data = await res.json();
     if (res.ok) {
-      setBanner({ type: 'success', text: `Check-in confirmed for ${data.machineId}.` });
+      setGateRelayPulse(true);
+      setTimeout(() => setGateRelayPulse(false), 2500);
+      setBanner({
+        type: 'success',
+        text: `Gate Turnstile Unlatched: Check-in recorded for student on ${data.machineId}. Workstation status is now OCCUPIED.`
+      });
       await handleVerify(tokenInput);
       await fetchShiftLogs();
     } else {
@@ -78,7 +104,7 @@ export default function AdminAccessControlView() {
     if (res.ok) {
       setBanner({
         type: 'success',
-        text: `Checked out from ${data.machineId} (${data.durationHours}h ${data.demandLevel}). Score updated to ${data.scoreAfter} pts.`
+        text: `Checked out from ${data.machineId} (${data.durationHours}h ${data.demandLevel}). −${data.deduction} pts applied (Score: ${data.scoreAfter} pts). Workstation returned to AVAILABLE pool.`
       });
       await handleVerify(tokenInput);
       await fetchShiftLogs();
@@ -91,14 +117,38 @@ export default function AdminAccessControlView() {
 
   return (
     <div className="flex flex-col w-full gap-5">
-      {/* Header (Exact 12_admin_access_control.png) */}
-      <div>
-        <h1 className="text-[26px] font-bold tracking-tight text-[#0F172A] leading-tight">
-          Access control
-        </h1>
-        <p className="text-[13px] text-[#64748B] mt-1">
-          Scan QR passes, check students in and out
-        </p>
+      {/* Header (Exact 12_admin_access_control.png with quick demo navigation) */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-[26px] font-bold tracking-tight text-[#0F172A] leading-tight">
+              Access control
+            </h1>
+            <span className="px-2 py-0.5 rounded-md bg-[#EEF2FF] text-[#4F46E5] text-[11px] font-semibold border border-[#E0E7FF]">
+              Gate Operator Console
+            </span>
+          </div>
+          <p className="text-[13px] text-[#64748B] mt-1">
+            Optical QR pass scanner & turnstile gate solenoid relay controller · Lab L-106
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <a
+            href="/bookings"
+            className="h-8 px-3 rounded-lg bg-white border border-[#E2E8F0] hover:bg-[#F8FAFC] text-[11.5px] font-medium text-[#475569] flex items-center gap-1.5 transition-colors"
+          >
+            <span className="material-symbols-outlined text-[15px]">arrow_back</span>
+            <span>Student Bookings</span>
+          </a>
+          <a
+            href="/overview"
+            className="h-8 px-3 rounded-lg bg-white border border-[#E2E8F0] hover:bg-[#F8FAFC] text-[11.5px] font-medium text-[#475569] flex items-center gap-1.5 transition-colors"
+          >
+            <span className="material-symbols-outlined text-[15px]">dashboard</span>
+            <span>Admin Overview</span>
+          </a>
+        </div>
       </div>
 
       {banner && (
@@ -126,12 +176,42 @@ export default function AdminAccessControlView() {
               Hold the student&apos;s pass in front of the camera
             </p>
 
-            {/* Dark Navy Optical Frame (Exact 12_admin_access_control.png) */}
-            <div className="mt-4 w-full aspect-[16/9] rounded-2xl bg-[#0B1120] flex flex-col items-center justify-center relative overflow-hidden">
-              <div className="w-40 h-40 rounded-2xl border-2 border-[#6366F1] bg-white/[0.02]" />
-              <span className="text-xs text-[#94A3B8] mt-4">
-                Align QR code inside the frame
-              </span>
+            {/* Dark Navy Optical Frame with Turnstile Relay indicator */}
+            <div
+              className={`mt-4 w-full aspect-[16/9] rounded-2xl flex flex-col items-center justify-center relative overflow-hidden transition-all duration-300 ${
+                gateRelayPulse
+                  ? 'bg-[#064E3B] border-2 border-[#10B981] shadow-[0_0_30px_rgba(16,185,129,0.35)]'
+                  : 'bg-[#0B1120]'
+              }`}
+            >
+              {gateRelayPulse ? (
+                <div className="flex flex-col items-center justify-center animate-bounce text-center px-4">
+                  <div className="w-14 h-14 rounded-full bg-[#10B981] text-white flex items-center justify-center mb-2 shadow-lg">
+                    <span className="material-symbols-outlined text-[32px]">lock_open</span>
+                  </div>
+                  <span className="text-white font-bold text-sm tracking-wide">
+                    TURNSTILE UNLATCHED
+                  </span>
+                  <span className="text-[#A7F3D0] text-xs mt-0.5 font-mono">
+                    500ms Momentary Relay Pulse
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <div
+                    className={`w-40 h-40 rounded-2xl border-2 transition-colors ${
+                      verdict?.authorized
+                        ? 'border-[#10B981] bg-[#10B981]/[0.05]'
+                        : 'border-[#6366F1] bg-white/[0.02]'
+                    }`}
+                  />
+                  <span className="text-xs text-[#94A3B8] mt-4 font-mono">
+                    {verdict?.authorized
+                      ? 'Pass verified · Ready for turnstile check-in'
+                      : 'Align QR code inside the frame'}
+                  </span>
+                </>
+              )}
             </div>
           </div>
 
@@ -144,7 +224,7 @@ export default function AdminAccessControlView() {
                 type="text"
                 value={tokenInput}
                 onChange={(e) => setTokenInput(e.target.value)}
-                placeholder="L106-2026-00125 or signed QR token"
+                placeholder="FAIRPASS:... signed QR token"
                 className="flex-1 h-10 px-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-xs font-mono text-[#0F172A] outline-none focus:bg-white focus:border-[#4F46E5]"
               />
               <button
@@ -160,11 +240,26 @@ export default function AdminAccessControlView() {
             <div className="flex flex-wrap items-center gap-2 pt-1">
               <button
                 type="button"
-                onClick={() => {
-                  setTokenInput('L106-2026-00125');
-                  handleVerify('L106-2026-00125');
+                onClick={async () => {
+                  let token = sampleToken;
+                  if (!token) {
+                    try {
+                      const res = await fetch('/api/access/sample-pass');
+                      if (res.ok) {
+                        const data = await res.json();
+                        token = data.signed_token;
+                        setSampleToken(token);
+                      }
+                    } catch {
+                      // ignore
+                    }
+                  }
+                  if (token) {
+                    setTokenInput(token);
+                    handleVerify(token);
+                  }
                 }}
-                className="px-2.5 py-1 rounded-lg bg-[#DCFCE7] text-[#15803D] text-[11px] font-semibold"
+                className="px-2.5 py-1 rounded-lg bg-[#DCFCE7] text-[#15803D] hover:bg-[#BBF7D0] text-[11px] font-semibold transition-colors"
               >
                 Test valid pass
               </button>

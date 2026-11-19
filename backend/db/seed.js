@@ -193,13 +193,21 @@ function ensureLayoutUpgraded(db) {
 function ensureTodayBookingsSeeded(db) {
   const today = getTodayDateString();
   const count = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE booking_date = ?").get(today).c;
-  if (count >= 20) return;
+  if (count >= 100) return;
 
   const sem = db.prepare("SELECT semester_id FROM semesters WHERE status = 'active' LIMIT 1").get();
   if (!sem) return;
   const semId = sem.semester_id;
 
-  const cohortUsers = db.prepare("SELECT user_id FROM users WHERE role = 'student' AND user_id != 'usr-student-ganesh'").all();
+  const cohortUsers = db.prepare(`
+    SELECT user_id FROM users
+    WHERE role = 'student'
+      AND user_id NOT LIKE 'usr-test-%'
+      AND user_id NOT LIKE 'usr-conc-%'
+      AND user_id NOT LIKE 'usr-e2e-%'
+      AND user_id NOT LIKE 'usr-v2-%'
+      AND user_id != 'usr-student-ganesh'
+  `).all();
   if (!cohortUsers || cohortUsers.length === 0) return;
   const cohortIds = cohortUsers.map(u => u.user_id);
 
@@ -223,8 +231,9 @@ function ensureTodayBookingsSeeded(db) {
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
-  const existingBookings = db.prepare("SELECT user_id, slot_id FROM bookings WHERE booking_date = ?").all(today);
+  const existingBookings = db.prepare("SELECT user_id, slot_id, machine_id, start_time, end_time FROM bookings WHERE booking_date = ? AND status IN ('CONFIRMED', 'CHECKED_IN')").all(today);
   const usedUserSlots = new Set(existingBookings.map(b => `${b.user_id}:${b.slot_id}`));
+  const usedMachineSlots = new Set(existingBookings.map(b => `${b.machine_id}:${b.slot_id}`));
   usedUserSlots.add('usr-student-ganesh:slot-3');
 
   let bSeq = 1;
@@ -233,6 +242,7 @@ function ensureTodayBookingsSeeded(db) {
   function seedMachineSlots(machineId, slotNums, demandLevel = 'NORMAL') {
     for (const sNum of slotNums) {
       const sId = `slot-${sNum}`;
+      if (usedMachineSlots.has(`${machineId}:${sId}`)) continue;
       const slotMeta = slots.find(s => s.id === sId) || { start: '09:00', end: '10:00', durationMinutes: 60 };
       let chosenUser = null;
       for (let tries = 0; tries < cohortIds.length; tries++) {
@@ -245,6 +255,7 @@ function ensureTodayBookingsSeeded(db) {
       }
       if (!chosenUser) continue;
       usedUserSlots.add(`${chosenUser}:${sId}`);
+      usedMachineSlots.add(`${machineId}:${sId}`);
       const bid = `L106-SEED-${today.replace(/-/g, '')}-${String(bSeq++).padStart(4, '0')}`;
       insertBooking.run(
         bid, null, chosenUser, machineId, sId, today,

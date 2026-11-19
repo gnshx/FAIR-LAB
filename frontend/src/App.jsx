@@ -191,7 +191,10 @@ function MainLayout() {
             <WorkstationMapView onNavigateToPass={() => handleNavigate('student-bookings')} />
           )}
           {currentView === 'student-bookings' && (
-            <StudentMyBookingsView onNavigateToBook={() => handleNavigate('student-book')} />
+            <StudentMyBookingsView
+              onNavigateToBook={() => handleNavigate('student-book')}
+              onNavigate={handleNavigate}
+            />
           )}
           {currentView === 'student-fairness' && <StudentFairnessView />}
           {currentView === 'student-notifications' && <StudentNotificationsView />}

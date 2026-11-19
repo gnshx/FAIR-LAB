@@ -192,27 +192,52 @@ export default function LoginView({ onSignedIn }) {
           </p>
 
           {/* Verified @iitbhilai.ac.in Quick Access */}
-          <div className="mt-5 pt-4 border-t border-[#F1F5F9] grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setEmail('ganesh.k@iitbhilai.ac.in');
-                completeLoginRequest('ganesh.k@iitbhilai.ac.in', password || 'demo');
-              }}
-              className="h-9 px-3 rounded-xl bg-[#F8FAFC] hover:bg-[#EEF2FF] border border-[#E2E8F0] text-[11px] font-semibold text-[#334155] hover:text-[#4F46E5] transition-colors"
-            >
-              Student (@iitbhilai)
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setEmail('aksharma@iitbhilai.ac.in');
-                completeLoginRequest('aksharma@iitbhilai.ac.in', password || 'demo');
-              }}
-              className="h-9 px-3 rounded-xl bg-[#F8FAFC] hover:bg-[#EEF2FF] border border-[#E2E8F0] text-[11px] font-semibold text-[#334155] hover:text-[#4F46E5] transition-colors"
-            >
-              Admin (@iitbhilai)
-            </button>
+          <div className="mt-5 pt-4 border-t border-[#F1F5F9] space-y-2">
+            <div className="text-[11px] font-semibold text-[#64748B] flex items-center justify-between">
+              <span>Demo Quick Sign-in</span>
+              <span className="text-[10px] text-[#94A3B8] font-normal">One-click role access</span>
+            </div>
+            <div className="grid grid-cols-3 gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('ganesh.k@iitbhilai.ac.in');
+                  setPassword('demo');
+                  completeLoginRequest('ganesh.k@iitbhilai.ac.in', 'demo');
+                }}
+                className="h-10 px-2 rounded-xl bg-[#F8FAFC] hover:bg-[#EEF2FF] border border-[#E2E8F0] text-[11px] font-semibold text-[#334155] hover:text-[#4F46E5] flex flex-col items-center justify-center text-center transition-colors"
+                title="Student: Ganesh Kumar (M.Tech CSE)"
+              >
+                <span>Student</span>
+                <span className="text-[9px] font-normal text-[#94A3B8]">@iitbhilai</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('aksharma@iitbhilai.ac.in');
+                  setPassword('demo');
+                  completeLoginRequest('aksharma@iitbhilai.ac.in', 'demo');
+                }}
+                className="h-10 px-2 rounded-xl bg-[#F8FAFC] hover:bg-[#EEF2FF] border border-[#E2E8F0] text-[11px] font-semibold text-[#334155] hover:text-[#4F46E5] flex flex-col items-center justify-center text-center transition-colors"
+                title="Admin: Dr. A.K. Sharma (Coordinator)"
+              >
+                <span>Admin</span>
+                <span className="text-[9px] font-normal text-[#94A3B8]">Coordinator</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('accessdesk.l106@iitbhilai.ac.in');
+                  setPassword('demo');
+                  completeLoginRequest('accessdesk.l106@iitbhilai.ac.in', 'demo');
+                }}
+                className="h-10 px-2 rounded-xl bg-[#F8FAFC] hover:bg-[#EEF2FF] border border-[#E2E8F0] text-[11px] font-semibold text-[#334155] hover:text-[#4F46E5] flex flex-col items-center justify-center text-center transition-colors"
+                title="Gate Desk: Access Pass Verifier (Turnstile Scanner)"
+              >
+                <span>Gate Desk</span>
+                <span className="text-[9px] font-normal text-[#94A3B8]">Pass Verifier</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

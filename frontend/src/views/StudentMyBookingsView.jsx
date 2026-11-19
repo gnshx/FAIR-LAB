@@ -16,8 +16,8 @@ function addMinutes(timeStr, mins) {
   return `${String(Math.floor(total / 60) % 24).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
 }
 
-export default function StudentMyBookingsView({ onNavigateToBook }) {
-  const { currentUser, refreshProfile } = useAuth();
+export default function StudentMyBookingsView({ onNavigateToBook, onNavigate }) {
+  const { currentUser, refreshProfile, switchUser, availableUsers } = useAuth();
   const { subscribe } = useSocket();
 
   const [filter, setFilter] = useState('UPCOMING');
@@ -131,6 +131,28 @@ export default function StudentMyBookingsView({ onNavigateToBook }) {
       a.click();
     } else {
       window.print();
+    }
+  };
+
+  const handleOpenInGateDesk = async () => {
+    if (!activePass?.signed_token) return;
+    try {
+      const gateDesk = availableUsers?.find(u => u.email === 'accessdesk.l106@iitbhilai.ac.in') || { user_id: 'usr-watchman-ram' };
+      if (switchUser && gateDesk?.user_id) {
+        await switchUser(gateDesk.user_id);
+      }
+      if (typeof window !== 'undefined') {
+        window.history.pushState(null, '', `/access?token=${encodeURIComponent(activePass.signed_token)}`);
+      }
+      if (onNavigate) {
+        onNavigate('admin-access');
+      } else if (typeof window !== 'undefined') {
+        window.location.href = `/access?token=${encodeURIComponent(activePass.signed_token)}`;
+      }
+    } catch {
+      if (typeof window !== 'undefined') {
+        window.location.href = `/access?token=${encodeURIComponent(activePass.signed_token)}`;
+      }
     }
   };
 
@@ -367,6 +389,15 @@ export default function StudentMyBookingsView({ onNavigateToBook }) {
               </div>
 
               <div className="mt-7 space-y-2.5">
+                <button
+                  type="button"
+                  onClick={handleOpenInGateDesk}
+                  className="w-full h-10 rounded-xl bg-[#10B981] hover:bg-[#059669] text-white font-semibold text-xs shadow-brand flex items-center justify-center gap-1.5 transition-colors"
+                  title="Verify this digital pass at the physical Lab L-106 Turnstile Gate Scanner"
+                >
+                  <span className="material-symbols-outlined text-[16px]">qr_code_scanner</span>
+                  <span>Verify at Turnstile Gate (Demo)</span>
+                </button>
                 <button
                   type="button"
                   onClick={handleDownloadPass}
