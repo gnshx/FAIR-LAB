@@ -33,12 +33,14 @@ async function runSuite() {
   const cleanup = () => {
     db.prepare("DELETE FROM entry_logs WHERE user_id LIKE 'usr-v2-%'").run();
     db.prepare("DELETE FROM allocation_history WHERE user_id LIKE 'usr-v2-%'").run();
-    db.prepare("DELETE FROM access_passes WHERE user_id LIKE 'usr-v2-%'").run();
+    db.prepare("DELETE FROM access_passes WHERE user_id LIKE 'usr-v2-%' OR booking_id IN (SELECT booking_id FROM bookings WHERE booking_date = ?)").run(testDate);
     db.prepare("DELETE FROM bookings WHERE booking_date = ? OR user_id LIKE 'usr-v2-%'").run(testDate);
     db.prepare("DELETE FROM waitlist_entries WHERE booking_date = ? OR user_id LIKE 'usr-v2-%'").run(testDate);
     db.prepare("DELETE FROM booking_requests WHERE booking_date = ? OR user_id LIKE 'usr-v2-%'").run(testDate);
     db.prepare("DELETE FROM student_fairness WHERE user_id LIKE 'usr-v2-%'").run();
     db.prepare("DELETE FROM users WHERE user_id LIKE 'usr-v2-%'").run();
+    db.prepare("DELETE FROM ticket_releases WHERE release_id = ?").run(`rel-v2-${testDate}`);
+    db.prepare("DELETE FROM lab_slots WHERE slot_id LIKE 'slot-conc-%' OR slot_id LIKE 'slot-term2-%' OR slot_id LIKE 'slot-audit-%'").run();
     db.prepare("UPDATE workstations SET status = 'AVAILABLE', current_user_id = NULL, active_job = NULL WHERE machine_id = 'L106-PC-83'").run();
     invalidateAvailabilityCache();
   };
@@ -47,6 +49,11 @@ async function runSuite() {
   const { ensureTodayBookingsSeeded } = require('../backend/db/seed');
   ensureTodayBookingsSeeded(db);
   invalidateAvailabilityCache();
+
+  db.prepare(`
+    INSERT OR REPLACE INTO ticket_releases (release_id, lab_id, release_date, start_time, end_time, total_tickets, status, title)
+    VALUES (?, 'lab-l106', ?, '00:00', '23:59', 100, 'RELEASED', 'V2 Test Drop')
+  `).run(`rel-v2-${testDate}`, testDate);
 
   try {
     // -----------------------------------------------------------------------

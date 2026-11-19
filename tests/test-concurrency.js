@@ -104,6 +104,10 @@ async function runConcurrencyTest() {
   const startTime = Date.now();
 
   const testDate = '2026-12-28';
+  db.prepare(`
+    INSERT OR REPLACE INTO ticket_releases (release_id, lab_id, release_date, start_time, end_time, total_tickets, status, title)
+    VALUES (?, 'lab-l106', ?, '00:00', '23:59', 100, 'RELEASED', 'Test Concurrency Drop')
+  `).run(`rel-conc-${testDate}`, testDate);
   const requestPromises = studentIds.map((uid, idx) => {
     const studentToken = signAuthToken({
       user_id: uid,
@@ -184,6 +188,7 @@ async function runConcurrencyTest() {
   console.log('\n✨ TEST 1 (SIMULTANEOUS CONCURRENCY) PASSED WITH ZERO RACE CONDITIONS!\n');
   } finally {
     try {
+      db.prepare("DELETE FROM ticket_releases WHERE release_id = ?").run(`rel-conc-${testDate}`);
       db.prepare("DELETE FROM access_passes WHERE booking_id IN (SELECT booking_id FROM bookings WHERE slot_id = ?)").run(testSlotId);
       db.prepare("DELETE FROM bookings WHERE slot_id = ?").run(testSlotId);
       db.prepare("DELETE FROM booking_requests WHERE slot_id = ?").run(testSlotId);

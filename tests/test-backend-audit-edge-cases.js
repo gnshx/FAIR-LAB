@@ -29,6 +29,7 @@ async function runAuditEdgeCaseSuite() {
     db.prepare("DELETE FROM bookings WHERE user_id LIKE 'usr-audit-%' OR booking_id LIKE 'test-audit-%'").run();
     db.prepare("DELETE FROM booking_requests WHERE user_id LIKE 'usr-audit-%' OR request_id LIKE 'test-audit-%'").run();
     db.prepare("DELETE FROM student_fairness WHERE user_id LIKE 'usr-audit-%'").run();
+    db.prepare("DELETE FROM ticket_releases WHERE release_id LIKE 'rel-audit-%'").run();
     db.prepare("DELETE FROM lab_slots WHERE slot_id LIKE 'slot-audit-%'").run();
     db.prepare("DELETE FROM users WHERE user_id LIKE 'usr-audit-%'").run();
   }
@@ -145,6 +146,10 @@ async function runAuditEdgeCaseSuite() {
   db.prepare("INSERT INTO student_fairness (fairness_id, user_id, semester_id, initial_score, current_score) VALUES ('fair-aud-1', ?, ?, 100, 100)").run(uAudit1, activeSem.semester_id);
 
   const testDate = '2026-12-28';
+  db.prepare(`
+    INSERT OR REPLACE INTO ticket_releases (release_id, lab_id, release_date, start_time, end_time, total_tickets, status, title)
+    VALUES (?, 'lab-l106', ?, '00:00', '23:59', 100, 'RELEASED', 'Test Audit Drop')
+  `).run(`rel-audit-${testDate}`, testDate);
   submitBookingRequest({
     userId: uAudit1,
     slotId: testSlot.id,

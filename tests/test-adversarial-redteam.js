@@ -55,6 +55,7 @@ async function runRedTeamSuite() {
     db.prepare("DELETE FROM booking_requests WHERE booking_date IN (?, ?) OR user_id LIKE 'usr-rt-%'").run(testDate, testDate2);
     db.prepare("DELETE FROM student_fairness WHERE user_id LIKE 'usr-rt-%'").run();
     db.prepare("DELETE FROM users WHERE user_id LIKE 'usr-rt-%'").run();
+    db.prepare("DELETE FROM ticket_releases WHERE release_date IN (?, ?)").run(testDate, testDate2);
     db.prepare("DELETE FROM lab_date_overrides WHERE override_date IN (?, ?)").run(testDate, testDate2);
   };
 
@@ -67,6 +68,10 @@ async function runRedTeamSuite() {
         INSERT OR REPLACE INTO lab_date_overrides (override_id, lab_id, override_date, override_type, is_open, open_time, close_time, ignore_timetable, reason)
         VALUES (?, 'lab-l106', ?, 'EXTRA_DAY', 1, '09:00', '18:00', 1, 'Isolated red-team test day')
       `).run(`ovr-${d}`, d);
+      db.prepare(`
+        INSERT OR REPLACE INTO ticket_releases (release_id, lab_id, release_date, start_time, end_time, total_tickets, status, title)
+        VALUES (?, 'lab-l106', ?, '00:00', '23:59', 100, 'RELEASED', 'Isolated red-team ticket drop')
+      `).run(`rel-${d}`, d);
     }
     // Seed dedicated red-team student accounts (attacker, victim, flooder, plus 30 racers)
     const baseAccounts = [

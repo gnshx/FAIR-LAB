@@ -35,6 +35,7 @@ async function runCustomIntervalSuite() {
     db.prepare("DELETE FROM booking_requests WHERE booking_date = ? OR user_id LIKE 'usr-v3-%'").run(testDate);
     db.prepare("DELETE FROM student_fairness WHERE user_id LIKE 'usr-v3-%'").run();
     db.prepare("DELETE FROM users WHERE user_id LIKE 'usr-v3-%'").run();
+    db.prepare("DELETE FROM ticket_releases WHERE release_id = ?").run(`rel-v3-${testDate}`);
     db.prepare("DELETE FROM lab_date_overrides WHERE override_date = ?").run(testDate);
     invalidateAvailabilityCache();
   };
@@ -46,6 +47,10 @@ async function runCustomIntervalSuite() {
       INSERT OR REPLACE INTO lab_date_overrides (override_id, lab_id, override_date, override_type, is_open, open_time, close_time, ignore_timetable, reason)
       VALUES (?, 'lab-l106', ?, 'EXTRA_DAY', 1, '09:00', '18:00', 1, 'Isolated custom-interval test day')
     `).run(`ovr-${testDate}`, testDate);
+    db.prepare(`
+      INSERT OR REPLACE INTO ticket_releases (release_id, lab_id, release_date, start_time, end_time, total_tickets, status, title)
+      VALUES (?, 'lab-l106', ?, '00:00', '23:59', 100, 'RELEASED', 'V3 Test Drop')
+    `).run(`rel-v3-${testDate}`, testDate);
     // Seed test students
     const users = [
       { id: 'usr-v3-a', name: 'Student A', roll: 'V3-A', score: 70 },

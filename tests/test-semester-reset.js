@@ -149,6 +149,10 @@ async function runSemesterResetTest() {
     INSERT INTO lab_slots (slot_id, lab_id, slot_name, start_time, end_time, capacity, round_number, is_active)
     VALUES (?, 'lab-l106', 'Term 2 Demonstration Slot', '20:00', '21:30', 24, 98, 1)
   `).run(freshSlotId);
+  db.prepare(`
+    INSERT OR REPLACE INTO ticket_releases (release_id, lab_id, release_date, start_time, end_time, total_tickets, status, title)
+    VALUES ('rel-sem-2026-12-28', 'lab-l106', '2026-12-28', '00:00', '23:59', 100, 'RELEASED', 'Test Sem Drop')
+  `).run();
 
   const reqRes = await request('POST', '/api/bookings/request', {
     slotId: freshSlotId,
@@ -163,6 +167,7 @@ async function runSemesterResetTest() {
   console.log(`   ✓ PASS: Student queued with maximum priority score (${reqRes.data.priorityScore} PTS) despite prior semester history.`);
 
   // Clean up synthetic test slot so live schedule stays clean
+  db.prepare("DELETE FROM ticket_releases WHERE release_id = 'rel-sem-2026-12-28'").run();
   db.prepare("DELETE FROM booking_requests WHERE slot_id = ?").run(freshSlotId);
   db.prepare("DELETE FROM bookings WHERE slot_id = ?").run(freshSlotId);
   db.prepare("DELETE FROM lab_slots WHERE slot_id = ?").run(freshSlotId);
