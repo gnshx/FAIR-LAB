@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 
@@ -94,6 +94,18 @@ export default function WorkstationMapView({ onNavigateToPass }) {
       setLoading(false);
     }
   }, [selectedDate, startTime, endTime]);
+
+  const mapSectionRef = useRef(null);
+
+  const handleCheckAvailability = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    await fetchAvailability();
+    setTimeout(() => {
+      if (mapSectionRef.current) {
+        mapSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 50);
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -243,7 +255,7 @@ export default function WorkstationMapView({ onNavigateToPass }) {
         type="button"
         onClick={() => toggleSelectSeat(ws)}
         title={`${ws.display_label || ws.machine_id} · ${st}`}
-        className={`relative overflow-visible h-10 rounded-lg border text-xs font-semibold tabular-nums transition-all flex items-center justify-center ${tileStyle}`}
+        className={`relative overflow-visible h-9 sm:h-[38px] rounded-lg border text-xs font-semibold tabular-nums transition-all flex items-center justify-center ${tileStyle}`}
       >
         <span>{numStr}</span>
         {isSelected && (
@@ -325,7 +337,7 @@ export default function WorkstationMapView({ onNavigateToPass }) {
           <div className="lg:col-span-3 flex justify-end">
             <button
               type="button"
-              onClick={fetchAvailability}
+              onClick={handleCheckAvailability}
               className="w-full lg:w-auto h-10 px-5 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] text-white font-semibold text-xs shadow-brand transition-colors"
             >
               Check availability
@@ -438,8 +450,8 @@ export default function WorkstationMapView({ onNavigateToPass }) {
       {/* Main Split: 84-Seat Map (8 cols) + Your Preferences Sidebar (4 cols) */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-stretch">
         {/* Workstation Map Card */}
-        <section className="xl:col-span-8 fl-card p-6">
-          <div className="mb-4">
+        <section ref={mapSectionRef} className="xl:col-span-8 fl-card p-5 scroll-mt-3">
+          <div className="mb-3">
             <h2 className="text-[15px] font-bold text-[#0F172A]">Workstation map</h2>
             <p className="text-xs text-[#64748B] mt-0.5">
               Live availability for the selected interval · pick up to 3 PCs in order of preference
@@ -447,7 +459,7 @@ export default function WorkstationMapView({ onNavigateToPass }) {
           </div>
 
           {/* Exact Legend Row */}
-          <div className="flex flex-wrap items-center gap-4 text-[11.5px] text-[#475569] mb-6">
+          <div className="flex flex-wrap items-center gap-3.5 text-[11px] text-[#475569] mb-3.5">
             <span className="inline-flex items-center gap-1.5">
               <span className="w-3 h-3 rounded bg-[#DCFCE7] border border-[#86EFAC]" />
               Available
@@ -477,18 +489,18 @@ export default function WorkstationMapView({ onNavigateToPass }) {
               ))}
             </div>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-4">
               {/* Block A · 60 workstations */}
               <div>
-                <div className="flex items-center gap-2 mb-1.5">
+                <div className="flex items-center gap-2 mb-1">
                   <span className="text-xs font-bold text-[#0F172A]">Block A</span>
                   <span className="text-xs text-[#94A3B8]">60 workstations</span>
                 </div>
-                <div className="space-y-2 overflow-x-auto pt-3 px-2 pb-2">
+                <div className="space-y-1.5 overflow-x-auto pt-2.5 px-2 pb-1.5">
                   {[1, 2, 3, 4, 5, 6].map(r => (
                     <div key={r} className="flex items-center gap-2 min-w-[540px]">
                       <span className="w-6 text-[11px] font-medium text-[#94A3B8] shrink-0">R{r}</span>
-                      <div className="grid grid-cols-10 gap-2 flex-1">
+                      <div className="grid grid-cols-10 gap-1.5 flex-1">
                         {(rowsA[r] || []).map(ws => renderTile(ws))}
                       </div>
                     </div>
@@ -498,15 +510,15 @@ export default function WorkstationMapView({ onNavigateToPass }) {
 
               {/* Block B · 24 workstations */}
               <div>
-                <div className="flex items-center gap-2 mb-1.5">
+                <div className="flex items-center gap-2 mb-1">
                   <span className="text-xs font-bold text-[#0F172A]">Block B</span>
                   <span className="text-xs text-[#94A3B8]">24 workstations</span>
                 </div>
-                <div className="space-y-2 overflow-x-auto pt-3 px-2 pb-2">
+                <div className="space-y-1.5 overflow-x-auto pt-2.5 px-2 pb-1.5">
                   {[1, 2, 3, 4].map(r => (
                     <div key={r} className="flex items-center gap-2 min-w-[340px] max-w-[62%]">
                       <span className="w-6 text-[11px] font-medium text-[#94A3B8] shrink-0">R{r}</span>
-                      <div className="grid grid-cols-6 gap-2 flex-1">
+                      <div className="grid grid-cols-6 gap-1.5 flex-1">
                         {(rowsB[r] || []).map(ws => renderTile(ws))}
                       </div>
                     </div>
@@ -518,7 +530,7 @@ export default function WorkstationMapView({ onNavigateToPass }) {
         </section>
 
         {/* Your Preferences Sidebar (4 cols) */}
-        <aside className="xl:col-span-4 fl-card p-6 flex flex-col justify-between gap-6">
+        <aside className="xl:col-span-4 fl-card p-5 flex flex-col justify-between gap-5">
           <div>
             <h2 className="text-[15px] font-bold text-[#0F172A]">Your preferences</h2>
             <p className="text-xs text-[#64748B] mt-0.5">Up to 3 · ranked by priority of choice</p>
