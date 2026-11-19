@@ -119,11 +119,11 @@ FairLab is actively deployed and running on the campus VM (**`10.1.75.40`**). It
 
 ### 4. Demo Evaluation Personas (`@iitbhilai.ac.in`)
 
-| Role | Name & Email | Permissions | Scope / Views Accessible |
-| :--- | :--- | :--- | :--- |
-| **Student** | **Ganesh Kumar**<br>`ganesh.k@iitbhilai.ac.in` | Standard Student | Student Workspace (`/dashboard`, `/book`, `/bookings`, `/fairness`, `/notifications`) |
-| **Admin** | **Dr. A. K. Sharma**<br>`aksharma@iitbhilai.ac.in` | `POLICY_ADMIN`<br>`ALLOCATION_ADMIN`<br>`ACCESS_OPERATOR` | Full Admin Workspace (`/overview`, `/settings`, `/allocation`, `/schedule`, `/workstations`, `/students`, `/analytics`, `/access`, `/audit`) |
-| **Gate Desk** | **Access Operator**<br>`accessdesk.l106@iitbhilai.ac.in` | `ACCESS_OPERATOR` | Access Control Gate Desk (`/access` only; policy & settings blocked `403`) |
+| Role | Name & Email | Password | Permissions | Scope / Views Accessible |
+| :--- | :--- | :---: | :--- | :--- |
+| **Student** | **Ganesh Kumar**<br>`ganesh.k@iitbhilai.ac.in` | `demo` | Standard Student | Student Workspace (`/dashboard`, `/book`, `/bookings`, `/fairness`, `/notifications`) |
+| **Admin** | **Dr. A. K. Sharma**<br>`aksharma@iitbhilai.ac.in` | `demo` | `POLICY_ADMIN`<br>`ALLOCATION_ADMIN`<br>`ACCESS_OPERATOR` | Full Admin Workspace (`/overview`, `/settings`, `/allocation`, `/schedule`, `/workstations`, `/students`, `/analytics`, `/access`, `/audit`) |
+| **Gate Desk** | **Access Operator**<br>`accessdesk.l106@iitbhilai.ac.in` | `demo` | `ACCESS_OPERATOR` | Access Control Gate Desk (`/access` only; policy & settings blocked `403`) |
 
 ---
 
@@ -183,53 +183,85 @@ FairLab is built as a **Modular Monolith** with real-time WebSocket synchronizat
 
 ```mermaid
 flowchart TD
-    UI["React 18 + Vite + Tailwind SPA (Student & Admin Workspaces)"]
-    WS["WebSocket Broadcast Hub (/ws)"]
-    API["Express REST API (/api & /api/v1)"]
-    SEC["Auth & RBAC Layer (Signed HS256 JWT / HttpOnly Cookie · 2-Role + ACCESS_OPERATOR · Zod v4 · Rate Limiter)"]
-
-    subgraph Core["Modular Domain Services"]
-        AV["availabilityService.js\n84-seat interval map + write-invalidated cache"]
-        SC["scheduleService.js\n2h max · Mon-Fri timetable · Holidays · Ticket drops"]
-        BK["bookingService.js\nHybrid booking · Ranked 1..3 matching · No-show sweep"]
-        FR["fairnessEngine.js\nHours+Peak scoring · 4-tier ranking · Semester reset"]
-        QR["passService.js & verificationService.js\nHMAC-SHA256 zero-PII QR · Anti-replay gate"]
-        RS["gpuResourceService.js\nInventory & automatic offline seat reallocation"]
-        AN["analyticsService.js\nDeterministic Mulberry32 3-policy benchmarks"]
+    subgraph Clients ["Client Layer"]
+        UI["React 18 + Vite SPA<br/>(Student & Admin Workspaces)"]
+        WSClient["WebSocket Client<br/>(Live Seat Map & Queue Sync)"]
     end
 
-    DB[("SQLite WAL (Dev) / PostgreSQL 16 (Prod btree_gist)")]
-    OB["Transactional Outbox Publisher (PENDING -> PUBLISHED)"]
+    subgraph Gateway ["Gateway & Security Layer"]
+        Nginx["Nginx Reverse Proxy & Load Balancer<br/>(Port 3500 Web / Port 4500 LB)"]
+        API["Express REST API<br/>(/api and /api/v1)"]
+        WSHub["WebSocket Broadcast Hub<br/>(/ws)"]
+        SEC["Auth & RBAC Middleware<br/>(Scrypt Auth, HS256 JWT, Zod v4, Rate Limiter)"]
+    end
 
-    UI -->|"HTTPS JSON + Signed JWT / Cookie"| API
-    UI <-->|"SLOT_UPDATED / QUEUE_CHANGED / GATE_EVENT"| WS
-    API --> SEC --> Core
-    Core --> DB
-    DB --> OB --> WS
+    subgraph DomainServices ["Modular Domain Services"]
+        AV["availabilityService.js<br/>(84-Seat Logical Map & Cache)"]
+        SC["scheduleService.js<br/>(Timetable, Holidays & Ticket Drops)"]
+        BK["bookingService.js<br/>(Hybrid Allocation & Ranked Preferences)"]
+        FR["fairnessEngine.js<br/>(Priority Scoring & 4-Tier Tie-Breaking)"]
+        QR["passService.js<br/>(HMAC-SHA256 Anti-Replay QR Passes)"]
+        RS["gpuResourceService.js<br/>(Workstation Fleet & Auto-Reallocation)"]
+        AN["analyticsService.js<br/>(Gini & Jain Index Calculation)"]
+    end
+
+    subgraph Persistence ["Dual Persistence & Event Layer"]
+        DB[("PostgreSQL 16 & SQLite WAL Storage")]
+        OB["Transactional Outbox Publisher<br/>(PENDING to PUBLISHED Event Tailer)"]
+    end
+
+    UI -->|"HTTPS JSON & JWT Cookie"| Nginx
+    WSClient -->|"WS Connection"| Nginx
+    Nginx -->|"Proxy Pass"| API
+    Nginx -->|"Connection Upgrade"| WSHub
+
+    API --> SEC
+    SEC --> AV
+    SEC --> SC
+    SEC --> BK
+    SEC --> FR
+    SEC --> QR
+    SEC --> RS
+    SEC --> AN
+
+    AV --> DB
+    SC --> DB
+    BK --> DB
+    FR --> DB
+    QR --> DB
+    RS --> DB
+
+    DB --> OB
+    OB -->|"Broadcast Events"| WSHub
+    WSHub -->|"State Update Events"| WSClient
 ```
 
 ### Hybrid Allocation Lifecycle (Immediate vs Contested Fairness Queue)
 
 ```mermaid
 sequenceDiagram
-    participant Student as Student Seat Map
+    autonumber
+    actor Student as Student (Browser)
     participant Booking as bookingService.js
     participant Schedule as scheduleService.js
-    participant DB as Database (Constraints/Triggers)
-    participant Worker as Allocation Round Worker
+    participant DB as Database (SQLite / Postgres)
+    participant Worker as Allocation Worker
 
-    Student->>Booking: POST /api/v1/booking-requests (date, [start, end), prefs 1..3)
-    Booking->>Schedule: Validate 2h max, Holiday, Mon-Fri Timetable, Ticket Release
-    Schedule-->>Booking: Allowed or HTTP 400 (Exact Code & Reason)
-    Booking->>DB: Check Idempotency-Key + Daily 2h Cap + User Overlap
-    alt Uncontested window & preferred seat free
-        Booking->>DB: Atomic INSERT booking (half-open overlap guard)
-        Booking-->>Student: 201 CONFIRMED + Signed HMAC QR Pass
-    else Contested window or busy seats
-        Booking->>DB: INSERT booking_requests (QUEUED) + ranked preferences
-        Booking-->>Student: 201 QUEUED (Priority snapshot locked)
-        Worker->>DB: Rank via 4-Tier Lexicographic Order -> Assign Pref 1..3 / Fallback
-        Worker->>DB: Commit bookings + notifications + immutable audit_logs
+    Student->>Booking: Submit Booking Request (date, interval, up to 3 preferences)
+    Booking->>Schedule: Check 2h limit, Mon-Fri timetable, holiday closures and tickets
+    alt Schedule restriction or quota exceeded
+        Schedule-->>Student: Reject with HTTP 400 (Explicit reason code)
+    else Request validated
+        Booking->>DB: Check idempotency key, daily 2h cap and user time overlap
+        alt Uncontested slot and preferred workstation available
+            Booking->>DB: Commit booking atomically (half-open range guard)
+            Booking-->>Student: Return HTTP 201 CONFIRMED + Signed HMAC QR Pass
+        else Contested slot or multiple competing requests
+            Booking->>DB: Enqueue booking request (PENDING) with priority snapshot
+            Booking-->>Student: Return HTTP 201 QUEUED
+            Worker->>DB: Execute 4-tier lexicographic ranking (Score, Wait, Time, ID)
+            Worker->>DB: Commit allocated workstations and waitlist remaining
+        end
     end
 ```
 
@@ -294,17 +326,17 @@ Engineered in [`backend/services/scheduleService.js`](backend/services/scheduleS
 
 ```mermaid
 erDiagram
-    USERS ||--o{ STUDENT_FAIRNESS : "per semester"
+    USERS ||--o{ STUDENT_FAIRNESS : maintains
     USERS ||--o{ BOOKING_REQUESTS : submits
     USERS ||--o{ BOOKINGS : owns
     USERS ||--o{ NOTIFICATIONS : receives
-    LABS ||--o{ WORKSTATIONS : "84 systems"
-    LABS ||--o{ LAB_TIMETABLE : "Mon-Fri classes"
-    LABS ||--o{ LAB_DATE_OVERRIDES : "holidays / extra days"
-    LABS ||--o{ TICKET_RELEASES : "ticket drops"
-    BOOKING_REQUESTS ||--o{ BOOKING_PREFERENCES : "ranks 1..3"
-    BOOKINGS ||--|| ACCESS_PASSES : "HMAC QR"
-    BOOKINGS ||--o{ ENTRY_LOGS : "gate scan"
+    LABS ||--o{ WORKSTATIONS : contains
+    LABS ||--o{ LAB_TIMETABLE : schedules
+    LABS ||--o{ LAB_DATE_OVERRIDES : overrides
+    LABS ||--o{ TICKET_RELEASES : releases
+    BOOKING_REQUESTS ||--o{ BOOKING_PREFERENCES : specifies
+    BOOKINGS ||--|| ACCESS_PASSES : generates
+    BOOKINGS ||--o{ ENTRY_LOGS : records
     ALLOCATION_ROUNDS ||--o{ BOOKINGS : commits
 ```
 
@@ -405,12 +437,12 @@ cd backend && node server.js
 ```
 
 ### Verified Demo Accounts (`@iitbhilai.ac.in` · Two-Role Model)
-| Role | Scoped Permissions | Institute Email | Workspace |
-| :--- | :--- | :--- | :--- |
-| **`student`** | Standard | `ganesh.k@iitbhilai.ac.in` *(or `priya.s@iitbhilai.ac.in`, `rahul.v@iitbhilai.ac.in`)* | Student Workspace (5 views) |
-| **`admin`** | `POLICY_ADMIN`, `ALLOCATION_ADMIN`, `ACCESS_OPERATOR` | `aksharma@iitbhilai.ac.in` | Full Admin Workspace (9 views) |
-| **`admin`** | `ACCESS_OPERATOR` | `accessdesk.l106@iitbhilai.ac.in` | Access Control Gate Desk |
-| **`admin`** | `ALLOCATION_ADMIN` *(no gate permission)* | `ssen@iitbhilai.ac.in` | Admin Queue & Policy (Gate blocked `403`) |
+| Role | Scoped Permissions | Institute Email | Password | Workspace |
+| :--- | :--- | :--- | :---: | :--- |
+| **`student`** | Standard | `ganesh.k@iitbhilai.ac.in` *(or `priya.s@iitbhilai.ac.in`, `rahul.v@iitbhilai.ac.in`)* | `demo` | Student Workspace (5 views) |
+| **`admin`** | `POLICY_ADMIN`, `ALLOCATION_ADMIN`, `ACCESS_OPERATOR` | `aksharma@iitbhilai.ac.in` | `demo` | Full Admin Workspace (9 views) |
+| **`admin`** | `ACCESS_OPERATOR` | `accessdesk.l106@iitbhilai.ac.in` | `demo` | Access Control Gate Desk |
+| **`admin`** | `ALLOCATION_ADMIN` *(no gate permission)* | `ssen@iitbhilai.ac.in` | `demo` | Admin Queue & Policy (Gate blocked `403`) |
 
 ---
 
@@ -422,13 +454,13 @@ Execute all **14 automated test suites** including the comprehensive Phase 10 va
 # Run the master automated test runner across all suites
 npm test
 
-# Run the Phase 10 demonstration & regression validation suite (76 assertions)
+# Run the Phase 10 demonstration & regression validation suite (77 assertions)
 node tests/test-phase10-validation.js
 ```
 
 | Suite | Focus | Status |
 | :--- | :--- | :---: |
-| `test-phase10-validation.js` | Comprehensive end-to-end regression across all 8 validation sections (76 assertions) | PASS (76/76) |
+| `test-phase10-validation.js` | Comprehensive end-to-end regression across all 8 validation sections (77 assertions) | PASS (77/77) |
 | `test-system.js` | Full E2E booking, QR check-in, replay block, check-out deduction, simulation | PASS |
 | `test-concurrency.js` | 100 simultaneous requests vs 5 slots — zero races, exact top-5 selection | PASS |
 | `test-semester-reset.js` | Semester rollover archive integrity & clean 100-pt reset | PASS |
