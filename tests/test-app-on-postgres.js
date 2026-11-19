@@ -8,6 +8,19 @@ const PostgresAdapter = require('../backend/db/postgres');
 const { calculatePriorityScore, rankBookingRequests } = require('../backend/services/fairnessEngine');
 const { generateAccessPass } = require('../backend/services/passService');
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
+
+// Auto-load .env if available
+const envFile = path.resolve(__dirname, '../.env');
+if (fs.existsSync(envFile)) {
+  fs.readFileSync(envFile, 'utf8').split('\n').forEach(line => {
+    const m = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
+    if (m && !process.env[m[1]]) {
+      process.env[m[1]] = m[2].trim().replace(/^['"]|['"]$/g, '');
+    }
+  });
+}
 
 const PG_URL = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/fairlab_db';
 const db = new PostgresAdapter(PG_URL);

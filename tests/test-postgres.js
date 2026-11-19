@@ -6,6 +6,19 @@
 
 const { Pool } = require('pg');
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
+
+// Auto-load .env if available
+const envFile = path.resolve(__dirname, '../.env');
+if (fs.existsSync(envFile)) {
+  fs.readFileSync(envFile, 'utf8').split('\n').forEach(line => {
+    const m = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
+    if (m && !process.env[m[1]]) {
+      process.env[m[1]] = m[2].trim().replace(/^['"]|['"]$/g, '');
+    }
+  });
+}
 
 const PG_CONFIG = {
   connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/fairlab_db',
