@@ -1,9 +1,23 @@
 const http = require('http');
 const assert = require('assert');
 const { getDb } = require('../backend/db/database');
+const { signAuthToken } = require('../backend/middleware/auth');
 
 function httpRequest(method, path, body = null, headers = {}, rawBody = null) {
   return new Promise((resolve, reject) => {
+    const finalHeaders = { ...headers };
+    if (finalHeaders['x-user-id'] && !finalHeaders['Authorization'] && !finalHeaders['authorization']) {
+      try {
+        const db = getDb();
+        const uid = finalHeaders['x-user-id'];
+        const user = db.prepare('SELECT user_id, name, roll_no, email, role, permissions FROM users WHERE user_id = ?').get(uid);
+        if (user) {
+          finalHeaders['Authorization'] = `Bearer ${signAuthToken(user)}`;
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
     const data = rawBody !== null ? rawBody : (body !== null ? JSON.stringify(body) : null);
     const req = http.request({
       hostname: 'localhost',
@@ -13,7 +27,7 @@ function httpRequest(method, path, body = null, headers = {}, rawBody = null) {
       headers: {
         'Content-Type': 'application/json',
         ...(data !== null ? { 'Content-Length': Buffer.byteLength(data) } : {}),
-        ...headers
+        ...finalHeaders
       }
     }, (res) => {
       let buf = '';
