@@ -228,7 +228,7 @@ export default function WorkstationMapView({ onNavigateToPass }) {
 
     let tileStyle = 'bg-[#DCFCE7] border-[#BBF7D0] text-[#15803D] hover:border-[#4ADE80] cursor-pointer';
     if (isSelected) {
-      tileStyle = 'bg-[#4F46E5] border-[#4338CA] text-white cursor-pointer shadow-sm';
+      tileStyle = 'bg-[#4F46E5] border-[#4338CA] text-white cursor-pointer shadow-sm z-10';
     } else if (st === 'BOOKED') {
       tileStyle = 'bg-[#FEE2E2] border-[#FECACA] text-[#DC2626]/80 cursor-not-allowed';
     } else if (st === 'PENDING') {
@@ -243,11 +243,11 @@ export default function WorkstationMapView({ onNavigateToPass }) {
         type="button"
         onClick={() => toggleSelectSeat(ws)}
         title={`${ws.display_label || ws.machine_id} · ${st}`}
-        className={`relative h-10 rounded-lg border text-xs font-semibold tabular-nums transition-all flex items-center justify-center ${tileStyle}`}
+        className={`relative overflow-visible h-10 rounded-lg border text-xs font-semibold tabular-nums transition-all flex items-center justify-center ${tileStyle}`}
       >
         <span>{numStr}</span>
         {isSelected && (
-          <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#0F172A] text-white text-[10px] font-bold flex items-center justify-center shadow-sm">
+          <span className="absolute -top-1.5 -right-1.5 w-[18px] h-[18px] rounded-full bg-[#0F172A] text-white text-[10px] font-bold flex items-center justify-center shadow-md ring-2 ring-white z-20 pointer-events-none">
             {rankIndex + 1}
           </span>
         )}
@@ -477,14 +477,14 @@ export default function WorkstationMapView({ onNavigateToPass }) {
               ))}
             </div>
           ) : (
-            <div className="space-y-7">
+            <div className="space-y-6">
               {/* Block A · 60 workstations */}
               <div>
-                <div className="flex items-center gap-2 mb-3">
+                <div className="flex items-center gap-2 mb-1.5">
                   <span className="text-xs font-bold text-[#0F172A]">Block A</span>
                   <span className="text-xs text-[#94A3B8]">60 workstations</span>
                 </div>
-                <div className="space-y-2 overflow-x-auto pb-1">
+                <div className="space-y-2 overflow-x-auto pt-3 px-2 pb-2">
                   {[1, 2, 3, 4, 5, 6].map(r => (
                     <div key={r} className="flex items-center gap-2 min-w-[540px]">
                       <span className="w-6 text-[11px] font-medium text-[#94A3B8] shrink-0">R{r}</span>
@@ -498,11 +498,11 @@ export default function WorkstationMapView({ onNavigateToPass }) {
 
               {/* Block B · 24 workstations */}
               <div>
-                <div className="flex items-center gap-2 mb-3">
+                <div className="flex items-center gap-2 mb-1.5">
                   <span className="text-xs font-bold text-[#0F172A]">Block B</span>
                   <span className="text-xs text-[#94A3B8]">24 workstations</span>
                 </div>
-                <div className="space-y-2 overflow-x-auto pb-1">
+                <div className="space-y-2 overflow-x-auto pt-3 px-2 pb-2">
                   {[1, 2, 3, 4].map(r => (
                     <div key={r} className="flex items-center gap-2 min-w-[340px] max-w-[62%]">
                       <span className="w-6 text-[11px] font-medium text-[#94A3B8] shrink-0">R{r}</span>
