@@ -218,8 +218,8 @@ function ensureTodayBookingsSeeded(db) {
   const insertBooking = db.prepare(`
     INSERT OR IGNORE INTO bookings (
       booking_id, request_id, user_id, machine_id, slot_id, booking_date,
-      start_time, end_time, duration_minutes, demand_level, priority_score_at_booking,
-      semester_id, status, created_at, confirmed_at
+      start_time, end_time, duration_minutes, demand_level, demand_ratio,
+      semester_id, status, booked_at, confirmed_at
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
