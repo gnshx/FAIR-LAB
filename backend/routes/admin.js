@@ -29,6 +29,9 @@ const {
 const { generateAccessPass } = require('../services/passService');
 const { getTodayDateString, parseTimeToMinutes } = require('../db/seed');
 
+// Every admin read and write route is restricted to an authenticated admin.
+router.use(requireAdmin);
+
 // Get Policy
 router.get('/policy', (req, res) => {
   const db = getDb();

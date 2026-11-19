@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { getDb } = require('../db/database');
-const { resolveAuthenticatedUser } = require('../middleware/auth');
+const { resolveAuthenticatedUser, requireAdmin } = require('../middleware/auth');
 const { runMonteCarloSimulation, runThreePolicyComparison } = require('../services/analyticsService');
 const { checkDailyBookingLimit, getFairnessLeaderboard } = require('../services/fairnessEngine');
 const { getTodayDateString } = require('../db/seed');
@@ -87,7 +87,7 @@ router.get('/me', (req, res) => {
 });
 
 // Cohort fairness leaderboard & live inequality indices
-router.get('/leaderboard', (req, res) => {
+router.get('/leaderboard', requireAdmin, (req, res) => {
   try {
     const limit = Math.min(200, Math.max(5, parseInt(req.query.limit, 10) || 50));
     const data = getFairnessLeaderboard(limit);

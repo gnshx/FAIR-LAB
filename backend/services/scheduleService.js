@@ -187,7 +187,8 @@ function checkIntervalScheduleStatus(labId, dateStr, startTime, endTime, policy 
         daySchedule
       };
     }
-    if (sMin < nowMin - 10) {
+    // Reservations are prospective; do not allow even a short retroactive start.
+    if (sMin < nowMin) {
       return {
         allowed: false,
         code: 'PAST_START_TIME',

@@ -8,6 +8,10 @@ const verifySchema = z.object({
   token: z.string().min(1, 'Token or QR scan input is required')
 });
 
+// Scanning a pass returns the holder's identity and booking details; restrict it
+// to an authenticated gate operator just like check-in and check-out.
+router.use(resolveGateOperator);
+
 // Gate Scan Verification
 router.post('/verify', validateBody(verifySchema), (req, res) => {
   try {

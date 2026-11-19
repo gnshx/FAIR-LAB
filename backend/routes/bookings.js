@@ -180,6 +180,15 @@ router.get('/my-passes', async (req, res) => {
 // Get single pass with QR code
 router.get('/:id/pass', async (req, res) => {
   try {
+    const authed = resolveBookingUser(req);
+    if (!authed) return res.status(401).json({ error: 'Authentication required' });
+    const db = getDb();
+    const booking = db.prepare('SELECT user_id FROM bookings WHERE booking_id = ?').get(req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Access pass not found' });
+    const actor = db.prepare('SELECT role FROM users WHERE user_id = ?').get(authed.user_id);
+    if (booking.user_id !== authed.user_id && actor?.role !== 'admin') {
+      return res.status(403).json({ error: 'Forbidden: You can only view your own access pass.' });
+    }
     const pass = await getPassByBookingId(req.params.id);
     if (!pass) return res.status(404).json({ error: 'Access pass not found' });
     res.json(pass);
