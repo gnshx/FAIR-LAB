@@ -1044,6 +1044,23 @@ function cancelBooking(bookingId, userId, reason = 'Student voluntary cancellati
       `Cancelled booking for ${booking.machine_id}. Reason: ${reason}`
     );
 
+    db.prepare(`
+      INSERT INTO notifications (notification_id, user_id, type, title, message)
+      VALUES (?, ?, 'BOOKING_CANCELLED', ?, ?)
+    `).run(
+      `notif-cancel-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+      booking.user_id,
+      `Reservation Cancelled: ${booking.display_label || booking.machine_id}`,
+      `Reservation on ${booking.booking_date} (${booking.eff_start || '10:00'}) was cancelled. Reason: ${reason}`
+    );
+
+    recordOutboxEvent('booking.cancelled', bookingId, {
+      bookingId,
+      userId: booking.user_id,
+      machineId: booking.machine_id,
+      bookingDate: booking.booking_date
+    });
+
     return {
       success: true,
       bookingId,

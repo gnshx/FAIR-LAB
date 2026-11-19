@@ -61,6 +61,28 @@ export default function StudentNotificationsView() {
     });
   }, [items, filter]);
 
+  const renderTypeBadge = (type) => {
+    const t = (type || '').toUpperCase();
+    if (t.includes('CONFIRMED')) return { label: 'Confirmed', cls: 'bg-[#DCFCE7] text-[#15803D] border-[#BBF7D0]' };
+    if (t.includes('CANCEL')) return { label: 'Cancelled', cls: 'bg-[#F1F5F9] text-[#64748B] border-[#E2E8F0]' };
+    if (t.includes('REALLOC')) return { label: 'Reallocated', cls: 'bg-[#FEF3C7] text-[#B45309] border-[#FDE68A]' };
+    if (t.includes('PENALTY') || t.includes('NO_SHOW')) return { label: 'Penalty', cls: 'bg-[#FEE2E2] text-[#DC2626] border-[#FECACA]' };
+    return { label: 'Notice', cls: 'bg-[#EEF2FF] text-[#4F46E5] border-[#E0E7FF]' };
+  };
+
+  const formatNotificationTime = (ts) => {
+    if (!ts) return 'Just now';
+    try {
+      const d = new Date(ts);
+      if (isNaN(d.getTime())) return ts;
+      const datePart = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+      const timePart = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+      return `${datePart}, ${timePart}`;
+    } catch {
+      return ts;
+    }
+  };
+
   const togglePref = (key) => setPrefs(prev => ({ ...prev, [key]: !prev[key] }));
 
   return (
@@ -128,11 +150,12 @@ export default function StudentNotificationsView() {
             <div className="space-y-2.5">
               {filtered.map(n => {
                 const unread = !n.is_read;
+                const badge = renderTypeBadge(n.type);
                 return (
                   <div
                     key={n.notification_id}
-                    className={`px-4 py-3.5 rounded-xl flex items-start justify-between gap-4 transition-colors ${
-                      unread ? 'bg-[#EEF2FF]' : 'bg-white hover:bg-[#F8FAFC]'
+                    className={`px-4 py-3.5 rounded-xl border border-transparent flex items-start justify-between gap-4 transition-colors ${
+                      unread ? 'bg-[#EEF2FF] border-[#E0E7FF]' : 'bg-white hover:bg-[#F8FAFC] border-[#F1F5F9]'
                     }`}
                   >
                     <div className="flex items-start gap-3 min-w-0">
@@ -142,12 +165,17 @@ export default function StudentNotificationsView() {
                         }`}
                       />
                       <div className="min-w-0">
-                        <div className="text-xs font-bold text-[#0F172A]">{n.title}</div>
-                        <div className="text-xs text-[#64748B] mt-0.5">{n.message}</div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-xs font-bold text-[#0F172A]">{n.title}</span>
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold border ${badge.cls}`}>
+                            {badge.label}
+                          </span>
+                        </div>
+                        <div className="text-xs text-[#64748B] mt-1 leading-relaxed">{n.message}</div>
                       </div>
                     </div>
                     <span className="text-[11px] text-[#94A3B8] shrink-0 whitespace-nowrap tabular-nums">
-                      {n.created_at ? new Date(n.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'Just now'}
+                      {formatNotificationTime(n.created_at)}
                     </span>
                   </div>
                 );

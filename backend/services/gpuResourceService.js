@@ -102,6 +102,16 @@ function toggleWorkstationMaintenance(machineId, isMaintenance, actorId = 'usr-a
             b.booking_id,
             `Automatically reallocated booking from offline ${machineId} to ${replacement.machine_id} for slot ${b.slot_id} (${b.booking_date}).`
           );
+
+          db.prepare(`
+            INSERT INTO notifications (notification_id, user_id, type, title, message)
+            VALUES (?, ?, 'WORKSTATION_REALLOCATED', ?, ?)
+          `).run(
+            `notif-realloc-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+            b.user_id,
+            `Workstation Reallocated: ${replacement.display_label || replacement.machine_id}`,
+            `Your booking for ${b.booking_date} (${b.start_time || '10:00'}–${b.end_time || '11:00'}) was automatically moved from ${current.display_label || machineId} (offline for maintenance) to ${replacement.display_label || replacement.machine_id}.`
+          );
         } else {
           // Lab 100% full: cancel booking with 0 penalty and return request to top of queue
           db.prepare("UPDATE bookings SET status = 'CANCELLED', cancelled_at = datetime('now') WHERE booking_id = ?").run(b.booking_id);
@@ -109,6 +119,15 @@ function toggleWorkstationMaintenance(machineId, isMaintenance, actorId = 'usr-a
           if (b.request_id) {
             db.prepare("UPDATE booking_requests SET status = 'QUEUED', wait_time_seconds = wait_time_seconds + 3600 WHERE request_id = ?").run(b.request_id);
           }
+          db.prepare(`
+            INSERT INTO notifications (notification_id, user_id, type, title, message)
+            VALUES (?, ?, 'BOOKING_CANCELLED', ?, ?)
+          `).run(
+            `notif-realloc-cancel-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+            b.user_id,
+            `Reservation Cancelled: Workstation Offline`,
+            `Your booking on ${current.display_label || machineId} for ${b.booking_date} was cancelled because all replacement workstations are fully occupied. You have been placed at the top of the queue with 0 penalty.`
+          );
           waitlisted.push({ bookingId: b.booking_id, userId: b.user_id, slotId: b.slot_id });
         }
       }

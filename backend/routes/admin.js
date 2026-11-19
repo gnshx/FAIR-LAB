@@ -50,7 +50,7 @@ router.get('/overview', requireAdmin, (req, res) => {
     const db = getDb();
     const activeSem = db.prepare("SELECT * FROM semesters WHERE status = 'active' LIMIT 1").get();
     const policy = db.prepare('SELECT * FROM policy_config WHERE id = 1').get();
-    const workstations = db.prepare('SELECT status, COUNT(*) as cnt FROM workstations WHERE lab_id = "lab-l106" GROUP BY status').all();
+    const workstations = db.prepare("SELECT status, COUNT(*) as cnt FROM workstations WHERE lab_id = 'lab-l106' GROUP BY status").all();
     const recentAudit = db.prepare('SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT 10').all();
     res.json({
       activeSemester: activeSem,
