@@ -146,7 +146,16 @@ async function runQrSecurityTest() {
   );
   db.prepare("UPDATE access_passes SET status = 'REVOKED' WHERE pass_id = ?").run(cancelledPass.passId);
 
-  const cancelRes = await request('POST', '/api/access/verify', { token: cancelledPass.signedToken });
+  const { signAuthToken } = require('../backend/middleware/auth');
+  const opToken = signAuthToken({
+    user_id: 'usr-watchman-ram',
+    email: 'accessdesk.l106@iitbhilai.ac.in',
+    role: 'admin',
+    permissions: ['ACCESS_OPERATOR']
+  });
+  const opHeaders = { 'Authorization': `Bearer ${opToken}` };
+
+  const cancelRes = await request('POST', '/api/access/verify', { token: cancelledPass.signedToken }, opHeaders);
   console.log(`   Verification result: authorized = ${cancelRes.data.authorized}, code = ${cancelRes.data.code}`);
   if (cancelRes.data.authorized === true || cancelRes.data.code !== 'BOOKING_CANCELLED') {
     throw new Error(`SECURITY BREACH: Cancelled pass was authorized or wrong code: ${cancelRes.data.code}`);
@@ -157,18 +166,18 @@ async function runQrSecurityTest() {
   // Test 4: Genuine Token Check-In & Duplicate Scan Replay Rejection
   // -------------------------------------------------------------
   console.log('\n[Vector 4] Testing Genuine Verification & Duplicate Scan Rejection...');
-  const firstVerify = await request('POST', '/api/access/verify', { token: validPass.signedToken });
+  const firstVerify = await request('POST', '/api/access/verify', { token: validPass.signedToken }, opHeaders);
   if (!firstVerify.data.authorized) throw new Error('Genuine pass failed initial validation');
 
   console.log(`   Initial verification passed for ${firstVerify.data.student.name} on ${firstVerify.data.workstation.machine_id}`);
 
   // Watchman records check-in
-  const checkInRes = await request('POST', '/api/access/check-in', { passId: validPass.passId }, { 'x-user-id': 'usr-watchman-ram' });
+  const checkInRes = await request('POST', '/api/access/check-in', { passId: validPass.passId }, opHeaders);
   if (checkInRes.status !== 200) throw new Error('Legitimate check-in failed: ' + JSON.stringify(checkInRes.data));
   console.log(`   Turnstile Check-In accepted (Entry ID: ${checkInRes.data.entryId})`);
 
   // Immediate Second scan attempt with same pass
-  const replayVerify = await request('POST', '/api/access/verify', { token: validPass.signedToken });
+  const replayVerify = await request('POST', '/api/access/verify', { token: validPass.signedToken }, opHeaders);
   console.log(`   Replay Scan Attempt: authorized = ${replayVerify.data.authorized}, code = ${replayVerify.data.code}`);
   if (replayVerify.data.authorized === true || replayVerify.data.code !== 'ALREADY_CHECKED_IN') {
     throw new Error(`SECURITY BREACH: Duplicate scan was permitted! Code: ${replayVerify.data.code}`);
@@ -179,9 +188,17 @@ async function runQrSecurityTest() {
   // Test 5: Unauthorized Account Attempting Gate Latch (RBAC)
   // -------------------------------------------------------------
   console.log('\n[Vector 5] Testing RBAC: Unauthorized Student Account Calling Check-In...');
+  const secStudentToken = signAuthToken({
+    user_id: secStudentId,
+    email: `${secStudentId}@iitbhilai.ac.in`,
+    role: 'student',
+    permissions: []
+  });
+  const secStudentHeaders = { 'Authorization': `Bearer ${secStudentToken}` };
+
   const unauthorizedCheckIn = await request('POST', '/api/access/check-in', {
     passId: validPass.passId
-  }, { 'x-user-id': secStudentId }); // Student user attempting gate operation!
+  }, secStudentHeaders); // Student user attempting gate operation!
 
   console.log(`   Unauthorized call HTTP status: ${unauthorizedCheckIn.status}`);
   if (unauthorizedCheckIn.status !== 403) {

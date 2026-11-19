@@ -78,9 +78,10 @@ async function runSuite() {
       `).run(`fair-${id}`, id, activeSem.semester_id);
     }
 
-    const adminH = { 'x-user-id': 'usr-admin-sharma' };
-    const s1H = { 'x-user-id': 'usr-sch-s1' };
-    const s2H = { 'x-user-id': 'usr-sch-s2' };
+    const { signAuthToken } = require('../backend/middleware/auth');
+    const adminH = { 'Authorization': `Bearer ${signAuthToken({ user_id: 'usr-admin-sharma', email: 'aksharma@iitbhilai.ac.in', role: 'admin', permissions: ['ADMIN_ALL'] })}` };
+    const s1H = { 'Authorization': `Bearer ${signAuthToken({ user_id: 'usr-sch-s1', email: 'usr-sch-s1@iitbhilai.ac.in', role: 'student', permissions: [] })}` };
+    const s2H = { 'Authorization': `Bearer ${signAuthToken({ user_id: 'usr-sch-s2', email: 'usr-sch-s2@iitbhilai.ac.in', role: 'student', permissions: [] })}` };
 
     // -----------------------------------------------------------------------
     // TEST 1: Strict 2-Hour Max Booking Limit (120m allowed, 135m rejected)

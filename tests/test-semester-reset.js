@@ -83,10 +83,17 @@ async function runSemesterResetTest() {
 
   // Phase 2: Execute Semester Reset via Admin API
   console.log('\n[Phase 2] Admin triggers Semester Reset via POST /api/admin/semester/reset...');
+  const { signAuthToken } = require('../backend/middleware/auth');
+  const adminToken = signAuthToken({
+    user_id: 'usr-admin-sharma',
+    email: 'aksharma@iitbhilai.ac.in',
+    role: 'admin',
+    permissions: ['ADMIN_ALL']
+  });
   const newSemName = `Autumn 2026 Semester · Active Cycle`;
   const resetRes = await request('POST', '/api/admin/semester/reset', {
     semesterName: newSemName
-  }, { 'x-user-id': 'usr-admin-sharma' });
+  }, { 'Authorization': `Bearer ${adminToken}` });
 
   if (resetRes.status !== 200 || !resetRes.data.success) {
     throw new Error('Semester reset endpoint failed: ' + JSON.stringify(resetRes.data));
@@ -114,7 +121,13 @@ async function runSemesterResetTest() {
 
   // B. Check Semester 2 state for the student
   console.log('[Assertion 2] Verifying Student profile in new Semester 2...');
-  const studentProfile = await request('GET', '/api/auth/me', null, { 'x-user-id': testStudentId });
+  const studentToken = signAuthToken({
+    user_id: testStudentId,
+    email: `${testStudentId}@iitbhilai.ac.in`,
+    role: 'student',
+    permissions: []
+  });
+  const studentProfile = await request('GET', '/api/auth/me', null, { 'Authorization': `Bearer ${studentToken}` });
   const sem2Fairness = studentProfile.data.fairness;
 
   console.log(`   Active Semester in Profile: "${studentProfile.data.activeSemester.name}"`);
@@ -142,7 +155,7 @@ async function runSemesterResetTest() {
     bookingDate: '2026-12-28',
     computePurpose: 'New Term Research Workload',
     researchField: 'AI / Machine Learning'
-  }, { 'x-user-id': testStudentId });
+  }, { 'Authorization': `Bearer ${studentToken}` });
 
   if (reqRes.status !== 201 || reqRes.data.priorityScore !== 100) {
     throw new Error(`Expected queued request to succeed with 100 priority points, but got status ${reqRes.status}: ${JSON.stringify(reqRes.data)}`);
