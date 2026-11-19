@@ -18,11 +18,29 @@ export default function AdminAllocationView() {
   const [slots, setSlots] = useState([]);
   const [selectedSlotId, setSelectedSlotId] = useState('slot-4');
   const [queue, setQueue] = useState([]);
+  const [pendingSummary, setPendingSummary] = useState([]);
   const [policy, setPolicy] = useState(null);
   const [loading, setLoading] = useState(true);
   const [committing, setCommitting] = useState(false);
   const [summary, setSummary] = useState(null);
   const [error, setError] = useState('');
+
+  const fetchPendingSummary = useCallback(async () => {
+    try {
+      const res = await fetch('/api/admin/pending-queues-summary');
+      if (res.ok) {
+        const rows = await res.json();
+        setPendingSummary(rows);
+        if (rows.length > 0) {
+          const first = rows[0];
+          setSelectedDate(prev => (prev ? prev : first.booking_date));
+          setSelectedSlotId(prev => (prev ? prev : first.slot_id));
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   const fetchRound = useCallback(async () => {
     try {
@@ -54,18 +72,28 @@ export default function AdminAllocationView() {
   }, [selectedDate, selectedSlotId]);
 
   useEffect(() => {
+    fetchPendingSummary();
+  }, [fetchPendingSummary]);
+
+  useEffect(() => {
     setLoading(true);
     fetchRound();
   }, [fetchRound]);
 
   useEffect(() => {
     const unsubs = [
-      subscribe('QUEUE_CHANGED', fetchRound),
-      subscribe('allocation.completed', fetchRound),
+      subscribe('QUEUE_CHANGED', () => {
+        fetchRound();
+        fetchPendingSummary();
+      }),
+      subscribe('allocation.completed', () => {
+        fetchRound();
+        fetchPendingSummary();
+      }),
       subscribe('SLOT_UPDATED', fetchRound)
     ];
     return () => unsubs.forEach(fn => fn && fn());
-  }, [subscribe, fetchRound]);
+  }, [subscribe, fetchRound, fetchPendingSummary]);
 
   const handleCommit = async () => {
     setCommitting(true);
@@ -141,6 +169,51 @@ export default function AdminAllocationView() {
           </span>
         </div>
       </div>
+
+      {pendingSummary.length > 0 && (
+        <div className="p-4 rounded-xl bg-[#EEF2FF] border border-[#C7D2FE] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <span className="material-symbols-outlined text-[#4F46E5] text-[20px]">pending_actions</span>
+            <div>
+              <div className="text-xs font-bold text-[#0F172A]">
+                Active Contention Queues ({pendingSummary.reduce((a, b) => a + (b.queued_count || 0), 0)} total requests pending)
+              </div>
+              <div className="text-[11px] text-[#4338CA] mt-0.5">
+                Students are waiting for allocation in the intervals below. Click any interval to view candidates:
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5">
+            {pendingSummary.map(ps => {
+              const isSelected = selectedDate === ps.booking_date && selectedSlotId === ps.slot_id;
+              return (
+                <button
+                  key={`${ps.booking_date}-${ps.slot_id}`}
+                  type="button"
+                  onClick={() => {
+                    setSelectedDate(ps.booking_date);
+                    setSelectedSlotId(ps.slot_id);
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all flex items-center gap-1.5 ${
+                    isSelected
+                      ? 'bg-[#4F46E5] text-white border-[#4F46E5] shadow-sm'
+                      : 'bg-white text-[#4F46E5] border-[#C7D2FE] hover:bg-[#E0E7FF]'
+                  }`}
+                >
+                  <span>{ps.booking_date}</span>
+                  <span className="opacity-80 font-mono text-[11px]">({ps.start_time}–{ps.end_time})</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                    isSelected ? 'bg-white/20 text-white' : 'bg-[#FEE2E2] text-[#DC2626]'
+                  }`}>
+                    {ps.queued_count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="px-4 py-3 rounded-xl bg-[#FEE2E2] border border-[#FECACA] text-xs text-[#DC2626]">

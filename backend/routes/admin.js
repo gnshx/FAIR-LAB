@@ -227,6 +227,28 @@ router.get('/allocation-rounds', requireAdmin, (req, res) => {
   }
 });
 
+// Summary of all dates/intervals having active QUEUED requests across the lab
+router.get('/pending-queues-summary', requireAdmin, (req, res) => {
+  const db = getDb();
+  try {
+    const rows = db.prepare(`
+      SELECT r.booking_date, r.slot_id,
+             COALESCE(s.slot_name, 'Custom Window') as slot_name,
+             COALESCE(r.start_time, s.start_time) as start_time,
+             COALESCE(r.end_time, s.end_time) as end_time,
+             COUNT(*) as queued_count
+      FROM booking_requests r
+      LEFT JOIN lab_slots s ON r.slot_id = s.slot_id
+      WHERE r.status = 'QUEUED'
+      GROUP BY r.booking_date, r.slot_id
+      ORDER BY r.booking_date ASC, start_time ASC
+    `).all();
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Admin batch allocation trigger alias: POST /api/admin/allocate/:slotId
 router.post('/allocate/:slotId', requireAdmin, async (req, res) => {
   try {
@@ -671,7 +693,7 @@ router.post('/ticket-releases', requireAdmin, validateBody(ticketReleaseSchema),
 });
 
 const bulkReleaseSchema = z.object({
-  days: z.number().int().min(1).max(14).default(5),
+  days: z.number().int().min(1).max(60).default(5),
   totalTickets: z.number().int().min(1).max(84).default(84),
   startTime: z.string().regex(/^\d{2}:\d{2}$/).default('09:00'),
   endTime: z.string().regex(/^\d{2}:\d{2}$/).default('18:00')

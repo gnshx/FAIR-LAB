@@ -73,7 +73,17 @@ export default function StudentMyBookingsView({ onNavigateToBook, onNavigate }) 
         setPendingRequests(rList);
 
         const todayStr = getTodayStr();
-        const defaultActive = bList.find(b => (b.status === 'CONFIRMED' || b.status === 'CHECKED_IN') && b.booking_date >= todayStr);
+        const now = new Date();
+        const nowMinutes = now.getHours() * 60 + now.getMinutes();
+        const defaultActive = bList.find(b => {
+          if (b.status !== 'CONFIRMED' && b.status !== 'CHECKED_IN') return false;
+          if (b.booking_date > todayStr) return true;
+          if (b.booking_date === todayStr) {
+            const [endH, endM] = (b.end_time || '23:59').split(':').map(Number);
+            return (endH * 60 + (endM || 0)) > nowMinutes;
+          }
+          return false;
+        });
         if (defaultActive) {
           setSelectedBookingId(prev => (bList.some(b => b.booking_id === prev && (b.status === 'CONFIRMED' || b.status === 'CHECKED_IN') && b.booking_date >= todayStr) ? prev : defaultActive.booking_id));
           await loadPass(defaultActive.booking_id);
@@ -111,7 +121,17 @@ export default function StudentMyBookingsView({ onNavigateToBook, onNavigate }) 
     setFilter(tabId);
     if (tabId === 'UPCOMING') {
       const todayStr = getTodayStr();
-      const active = bookings.find(b => (b.status === 'CONFIRMED' || b.status === 'CHECKED_IN') && b.booking_date >= todayStr);
+      const now = new Date();
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+      const active = bookings.find(b => {
+        if (b.status !== 'CONFIRMED' && b.status !== 'CHECKED_IN') return false;
+        if (b.booking_date > todayStr) return true;
+        if (b.booking_date === todayStr) {
+          const [endH, endM] = (b.end_time || '23:59').split(':').map(Number);
+          return (endH * 60 + (endM || 0)) > nowMinutes;
+        }
+        return false;
+      });
       if (active) {
         setSelectedBookingId(active.booking_id);
         loadPass(active.booking_id);

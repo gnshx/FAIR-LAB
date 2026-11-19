@@ -63,6 +63,33 @@ export default function AdminScheduleView() {
     status: 'RELEASED'
   });
 
+  const [bulkDaysInput, setBulkDaysInput] = useState(7);
+
+  const coverageDays = useMemo(() => {
+    const today = getTodayStr();
+    const days = [];
+    for (let i = 0; i < 14; i++) {
+      const d = new Date(`${today}T00:00:00Z`);
+      d.setUTCDate(d.getUTCDate() + i);
+      const iso = d.toISOString().split('T')[0];
+      const dayName = new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: 'UTC' }).format(d);
+      const formattedDate = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(d);
+
+      const rel = releases.find(r => r.release_date === iso);
+      const ovr = overrides.find(o => o.override_date === iso);
+
+      days.push({
+        iso,
+        dayName,
+        formattedDate,
+        isToday: i === 0,
+        release: rel,
+        override: ovr
+      });
+    }
+    return days;
+  }, [releases, overrides]);
+
   const fetchSchedule = useCallback(async () => {
     try {
       const res = await fetch('/api/admin/schedule-overview');
@@ -227,19 +254,46 @@ export default function AdminScheduleView() {
     }
   };
 
-  const handleBulkRelease = async () => {
+  const handleBulkRelease = async (days = 5) => {
     setBanner(null);
+    const numDays = Math.max(1, Math.min(60, Number(days) || 5));
     const res = await fetch('/api/admin/ticket-releases/bulk', {
       method: 'POST',
       headers: adminHeaders,
-      body: JSON.stringify({ days: 5, totalTickets: 84, startTime: '09:00', endTime: '18:00' })
+      body: JSON.stringify({ days: numDays, totalTickets: 84, startTime: '09:00', endTime: '18:00' })
     });
     const d = await res.json();
     if (res.ok) {
-      setBanner({ type: 'success', text: `Bulk release complete: opened tickets for ${d.createdCount} upcoming day(s).` });
+      setBanner({
+        type: 'success',
+        text: `Bulk release complete: ${d.createdCount > 0 ? `opened tickets for ${d.createdCount} new day(s)` : `all ${numDays} upcoming day(s) already have active ticket drops`}.`
+      });
       await fetchSchedule();
     } else {
       setBanner({ type: 'error', text: d.error || 'Bulk ticket release failed.' });
+    }
+  };
+
+  const handleQuickReleaseForDate = async (isoDate) => {
+    setBanner(null);
+    const res = await fetch('/api/admin/ticket-releases', {
+      method: 'POST',
+      headers: adminHeaders,
+      body: JSON.stringify({
+        releaseDate: isoDate,
+        startTime: '09:00',
+        endTime: '18:00',
+        title: `Lab L-106 Open Access Tickets (${isoDate})`,
+        totalTickets: 84,
+        status: 'RELEASED'
+      })
+    });
+    const d = await res.json();
+    if (res.ok) {
+      setBanner({ type: 'success', text: `Released 84 tickets for ${isoDate} (09:00–18:00).` });
+      await fetchSchedule();
+    } else {
+      setBanner({ type: 'error', text: d.error || 'Could not release tickets.' });
     }
   };
 
@@ -285,14 +339,47 @@ export default function AdminScheduleView() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleBulkRelease}
-          className="h-10 px-4 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] text-white font-semibold text-xs shadow-brand transition-colors inline-flex items-center gap-1.5 self-start lg:self-auto"
-        >
-          <span className="material-symbols-outlined text-[17px]">confirmation_number</span>
-          <span>Release next 5 days</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2 self-start lg:self-auto">
+          <div className="inline-flex items-center rounded-xl border border-[#E2E8F0] bg-white p-1 shadow-sm">
+            <span className="text-[11px] font-semibold text-[#64748B] px-2.5">Release tickets:</span>
+            {[
+              { days: 5, label: '5 Days' },
+              { days: 7, label: '7 Days' },
+              { days: 14, label: '14 Days' },
+              { days: 30, label: '30 Days' }
+            ].map(p => (
+              <button
+                key={p.days}
+                type="button"
+                onClick={() => handleBulkRelease(p.days)}
+                className="h-8 px-2.5 rounded-lg text-xs font-semibold text-[#4F46E5] hover:bg-[#EEF2FF] transition-colors"
+                title={`Release 84 tickets per day for next ${p.days} days`}
+              >
+                +{p.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="inline-flex items-center gap-1.5 rounded-xl border border-[#E2E8F0] bg-white p-1 shadow-sm">
+            <input
+              type="number"
+              min="1"
+              max="60"
+              value={bulkDaysInput}
+              onChange={(e) => setBulkDaysInput(Math.max(1, Math.min(60, Number(e.target.value) || 1)))}
+              className="w-12 h-8 px-2 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0] text-xs font-bold text-center text-[#0F172A] outline-none focus:border-[#4F46E5]"
+              title="Number of upcoming days to release"
+            />
+            <button
+              type="button"
+              onClick={() => handleBulkRelease(bulkDaysInput)}
+              className="h-8 px-3 rounded-lg bg-[#4F46E5] hover:bg-[#4338CA] text-white text-xs font-semibold shadow-sm transition-colors flex items-center gap-1"
+            >
+              <span className="material-symbols-outlined text-[15px]">confirmation_number</span>
+              <span>Release Days</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       {!isAdmin && (
@@ -711,6 +798,122 @@ export default function AdminScheduleView() {
             >
               <span className="w-5 h-5 rounded-full bg-white shadow-sm block" />
             </button>
+          </div>
+
+          {/* Upcoming 14-Day Date Coverage & Status Strip */}
+          <div className="fl-card p-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-[#0F172A]">Upcoming 14-Day Ticket Coverage</h3>
+                  <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#EEF2FF] text-[#4F46E5] border border-[#E0E7FF]">
+                    {coverageDays.filter(d => d.release && d.release.status === 'RELEASED').length} of 14 Days Released
+                  </span>
+                </div>
+                <p className="text-xs text-[#64748B] mt-0.5">
+                  Live calendar status: See exactly which upcoming dates have active ticket drops. Click “+ Release” on any unreleased day to open it immediately.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-1.5 self-start sm:self-auto">
+                <span className="text-[11px] font-medium text-[#64748B]">Quick extend:</span>
+                <button
+                  type="button"
+                  onClick={() => handleBulkRelease(7)}
+                  className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-[#F8FAFC] hover:bg-[#EEF2FF] border border-[#E2E8F0] text-[#4F46E5] transition-colors"
+                >
+                  + Next 7 Days
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleBulkRelease(14)}
+                  className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-[#F8FAFC] hover:bg-[#EEF2FF] border border-[#E2E8F0] text-[#4F46E5] transition-colors"
+                >
+                  + Next 14 Days
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2.5">
+              {coverageDays.map(d => {
+                const isReleased = d.release && d.release.status === 'RELEASED';
+                const isPaused = d.release && d.release.status === 'PAUSED';
+                const isHoliday = d.override && d.override.override_type === 'HOLIDAY';
+
+                return (
+                  <div
+                    key={d.iso}
+                    className={`p-3 rounded-xl border flex flex-col justify-between transition-all ${
+                      isReleased
+                        ? 'bg-[#F0FDF4] border-[#BBF7D0]'
+                        : isPaused
+                        ? 'bg-[#FEFCE8] border-[#FEF08A]'
+                        : isHoliday
+                        ? 'bg-[#FEF2F2] border-[#FECACA]'
+                        : 'bg-[#F8FAFC] border-[#E2E8F0]'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider">{d.dayName}</span>
+                        {d.isToday && (
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-bold uppercase bg-[#4F46E5] text-white">
+                            Today
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs font-bold text-[#0F172A] mt-1 font-mono">{d.formattedDate}</div>
+                      <div className="text-[10px] text-[#94A3B8] font-mono">{d.iso}</div>
+                    </div>
+
+                    <div className="mt-3 pt-2 border-t border-black/5">
+                      {isHoliday ? (
+                        <div className="text-[10.5px] font-semibold text-[#DC2626] flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[13px]">block</span>
+                          <span>Holiday</span>
+                        </div>
+                      ) : isReleased ? (
+                        <div className="space-y-0.5">
+                          <div className="text-[10.5px] font-bold text-[#15803D] flex items-center gap-1">
+                            <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                            <span>Released</span>
+                          </div>
+                          <div className="text-[10px] text-[#166534] font-mono font-medium">
+                            {d.release.remaining_tickets} / {d.release.total_tickets} left
+                          </div>
+                        </div>
+                      ) : isPaused ? (
+                        <div className="space-y-1">
+                          <div className="text-[10.5px] font-semibold text-[#B45309] flex items-center gap-1">
+                            <span className="material-symbols-outlined text-[13px]">pause_circle</span>
+                            <span>Paused</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handlePatchRelease(d.release.release_id, 'RELEASED')}
+                            className="w-full py-0.5 rounded text-[10px] font-bold bg-[#DCFCE7] text-[#15803D] hover:bg-[#BBF7D0]"
+                          >
+                            Resume
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-1.5">
+                          <div className="text-[10px] text-[#94A3B8] font-medium">Not released</div>
+                          <button
+                            type="button"
+                            onClick={() => handleQuickReleaseForDate(d.iso)}
+                            className="w-full py-1 rounded-lg text-[10.5px] font-bold bg-[#4F46E5] hover:bg-[#4338CA] text-white transition-colors shadow-sm flex items-center justify-center gap-0.5"
+                          >
+                            <span className="material-symbols-outlined text-[12px]">add</span>
+                            <span>Release</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
