@@ -580,7 +580,7 @@ async function V6_jwtAndProductionSecurity() {
   // 4. Fail-fast check: NODE_ENV=production without JWT_SECRET refuses to start
   const badProd = spawn(process.execPath, ['server.js'], {
     cwd: BACKEND_DIR,
-    env: { PATH: process.env.PATH, NODE_ENV: 'production', PORT: '5059' },
+    env: { PATH: process.env.PATH, NODE_ENV: 'production', PORT: '5059', IGNORE_DOTENV: '1' },
     stdio: ['ignore', 'pipe', 'pipe']
   });
   const badProdExit = await new Promise(resolve => {

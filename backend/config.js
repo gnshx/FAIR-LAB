@@ -4,7 +4,7 @@ const fs = require('fs');
 
 // Auto-load .env if present (e.g. for standalone tests and CLI runners)
 const envPath = path.resolve(__dirname, '../.env');
-if (fs.existsSync(envPath)) {
+if (!process.env.IGNORE_DOTENV && fs.existsSync(envPath)) {
   try {
     const envContent = fs.readFileSync(envPath, 'utf8');
     for (const line of envContent.split('\n')) {
@@ -14,7 +14,7 @@ if (fs.existsSync(envPath)) {
       if (eqIdx > 0) {
         const key = trimmed.slice(0, eqIdx).trim();
         const val = trimmed.slice(eqIdx + 1).trim().replace(/^["']|["']$/g, '');
-        if (!process.env[key]) {
+        if (process.env[key] === undefined) {
           process.env[key] = val;
         }
       }
