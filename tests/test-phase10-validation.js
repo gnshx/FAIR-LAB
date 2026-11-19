@@ -94,6 +94,7 @@ function spawnServer(port, extraEnv = {}) {
     cwd: BACKEND_DIR,
     env: {
       ...process.env,
+      NODE_ENV: 'development',
       PORT: String(port),
       HOST: '127.0.0.1',
       FAIRLAB_DB_PATH: TEST_DB_PATH,
