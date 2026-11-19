@@ -229,6 +229,73 @@ export default function WorkstationMapView({ onNavigateToPass }) {
     .map(id => allWorkstations.find(w => w.machine_id === id))
     .filter(Boolean);
 
+  const freeWorkstations = useMemo(() => {
+    return allWorkstations.filter(w => {
+      const isMaint =
+        w.status === 'MAINTENANCE' ||
+        w.operational_status === 'MAINTENANCE' ||
+        w.hardware_state === 'MAINTENANCE' ||
+        Boolean(w.is_maintenance) ||
+        w.status === 'OFFLINE';
+      const isBooked =
+        (w.slot_status || '').toUpperCase() === 'BOOKED' ||
+        (w.slot_status || '').toUpperCase() === 'OCCUPIED';
+      return !isMaint && !isBooked && w.slot_available !== false;
+    });
+  }, [allWorkstations]);
+
+  const bookedSelected = useMemo(() => {
+    return selectedObjects.filter(w => {
+      const isMaint =
+        w.status === 'MAINTENANCE' ||
+        w.operational_status === 'MAINTENANCE' ||
+        w.hardware_state === 'MAINTENANCE' ||
+        Boolean(w.is_maintenance) ||
+        w.status === 'OFFLINE';
+      const isBooked =
+        (w.slot_status || '').toUpperCase() === 'BOOKED' ||
+        (w.slot_status || '').toUpperCase() === 'OCCUPIED';
+      return isMaint || isBooked || w.slot_available === false;
+    });
+  }, [selectedObjects]);
+
+  const alternativeSlots = useMemo(() => {
+    if (!availability?.slots) return [];
+    return availability.slots.filter(s => {
+      if (s.start_time === startTime && s.end_time === endTime) return false;
+      return (s.available_count || 0) > 0;
+    });
+  }, [availability?.slots, startTime, endTime]);
+
+  const autoPickFreeSeats = () => {
+    if (freeWorkstations.length === 0) return;
+    const top3 = freeWorkstations.slice(0, 3).map(w => w.machine_id);
+    setSelectedMachineIds(top3);
+  };
+
+  const replaceBookedWithFree = () => {
+    const validIds = selectedMachineIds.filter(id => {
+      const obj = allWorkstations.find(w => w.machine_id === id);
+      if (!obj) return false;
+      const isMaint =
+        obj.status === 'MAINTENANCE' ||
+        obj.operational_status === 'MAINTENANCE' ||
+        obj.hardware_state === 'MAINTENANCE' ||
+        Boolean(obj.is_maintenance) ||
+        obj.status === 'OFFLINE';
+      const isBooked =
+        (obj.slot_status || '').toUpperCase() === 'BOOKED' ||
+        (obj.slot_status || '').toUpperCase() === 'OCCUPIED';
+      return !isMaint && !isBooked && obj.slot_available !== false;
+    });
+    const need = 3 - validIds.length;
+    const availableToAdd = freeWorkstations
+      .filter(w => !validIds.includes(w.machine_id))
+      .slice(0, need)
+      .map(w => w.machine_id);
+    setSelectedMachineIds([...validIds, ...availableToAdd]);
+  };
+
   const summary = availability?.summary;
   const bookedRatio = summary && summary.onlineCount > 0
     ? summary.slotBookedCount / summary.onlineCount
@@ -468,6 +535,32 @@ export default function WorkstationMapView({ onNavigateToPass }) {
             </p>
           </div>
 
+          {/* Availability Status & Fast Actions Bar */}
+          <div className="mb-3.5 px-4 py-2.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2">
+              <span className={`w-2.5 h-2.5 rounded-full ${freeWorkstations.length > 0 ? 'bg-[#16A34A] animate-pulse' : 'bg-[#DC2626]'}`} />
+              <span className="font-bold text-[#0F172A]">
+                {freeWorkstations.length > 0 ? `${freeWorkstations.length} workstations free` : 'No workstations free'}
+              </span>
+              <span className="text-[#64748B]">
+                ({startTime}–{endTime} · {selectedDate})
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {freeWorkstations.length > 0 && selectedMachineIds.length < 3 && (
+                <button
+                  type="button"
+                  onClick={autoPickFreeSeats}
+                  className="px-3 py-1 rounded-lg bg-[#4F46E5] hover:bg-[#4338CA] text-white font-semibold text-[11px] shadow-xs flex items-center gap-1 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[14px]">auto_awesome</span>
+                  Auto-fill 3 free seats
+                </button>
+              )}
+            </div>
+          </div>
+
           {/* Exact Legend Row */}
           <div className="flex flex-wrap items-center gap-3.5 text-[11px] text-[#475569] mb-3.5">
             <span className="inline-flex items-center gap-1.5">
@@ -542,14 +635,51 @@ export default function WorkstationMapView({ onNavigateToPass }) {
         {/* Your Preferences Sidebar (4 cols) */}
         <aside className="xl:col-span-4 fl-card p-5 flex flex-col justify-between gap-5">
           <div>
-            <h2 className="text-[15px] font-bold text-[#0F172A]">Your preferences</h2>
-            <p className="text-xs text-[#64748B] mt-0.5">Up to 3 · ranked by priority of choice</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-[15px] font-bold text-[#0F172A]">Your preferences</h2>
+                <p className="text-xs text-[#64748B] mt-0.5">Up to 3 · ranked by priority of choice</p>
+              </div>
+              {freeWorkstations.length > 0 && selectedMachineIds.length < 3 && (
+                <button
+                  type="button"
+                  onClick={autoPickFreeSeats}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#EEF2FF] hover:bg-[#E0E7FF] text-[#4F46E5] text-[11px] font-semibold transition-colors"
+                  title="Automatically pick 3 available workstations"
+                >
+                  <span className="material-symbols-outlined text-[14px]">auto_awesome</span>
+                  Auto-pick free
+                </button>
+              )}
+            </div>
+
+            {/* Booked Warning & Fast-Replace Action */}
+            {bookedSelected.length > 0 && (
+              <div className="mt-3 p-3 rounded-xl bg-[#FEF3C7] border border-[#FDE68A] text-xs text-[#92400E] flex flex-col gap-1.5">
+                <div className="font-semibold flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[16px]">warning</span>
+                  Preference occupied
+                </div>
+                <p className="text-[11px] leading-relaxed">
+                  {bookedSelected.map(w => w.display_label || w.machine_id).join(', ')} is booked for this interval.
+                </p>
+                {freeWorkstations.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={replaceBookedWithFree}
+                    className="self-start text-[11px] font-bold text-[#4F46E5] underline hover:text-[#4338CA]"
+                  >
+                    Replace with available workstation →
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Preference List */}
             <div className="mt-4 space-y-2.5">
               {selectedObjects.length === 0 ? (
                 <div className="p-4 rounded-xl bg-[#F8FAFC] border border-dashed border-[#CBD5E1] text-center text-xs text-[#64748B]">
-                  Click up to 3 green or yellow seats on the map, or submit directly for any free workstation.
+                  Click up to 3 green or yellow seats on the map, or use &ldquo;Auto-pick free&rdquo; above.
                 </div>
               ) : (
                 selectedObjects.map((ws, idx) => (
@@ -582,6 +712,64 @@ export default function WorkstationMapView({ onNavigateToPass }) {
                 ))
               )}
             </div>
+
+            {/* Quick Available Systems Options */}
+            {freeWorkstations.length > 0 ? (
+              <div className="mt-4 pt-3.5 border-t border-[#F1F5F9]">
+                <div className="flex items-center justify-between text-xs mb-2">
+                  <span className="font-semibold text-[#0F172A]">Available in this slot</span>
+                  <span className="text-[11px] text-[#15803D] font-bold">{freeWorkstations.length} free</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto">
+                  {freeWorkstations.slice(0, 8).map(ws => {
+                    const isSel = selectedMachineIds.includes(ws.machine_id);
+                    return (
+                      <button
+                        key={ws.machine_id}
+                        type="button"
+                        onClick={() => toggleSelectSeat(ws)}
+                        className={`px-2 py-0.5 rounded-lg text-[11px] font-mono font-semibold border transition-all ${
+                          isSel
+                            ? 'bg-[#4F46E5] border-[#4338CA] text-white shadow-xs'
+                            : 'bg-[#DCFCE7] border-[#BBF7D0] text-[#15803D] hover:border-[#4ADE80]'
+                        }`}
+                        title={`Click to ${isSel ? 'remove' : 'add'} ${ws.display_label || ws.machine_id}`}
+                      >
+                        {ws.display_label || ws.machine_id}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[10px] text-[#94A3B8] mt-1.5">
+                  Click any chip to add. Fallback matching automatically assigns a free seat if needed.
+                </p>
+              </div>
+            ) : (
+              alternativeSlots.length > 0 && (
+                <div className="mt-4 p-3 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-xs">
+                  <div className="font-bold text-[#DC2626] flex items-center gap-1.5 mb-1">
+                    <span className="material-symbols-outlined text-[16px]">event_busy</span>
+                    Slot 100% full · Alternative slots today:
+                  </div>
+                  <div className="flex flex-col gap-1.5 mt-2">
+                    {alternativeSlots.slice(0, 3).map(alt => (
+                      <button
+                        key={alt.slot_id}
+                        type="button"
+                        onClick={() => {
+                          setStartTime(alt.start_time);
+                          setEndTime(alt.end_time);
+                        }}
+                        className="px-2.5 py-1.5 rounded-lg bg-white border border-[#FECACA] hover:border-[#4F46E5] text-[11px] font-semibold text-[#0F172A] flex items-center justify-between transition-colors"
+                      >
+                        <span>{alt.start_time} – {alt.end_time}</span>
+                        <span className="text-[#15803D] font-bold">{alt.available_count} free →</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )
+            )}
 
             {/* Session Purpose */}
             <div className="mt-4">
