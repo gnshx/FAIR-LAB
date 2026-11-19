@@ -52,6 +52,20 @@ export const CANONICAL_DEMO_USERS = [
   }
 ];
 
+export function isGateDeskUser(u) {
+  if (!u) return false;
+  if (typeof u === 'string') {
+    return u === 'usr-watchman-ram' || u === 'accessdesk.l106@iitbhilai.ac.in';
+  }
+  if (u.user_id === 'usr-watchman-ram') return true;
+  if (u.email === 'accessdesk.l106@iitbhilai.ac.in') return true;
+  if (u.role === 'watchman') return true;
+  const pStr = typeof u.permissions === 'string'
+    ? u.permissions
+    : (Array.isArray(u.permissions) ? JSON.stringify(u.permissions) : '');
+  return pStr.includes('ACCESS_OPERATOR') && !pStr.includes('POLICY_ADMIN') && !pStr.includes('ALLOCATION_ADMIN');
+}
+
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(() => {
     if (typeof window !== 'undefined') {

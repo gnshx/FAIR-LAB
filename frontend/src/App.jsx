@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider, useAuth, isGateDeskUser } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
 import Sidebar, { STUDENT_NAV, ADMIN_NAV, GATE_NAV } from './components/Sidebar';
 import { VIEW_TO_PATH, PATH_TO_ROUTE, resolveRoute } from './routes';
@@ -25,9 +25,7 @@ function MainLayout() {
   const { profile, availableUsers, switchUser, clearSession } = useAuth();
 
   const user = profile?.user;
-  const isGateUser = user?.email === 'accessdesk.l106@iitbhilai.ac.in' ||
-    ((Array.isArray(user?.permissions) ? user.permissions : []).includes('ACCESS_OPERATOR') &&
-     !(Array.isArray(user?.permissions) ? user.permissions : []).includes('POLICY_ADMIN'));
+  const isGateUser = isGateDeskUser(user);
 
   const initialRoute = typeof window !== 'undefined'
     ? resolveRoute(window.location.pathname, sessionStorage.getItem('fairlab_last_workspace') || (isGateUser ? 'gate' : 'student'))

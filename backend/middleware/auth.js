@@ -187,10 +187,15 @@ function requireAdmin(req, res, next) {
       message: 'Administrator authentication is required for this endpoint.'
     });
   }
-  if (user.role !== 'admin') {
+  const isGateOnly = user.email === 'accessdesk.l106@iitbhilai.ac.in' ||
+    user.user_id === 'usr-watchman-ram' ||
+    user.role === 'watchman' ||
+    (hasPermission(user, 'ACCESS_OPERATOR') && !hasPermission(user, 'POLICY_ADMIN') && !hasPermission(user, 'ALLOCATION_ADMIN'));
+
+  if (user.role !== 'admin' || isGateOnly) {
     return res.status(403).json({
       error: 'Forbidden: Administrator role required',
-      message: `Role "${user.role}" is not permitted to perform administrative actions.`
+      message: `Role "${user.role}" (Gate Operator) is not permitted to perform administrative actions.`
     });
   }
   req.user = user;

@@ -16,6 +16,14 @@ function addMinutes(timeStr, mins) {
   return `${String(Math.floor(total / 60) % 24).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
 }
 
+function getTodayStr() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 export default function StudentMyBookingsView({ onNavigateToBook, onNavigate }) {
   const { currentUser, refreshProfile, switchUser, availableUsers } = useAuth();
   const { subscribe } = useSocket();
@@ -53,9 +61,10 @@ export default function StudentMyBookingsView({ onNavigateToBook, onNavigate }) 
         setBookings(bList);
         setPendingRequests(rList);
 
-        const defaultActive = bList.find(b => b.status === 'CONFIRMED' || b.status === 'CHECKED_IN');
+        const todayStr = getTodayStr();
+        const defaultActive = bList.find(b => (b.status === 'CONFIRMED' || b.status === 'CHECKED_IN') && b.booking_date >= todayStr);
         if (defaultActive) {
-          setSelectedBookingId(prev => (bList.some(b => b.booking_id === prev && (b.status === 'CONFIRMED' || b.status === 'CHECKED_IN')) ? prev : defaultActive.booking_id));
+          setSelectedBookingId(prev => (bList.some(b => b.booking_id === prev && (b.status === 'CONFIRMED' || b.status === 'CHECKED_IN') && b.booking_date >= todayStr) ? prev : defaultActive.booking_id));
           await loadPass(defaultActive.booking_id);
         } else {
           setSelectedBookingId(null);
@@ -90,7 +99,8 @@ export default function StudentMyBookingsView({ onNavigateToBook, onNavigate }) 
   const handleFilterChange = (tabId) => {
     setFilter(tabId);
     if (tabId === 'UPCOMING') {
-      const active = bookings.find(b => b.status === 'CONFIRMED' || b.status === 'CHECKED_IN');
+      const todayStr = getTodayStr();
+      const active = bookings.find(b => (b.status === 'CONFIRMED' || b.status === 'CHECKED_IN') && b.booking_date >= todayStr);
       if (active) {
         setSelectedBookingId(active.booking_id);
         loadPass(active.booking_id);
@@ -98,7 +108,7 @@ export default function StudentMyBookingsView({ onNavigateToBook, onNavigate }) 
         setSelectedBookingId(null);
         setActivePass(null);
       }
-    } else if (tabId === 'PENDING') {
+    } else {
       setSelectedBookingId(null);
       setActivePass(null);
     }

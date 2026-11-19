@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, isGateDeskUser } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 
 export default function AdminAccessControlView() {
-  const { currentUser } = useAuth();
+  const { currentUser, profile } = useAuth();
   const { subscribe } = useSocket();
+  const isGateUser = isGateDeskUser(profile?.user);
 
   const [sampleToken, setSampleToken] = useState('');
   const [tokenInput, setTokenInput] = useState('');
@@ -133,22 +134,24 @@ export default function AdminAccessControlView() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <a
-            href="/bookings"
-            className="h-8 px-3 rounded-lg bg-white border border-[#E2E8F0] hover:bg-[#F8FAFC] text-[11.5px] font-medium text-[#475569] flex items-center gap-1.5 transition-colors"
-          >
-            <span className="material-symbols-outlined text-[15px]">arrow_back</span>
-            <span>Student Bookings</span>
-          </a>
-          <a
-            href="/overview"
-            className="h-8 px-3 rounded-lg bg-white border border-[#E2E8F0] hover:bg-[#F8FAFC] text-[11.5px] font-medium text-[#475569] flex items-center gap-1.5 transition-colors"
-          >
-            <span className="material-symbols-outlined text-[15px]">dashboard</span>
-            <span>Admin Overview</span>
-          </a>
-        </div>
+        {!isGateUser && (
+          <div className="flex items-center gap-2">
+            <a
+              href="/bookings"
+              className="h-8 px-3 rounded-lg bg-white border border-[#E2E8F0] hover:bg-[#F8FAFC] text-[11.5px] font-medium text-[#475569] flex items-center gap-1.5 transition-colors"
+            >
+              <span className="material-symbols-outlined text-[15px]">arrow_back</span>
+              <span>Student Bookings</span>
+            </a>
+            <a
+              href="/overview"
+              className="h-8 px-3 rounded-lg bg-white border border-[#E2E8F0] hover:bg-[#F8FAFC] text-[11.5px] font-medium text-[#475569] flex items-center gap-1.5 transition-colors"
+            >
+              <span className="material-symbols-outlined text-[15px]">dashboard</span>
+              <span>Admin Overview</span>
+            </a>
+          </div>
+        )}
       </div>
 
       {banner && (

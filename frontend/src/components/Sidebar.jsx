@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth, CANONICAL_DEMO_USERS } from '../context/AuthContext';
+import { useAuth, CANONICAL_DEMO_USERS, isGateDeskUser } from '../context/AuthContext';
 
 export const STUDENT_NAV = [
   { id: 'student-dashboard', label: 'Dashboard' },
@@ -30,9 +30,7 @@ export default function Sidebar({ workspace, currentView, setCurrentView, onSwit
   const [menuOpen, setMenuOpen] = useState(false);
 
   const user = profile?.user;
-  const isGateOp = user?.email === 'accessdesk.l106@iitbhilai.ac.in' ||
-    ((Array.isArray(user?.permissions) ? user.permissions : []).includes('ACCESS_OPERATOR') &&
-     !(Array.isArray(user?.permissions) ? user.permissions : []).includes('POLICY_ADMIN'));
+  const isGateOp = isGateDeskUser(user);
 
   const isGateWorkspace = workspace === 'gate' || isGateOp;
   const isAdminWorkspace = workspace === 'admin' && !isGateWorkspace;
@@ -62,9 +60,7 @@ export default function Sidebar({ workspace, currentView, setCurrentView, onSwit
   const handleSelectPersona = async (u) => {
     setMenuOpen(false);
     await switchUser(u.user_id);
-    const uIsGate = u.email === 'accessdesk.l106@iitbhilai.ac.in' ||
-      ((Array.isArray(u.permissions) ? u.permissions : []).includes('ACCESS_OPERATOR') &&
-       !(Array.isArray(u.permissions) ? u.permissions : []).includes('POLICY_ADMIN'));
+    const uIsGate = isGateDeskUser(u);
 
     if (uIsGate) {
       onSwitchWorkspace('gate', 'admin-access');
@@ -135,12 +131,9 @@ export default function Sidebar({ workspace, currentView, setCurrentView, onSwit
               Switch Workspace / Account
             </div>
 
-            <div className="space-y-1 my-1 max-h-56 overflow-y-auto">
-              {userList.map(u => {
+            <div className="space-y-1 my-1 max-h-56 overflow-y-auto">              {userList.map(u => {
                 const selected = u.user_id === user?.user_id || u.email === user?.email;
-                const uIsGate = u.email === 'accessdesk.l106@iitbhilai.ac.in' ||
-                  ((Array.isArray(u.permissions) ? u.permissions : []).includes('ACCESS_OPERATOR') &&
-                   !(Array.isArray(u.permissions) ? u.permissions : []).includes('POLICY_ADMIN'));
+                const uIsGate = isGateDeskUser(u);
 
                 let roleBadge = 'Student';
                 let roleColor = 'text-[#94A3B8]';
@@ -178,34 +171,66 @@ export default function Sidebar({ workspace, currentView, setCurrentView, onSwit
                 type="button"
                 onClick={() => {
                   setMenuOpen(false);
-                  const gateUser = userList.find(u => u.email === 'accessdesk.l106@iitbhilai.ac.in');
-                  if (gateUser) handleSelectPersona(gateUser);
-                  else onSwitchWorkspace('gate', 'admin-access');
+                  const student = userList.find(u => u.role === 'student') || CANONICAL_DEMO_USERS[0];
+                  handleSelectPersona(student);
                 }}
-                className="w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium text-[#34D399] hover:bg-white/[0.05] flex items-center justify-between"
+                className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between transition-colors ${
+                  !isAdminWorkspace && !isGateWorkspace
+                    ? 'bg-[#1E2A47] text-white'
+                    : 'text-[#CBD5E1] hover:bg-white/[0.05]'
+                }`}
               >
-                <span>Switch to Gate Verifier</span>
-                <span className="material-symbols-outlined text-[15px]">qr_code_scanner</span>
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[15px] text-[#818CF8]">school</span>
+                  <span>Student View</span>
+                </div>
+                {!isAdminWorkspace && !isGateWorkspace && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] shrink-0" />
+                )}
               </button>
 
               <button
                 type="button"
                 onClick={() => {
                   setMenuOpen(false);
-                  if (isGateWorkspace || !isAdminWorkspace) {
-                    const admin = userList.find(u => u.role === 'admin' && u.email !== 'accessdesk.l106@iitbhilai.ac.in');
-                    if (admin) handleSelectPersona(admin);
-                    else onSwitchWorkspace('admin', 'admin-overview');
-                  } else {
-                    const student = userList.find(u => u.role === 'student');
-                    if (student) handleSelectPersona(student);
-                    else onSwitchWorkspace('student', 'student-dashboard');
-                  }
+                  const admin = userList.find(u => u.role === 'admin' && !isGateDeskUser(u)) || CANONICAL_DEMO_USERS[1];
+                  handleSelectPersona(admin);
                 }}
-                className="w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium text-[#A5B4FC] hover:bg-white/[0.05] flex items-center justify-between"
+                className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between transition-colors ${
+                  isAdminWorkspace
+                    ? 'bg-[#1E2A47] text-white'
+                    : 'text-[#CBD5E1] hover:bg-white/[0.05]'
+                }`}
               >
-                <span>{isAdminWorkspace ? 'Switch to Student View' : 'Switch to Admin View'}</span>
-                <span className="material-symbols-outlined text-[15px]">swap_horiz</span>
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[15px] text-[#A5B4FC]">shield_person</span>
+                  <span>Admin View</span>
+                </div>
+                {isAdminWorkspace && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] shrink-0" />
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  const gate = userList.find(isGateDeskUser) || CANONICAL_DEMO_USERS[2];
+                  handleSelectPersona(gate);
+                }}
+                className={`w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium flex items-center justify-between transition-colors ${
+                  isGateWorkspace
+                    ? 'bg-[#1E2A47] text-white'
+                    : 'text-[#34D399] hover:bg-white/[0.05]'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[15px] text-[#34D399]">qr_code_scanner</span>
+                  <span>Gate Verifier (Scanner)</span>
+                </div>
+                {isGateWorkspace && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] shrink-0" />
+                )}
               </button>
 
               <button
@@ -214,10 +239,12 @@ export default function Sidebar({ workspace, currentView, setCurrentView, onSwit
                   setMenuOpen(false);
                   onSignOut();
                 }}
-                className="w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium text-[#FCA5A5] hover:bg-white/[0.05] flex items-center justify-between"
+                className="w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium text-[#FCA5A5] hover:bg-white/[0.05] flex items-center justify-between transition-colors"
               >
-                <span>Sign out</span>
-                <span className="material-symbols-outlined text-[15px]">logout</span>
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-[15px]">logout</span>
+                  <span>Sign out</span>
+                </div>
               </button>
             </div>
           </div>

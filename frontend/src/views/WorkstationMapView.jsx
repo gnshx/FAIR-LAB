@@ -250,20 +250,27 @@ export default function WorkstationMapView({ onNavigateToPass }) {
     }
 
     return (
-      <button
+      <div
         key={ws.machine_id}
-        type="button"
+        role="button"
+        tabIndex={st === 'BOOKED' || st === 'MAINTENANCE' || st === 'OFFLINE' ? -1 : 0}
         onClick={() => toggleSelectSeat(ws)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleSelectSeat(ws);
+          }
+        }}
         title={`${ws.display_label || ws.machine_id} · ${st}`}
-        className={`relative overflow-visible h-9 sm:h-[38px] rounded-lg border text-xs font-semibold tabular-nums transition-all flex items-center justify-center ${tileStyle}`}
+        className={`relative overflow-visible h-9 sm:h-[38px] rounded-lg border text-xs font-semibold tabular-nums select-none transition-all flex items-center justify-center ${tileStyle}`}
       >
         <span>{numStr}</span>
         {isSelected && (
-          <span className="absolute -top-1.5 -right-1.5 w-[18px] h-[18px] rounded-full bg-[#0F172A] text-white text-[10px] font-bold flex items-center justify-center shadow-md ring-2 ring-white z-20 pointer-events-none">
+          <span className="absolute -top-1.5 -right-1.5 w-[19px] h-[19px] rounded-full bg-[#0F172A] text-white text-[10px] font-bold flex items-center justify-center shadow-md ring-2 ring-white z-30 pointer-events-none">
             {rankIndex + 1}
           </span>
         )}
-      </button>
+      </div>
     );
   };
 
@@ -496,11 +503,11 @@ export default function WorkstationMapView({ onNavigateToPass }) {
                   <span className="text-xs font-bold text-[#0F172A]">Block A</span>
                   <span className="text-xs text-[#94A3B8]">60 workstations</span>
                 </div>
-                <div className="space-y-1.5 overflow-x-auto pt-2.5 px-2 pb-1.5">
+                <div className="space-y-1 overflow-x-auto pt-3.5 px-2.5 pb-2.5">
                   {[1, 2, 3, 4, 5, 6].map(r => (
-                    <div key={r} className="flex items-center gap-2 min-w-[540px]">
+                    <div key={r} className="flex items-center gap-2 min-w-[540px] py-1">
                       <span className="w-6 text-[11px] font-medium text-[#94A3B8] shrink-0">R{r}</span>
-                      <div className="grid grid-cols-10 gap-1.5 flex-1">
+                      <div className="grid grid-cols-10 gap-1.5 flex-1 overflow-visible">
                         {(rowsA[r] || []).map(ws => renderTile(ws))}
                       </div>
                     </div>
@@ -514,11 +521,11 @@ export default function WorkstationMapView({ onNavigateToPass }) {
                   <span className="text-xs font-bold text-[#0F172A]">Block B</span>
                   <span className="text-xs text-[#94A3B8]">24 workstations</span>
                 </div>
-                <div className="space-y-1.5 overflow-x-auto pt-2.5 px-2 pb-1.5">
+                <div className="space-y-1 overflow-x-auto pt-3.5 px-2.5 pb-2.5">
                   {[1, 2, 3, 4].map(r => (
-                    <div key={r} className="flex items-center gap-2 min-w-[340px] max-w-[62%]">
+                    <div key={r} className="flex items-center gap-2 min-w-[340px] max-w-[62%] py-1">
                       <span className="w-6 text-[11px] font-medium text-[#94A3B8] shrink-0">R{r}</span>
-                      <div className="grid grid-cols-6 gap-1.5 flex-1">
+                      <div className="grid grid-cols-6 gap-1.5 flex-1 overflow-visible">
                         {(rowsB[r] || []).map(ws => renderTile(ws))}
                       </div>
                     </div>

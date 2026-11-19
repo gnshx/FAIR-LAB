@@ -58,7 +58,11 @@ router.post('/request', validateBody(bookingRequestSchema), async (req, res) => 
   const authed = resolveBookingUser(req, 'usr-student-ganesh');
   if (!authed) return res.status(401).json({ error: 'Authentication required' });
   const perms = Array.isArray(authed.permissions) ? authed.permissions : [];
-  if (authed.email === 'accessdesk.l106@iitbhilai.ac.in' || (perms.includes('ACCESS_OPERATOR') && !perms.includes('POLICY_ADMIN'))) {
+  const isGate = authed.user_id === 'usr-watchman-ram' ||
+    authed.email === 'accessdesk.l106@iitbhilai.ac.in' ||
+    authed.role === 'watchman' ||
+    (perms.includes('ACCESS_OPERATOR') && !perms.includes('POLICY_ADMIN'));
+  if (isGate) {
     return res.status(403).json({ error: 'Gate operators are authorized exclusively for QR pass verification and cannot submit workstation reservations.' });
   }
   const userId = authed.user_id;
