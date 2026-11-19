@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import jsQR from 'jsqr';
 import { useAuth, isGateDeskUser } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 
@@ -14,6 +15,14 @@ export default function AdminAccessControlView() {
   const [shiftLogs, setShiftLogs] = useState([]);
   const [banner, setBanner] = useState(null);
   const [gateRelayPulse, setGateRelayPulse] = useState(false);
+
+  // Camera scanner state & refs
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const cameraStreamRef = useRef(null);
+  const lastScannedTokenRef = useRef('');
+  const [cameraActive, setCameraActive] = useState(false);
+  const [cameraError, setCameraError] = useState(null);
 
   const fetchShiftLogs = async () => {
     try {
@@ -42,6 +51,102 @@ export default function AdminAccessControlView() {
       setLoading(false);
     }
   };
+
+  const startCamera = async () => {
+    setCameraError(null);
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setCameraError('Webcam access is not supported in this browser environment. You can enter token manually or click the sample pass buttons.');
+        return;
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+      });
+      cameraStreamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play().catch(() => {});
+      }
+      setCameraActive(true);
+    } catch (err) {
+      console.warn('Camera request error:', err);
+      setCameraActive(false);
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        setCameraError('Camera permission was denied. Please allow camera permissions in your browser address bar.');
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        setCameraError('No webcam hardware found. You can test pass scanning with the 1-click test buttons below.');
+      } else {
+        setCameraError(`Camera unavailable: ${err.message || err.name}`);
+      }
+    }
+  };
+
+  const stopCamera = () => {
+    if (cameraStreamRef.current) {
+      cameraStreamRef.current.getTracks().forEach(t => t.stop());
+      cameraStreamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setCameraActive(false);
+  };
+
+  // Auto-request camera on mount; release on unmount
+  useEffect(() => {
+    startCamera();
+    return () => {
+      stopCamera();
+    };
+  }, []);
+
+  // Real-time canvas frame scanning loop with jsQR
+  useEffect(() => {
+    let animId;
+    let lastScanTime = 0;
+
+    const scanFrame = () => {
+      if (cameraActive && videoRef.current && canvasRef.current) {
+        const video = videoRef.current;
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+          const now = Date.now();
+          if (now - lastScanTime > 160) {
+            lastScanTime = now;
+            const canvas = canvasRef.current;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            try {
+              const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+              const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                inversionAttempts: 'dontInvert'
+              });
+
+              if (code && code.data && code.data.trim().startsWith('FAIRPASS:')) {
+                const detectedToken = code.data.trim();
+                if (detectedToken !== lastScannedTokenRef.current) {
+                  lastScannedTokenRef.current = detectedToken;
+                  setTokenInput(detectedToken);
+                  handleVerify(detectedToken);
+                  if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                    try { navigator.vibrate(100); } catch {}
+                  }
+                }
+              }
+            } catch {
+              // Frame decoding error ignored
+            }
+          }
+        }
+      }
+      animId = requestAnimationFrame(scanFrame);
+    };
+
+    animId = requestAnimationFrame(scanFrame);
+    return () => cancelAnimationFrame(animId);
+  }, [cameraActive]);
 
   useEffect(() => {
     fetchShiftLogs();
@@ -179,7 +284,7 @@ export default function AdminAccessControlView() {
               Hold the student&apos;s pass in front of the camera
             </p>
 
-            {/* Dark Navy Optical Frame with Turnstile Relay indicator */}
+            {/* Dark Navy Optical Frame with Live Camera Stream & Turnstile Relay */}
             <div
               className={`mt-4 w-full aspect-[16/9] rounded-2xl flex flex-col items-center justify-center relative overflow-hidden transition-all duration-300 ${
                 gateRelayPulse
@@ -187,8 +292,21 @@ export default function AdminAccessControlView() {
                   : 'bg-[#0B1120]'
               }`}
             >
+              {/* Live Optical Webcam Video Feed */}
+              <video
+                ref={videoRef}
+                playsInline
+                autoPlay
+                muted
+                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
+                  cameraActive && !gateRelayPulse ? 'opacity-90' : 'opacity-0 pointer-events-none'
+                }`}
+              />
+              <canvas ref={canvasRef} className="hidden" />
+
+              {/* Overlay: Turnstile Relay Pulse Animation */}
               {gateRelayPulse ? (
-                <div className="flex flex-col items-center justify-center animate-bounce text-center px-4">
+                <div className="relative z-10 flex flex-col items-center justify-center animate-bounce text-center px-4 bg-[#064E3B]/80 backdrop-blur-sm w-full h-full">
                   <div className="w-14 h-14 rounded-full bg-[#10B981] text-white flex items-center justify-center mb-2 shadow-lg">
                     <span className="material-symbols-outlined text-[32px]">lock_open</span>
                   </div>
@@ -200,22 +318,70 @@ export default function AdminAccessControlView() {
                   </span>
                 </div>
               ) : (
-                <>
+                <div className="relative z-10 flex flex-col items-center justify-center pointer-events-none">
+                  {/* Optical Scanning Target Reticle */}
                   <div
-                    className={`w-40 h-40 rounded-2xl border-2 transition-colors ${
+                    className={`relative w-40 h-40 sm:w-44 sm:h-44 rounded-2xl border-2 transition-colors flex items-center justify-center ${
                       verdict?.authorized
-                        ? 'border-[#10B981] bg-[#10B981]/[0.05]'
-                        : 'border-[#6366F1] bg-white/[0.02]'
+                        ? 'border-[#10B981] bg-[#10B981]/15 shadow-[0_0_25px_rgba(16,185,129,0.3)]'
+                        : 'border-[#6366F1] bg-white/[0.04] shadow-[0_0_20px_rgba(99,102,241,0.2)]'
                     }`}
-                  />
-                  <span className="text-xs text-[#94A3B8] mt-4 font-mono">
+                  >
+                    {/* Animated Scanning Laser Line */}
+                    {cameraActive && (
+                      <div className="absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-[#38BDF8] to-transparent animate-pulse shadow-[0_0_8px_#38BDF8]" />
+                    )}
+
+                    {/* Corner Reticle Accents */}
+                    <div className="absolute top-1.5 left-1.5 w-3.5 h-3.5 border-t-2 border-l-2 border-white/70 rounded-tl-sm" />
+                    <div className="absolute top-1.5 right-1.5 w-3.5 h-3.5 border-t-2 border-r-2 border-white/70 rounded-tr-sm" />
+                    <div className="absolute bottom-1.5 left-1.5 w-3.5 h-3.5 border-b-2 border-l-2 border-white/70 rounded-bl-sm" />
+                    <div className="absolute bottom-1.5 right-1.5 w-3.5 h-3.5 border-b-2 border-r-2 border-white/70 rounded-br-sm" />
+                  </div>
+
+                  <span className="text-xs text-[#E2E8F0] mt-3 font-mono bg-black/60 px-3 py-1 rounded-full backdrop-blur-sm shadow-sm">
                     {verdict?.authorized
                       ? 'Pass verified · Ready for turnstile check-in'
+                      : cameraActive
+                      ? 'Camera active · Hold student QR pass inside target'
                       : 'Align QR code inside the frame'}
                   </span>
-                </>
+                </div>
               )}
             </div>
+
+            {/* Camera Control & Permission Toolbar */}
+            <div className="flex items-center justify-between text-xs pt-1.5">
+              <div className="flex items-center gap-2">
+                <span className={`w-2 h-2 rounded-full ${cameraActive ? 'bg-[#10B981] animate-ping' : 'bg-[#94A3B8]'}`} />
+                <span className="text-[#64748B] font-medium text-[11px]">
+                  {cameraActive ? 'Live webcam optical feed active' : 'Webcam standby'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={cameraActive ? stopCamera : startCamera}
+                className="px-2.5 py-1 rounded-lg border border-[#E2E8F0] hover:bg-[#F8FAFC] text-[#475569] font-medium text-[11px] flex items-center gap-1.5 transition-colors"
+              >
+                <span className="material-symbols-outlined text-[14px]">
+                  {cameraActive ? 'videocam_off' : 'videocam'}
+                </span>
+                <span>{cameraActive ? 'Turn off camera' : 'Start camera'}</span>
+              </button>
+            </div>
+
+            {cameraError && (
+              <div className="mt-1.5 p-2.5 rounded-xl bg-[#FEF3C7] border border-[#FDE68A] text-[#B45309] text-[11px] flex items-center justify-between">
+                <span>{cameraError}</span>
+                <button
+                  type="button"
+                  onClick={startCamera}
+                  className="font-bold underline ml-2 hover:text-[#78350F] shrink-0"
+                >
+                  Retry camera
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2.5">
