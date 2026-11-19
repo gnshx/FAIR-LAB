@@ -3,7 +3,11 @@ import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 
 function getTodayStr() {
-  return new Date().toISOString().split('T')[0];
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 export default function AdminAllocationView() {
@@ -32,7 +36,11 @@ export default function AdminAllocationView() {
       if (resSlots.ok) {
         const sData = await resSlots.json();
         setSlots(sData);
-        if (sData.length > 0 && !sData.some(s => s.slot_id === selectedSlotId)) {
+        // Smart auto-select: if current slot has 0 queued requests, auto-select a slot that has queued requests
+        const slotWithQueue = sData.find(s => (s.queued_count || 0) > 0);
+        if (slotWithQueue && (!selectedSlotId || sData.find(s => s.slot_id === selectedSlotId)?.queued_count === 0)) {
+          setSelectedSlotId(slotWithQueue.slot_id);
+        } else if (sData.length > 0 && !sData.some(s => s.slot_id === selectedSlotId)) {
           setSelectedSlotId(sData[0].slot_id);
         }
       }

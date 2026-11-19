@@ -299,6 +299,44 @@ function ensureTodayBookingsSeeded(db) {
   });
   tx();
   console.log(`[Seed] Seeded realistic workstation occupancy for today (${today}).`);
+
+  // Ensure sample allocation queue exists for today's demo (Slot 4: 12:00 - 13:00)
+  const todayQueued = db.prepare("SELECT COUNT(*) as count FROM booking_requests WHERE booking_date = ? AND status = 'QUEUED'").get(today).count;
+  if (todayQueued === 0) {
+    const updated = db.prepare("UPDATE booking_requests SET booking_date = ? WHERE request_id LIKE 'req-slot4-%' AND status = 'QUEUED'").run(today);
+    db.prepare("UPDATE waitlist_entries SET booking_date = ? WHERE request_id LIKE 'req-slot4-%'").run(today);
+
+    if (updated.changes === 0) {
+      const queueSample = [
+        { user: 'usr-student-priya', score: 100, wait: 1800, pref: 'L106-PC-05', purpose: 'Compiler Optimization Lab Assignment', field: 'Systems' },
+        { user: 'usr-student-rahul', score: 80, wait: 1540, pref: 'L106-PC-05', purpose: 'Graph Algorithm Benchmarking', field: 'Algorithms' },
+        { user: 'usr-student-ananya', score: 70, wait: 980, pref: 'L106-PC-61', purpose: 'Simulation Modeling & Analysis', field: 'AI / Machine Learning' },
+        { user: 'usr-student-vikram', score: 50, wait: 600, pref: null, purpose: 'NLP Dataset Preprocessing', field: 'NLP' },
+        { user: 'usr-student-devansh', score: 40, wait: 320, pref: null, purpose: 'Signal Processing Simulation', field: 'Signal Processing' }
+      ];
+
+      const insertRequest = db.prepare(`
+        INSERT OR REPLACE INTO booking_requests (
+          request_id, user_id, slot_id, booking_date, start_time, end_time,
+          duration_minutes, preferred_machine_id, compute_purpose, research_field,
+          priority_score_snapshot, wait_time_seconds, status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+
+      const insertWaitlist = db.prepare(`
+        INSERT OR REPLACE INTO waitlist_entries (
+          entry_id, request_id, user_id, slot_id, booking_date, priority_score, position
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+      `);
+
+      queueSample.forEach((q, idx) => {
+        const rid = `req-slot4-${idx + 1}`;
+        insertRequest.run(rid, q.user, 'slot-4', today, '12:00', '13:00', 60, q.pref, q.purpose, q.field, q.score, q.wait, 'QUEUED');
+        insertWaitlist.run(`wl-slot4-${idx + 1}`, rid, q.user, 'slot-4', today, q.score, idx + 1);
+      });
+    }
+    console.log(`[Seed] Seeded 5 pending allocation queue requests for today (${today}) slot-4.`);
+  }
 }
 
 async function seedDatabase() {
