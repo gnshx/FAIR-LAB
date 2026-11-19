@@ -1,15 +1,50 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import jsQR from 'jsqr';
 import { useSocket } from '../context/SocketContext';
 
 export default function WatchmanGateView() {
   const { subscribe } = useSocket();
 
+  const fileInputRef = useRef(null);
   const [tokenInput, setTokenInput] = useState('L106-2026-00125');
   const [verdict, setVerdict] = useState(null);
   const [loading, setLoading] = useState(false);
   const [shiftLogs, setShiftLogs] = useState([]);
   const [actionBanner, setActionBanner] = useState(null);
   const [gateRelayPulse, setGateRelayPulse] = useState(false);
+  const [scanError, setScanError] = useState(null);
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setScanError(null);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const code = jsQR(imgData.data, imgData.width, imgData.height);
+          if (code && code.data) {
+            const detectedToken = code.data.trim();
+            setTokenInput(detectedToken);
+            handleVerifyToken(detectedToken);
+          } else {
+            setScanError('No QR code found in selected photo. Try another image or scan token.');
+          }
+        } catch (err) {
+          setScanError(`Scan error: ${err.message}`);
+        }
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
 
   const fetchShiftLogs = async () => {
     try {
@@ -153,18 +188,41 @@ export default function WatchmanGateView() {
           </div>
 
           {/* Target Alignment Window (clean light dotted-grid frame) */}
-          <div className="relative w-full aspect-video lab-dotted-grid rounded-2xl overflow-hidden flex flex-col items-center justify-center border border-[#D0D5DD]">
-            <div className="w-36 h-36 bg-white/95 border border-[#D0D5DD] rounded-2xl flex items-center justify-center relative shadow-card">
-              <span className="material-symbols-outlined text-[#98A2B3] text-[48px]">qr_code_2</span>
-              <span className="absolute top-2.5 left-2.5 w-3.5 h-3.5 border-t-2 border-l-2 border-[#5B4CF5] rounded-tl-sm" />
-              <span className="absolute top-2.5 right-2.5 w-3.5 h-3.5 border-t-2 border-r-2 border-[#5B4CF5] rounded-tr-sm" />
-              <span className="absolute bottom-2.5 left-2.5 w-3.5 h-3.5 border-b-2 border-l-2 border-[#5B4CF5] rounded-bl-sm" />
-              <span className="absolute bottom-2.5 right-2.5 w-3.5 h-3.5 border-b-2 border-r-2 border-[#5B4CF5] rounded-br-sm" />
+          <div className="relative w-full aspect-video lab-dotted-grid rounded-2xl overflow-hidden flex flex-col items-center justify-center border border-[#D0D5DD] p-3">
+            <div className="w-36 h-36 bg-white/95 border border-[#D0D5DD] rounded-2xl flex flex-col items-center justify-center relative shadow-card p-2 text-center">
+              <span className="material-symbols-outlined text-[#98A2B3] text-[36px] mb-1">qr_code_2</span>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="px-2.5 py-1 rounded-lg bg-[#5B4CF5] hover:bg-[#4F22F2] text-white text-[11px] font-semibold flex items-center gap-1 transition-colors shadow-xs"
+              >
+                <span className="material-symbols-outlined text-[13px]">photo_camera</span>
+                <span>Snap / Upload</span>
+              </button>
+              <span className="absolute top-2.5 left-2.5 w-3.5 h-3.5 border-t-2 border-l-2 border-[#5B4CF5] rounded-tl-sm pointer-events-none" />
+              <span className="absolute top-2.5 right-2.5 w-3.5 h-3.5 border-t-2 border-r-2 border-[#5B4CF5] rounded-tr-sm pointer-events-none" />
+              <span className="absolute bottom-2.5 left-2.5 w-3.5 h-3.5 border-b-2 border-l-2 border-[#5B4CF5] rounded-bl-sm pointer-events-none" />
+              <span className="absolute bottom-2.5 right-2.5 w-3.5 h-3.5 border-b-2 border-r-2 border-[#5B4CF5] rounded-br-sm pointer-events-none" />
             </div>
-            <span className="text-xs text-[#667085] mt-3 font-medium">
-              Align student digital pass QR within scanner bounds
+            <span className="text-xs text-[#667085] mt-2 font-medium">
+              Snap photo with camera or choose pass image to scan
             </span>
+            {scanError && (
+              <span className="text-[11px] text-[#DC2626] font-medium mt-1">
+                {scanError}
+              </span>
+            )}
           </div>
+
+          {/* Hidden Camera / Photo File Input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
 
           {/* Preset Test Passes */}
           <div>

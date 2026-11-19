@@ -15,6 +15,7 @@ const {
 const {
   submitHybridBookingRequest,
   cancelBookingRequest,
+  autoProcessQueues,
   publishPendingOutboxEvents,
   getLatestOutboxRowId,
   tailOutboxEventsSince
@@ -352,6 +353,15 @@ const outboxInterval = setInterval(() => {
   }
 }, 5000);
 
+// Autonomous Fairness Allocation Engine daemon: automatically processes queued contested requests every 5 seconds
+const autoAllocationInterval = setInterval(async () => {
+  try {
+    await autoProcessQueues({ broadcast });
+  } catch {
+    // non-fatal background sweep
+  }
+}, 5000);
+
 // Cross-Replica Event Tailer: propagates newly committed outbox events across replicas every 1s
 let outboxTailCursor = getLatestOutboxRowId();
 const crossReplicaTailInterval = setInterval(() => {
@@ -365,6 +375,7 @@ const crossReplicaTailInterval = setInterval(() => {
 function shutdown() {
   console.log('\n[FairLab] Shutting down gracefully...');
   clearInterval(outboxInterval);
+  clearInterval(autoAllocationInterval);
   clearInterval(crossReplicaTailInterval);
   server.close(() => {
     try {

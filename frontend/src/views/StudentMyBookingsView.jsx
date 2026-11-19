@@ -261,6 +261,18 @@ export default function StudentMyBookingsView({ onNavigateToBook, onNavigate }) 
     return unifiedRows;
   }, [unifiedRows, filter]);
 
+  const isPassDisplayable = useMemo(() => {
+    if (!activePass) return false;
+    // If explicitly selected a specific booking
+    if (selectedBookingId && selectedBookingId === activePass.booking_id) return true;
+    // In UPCOMING view, only display if user has an active upcoming booking
+    if (filter === 'UPCOMING') {
+      const todayStr = getTodayStr();
+      return bookings.some(b => b.booking_id === activePass.booking_id && (b.status === 'CONFIRMED' || b.status === 'CHECKED_IN') && b.booking_date >= todayStr);
+    }
+    return false;
+  }, [activePass, selectedBookingId, filter, bookings]);
+
   const renderBadge = (status) => {
     const s = (status || '').toUpperCase();
     if (s === 'CONFIRMED' || s === 'CHECKED_IN') return { label: s === 'CHECKED_IN' ? 'Checked in' : 'Confirmed', cls: 'bg-[#DCFCE7] text-[#15803D]' };
@@ -410,9 +422,9 @@ export default function StudentMyBookingsView({ onNavigateToBook, onNavigate }) 
           )}
         </section>
 
-        {/* Right: QR Access Pass Panel (Exact 04_student_my_bookings.png) */}
+        {/* Right: QR Access Pass Panel */}
         <aside id="printable-pass-card" className="xl:col-span-4 fl-card p-6 flex flex-col justify-between">
-          {activePass ? (
+          {isPassDisplayable ? (
             <>
               <div>
                 <h2 className="text-[14px] font-bold text-[#0F172A]">QR access pass</h2>

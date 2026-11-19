@@ -638,7 +638,7 @@ export default function WorkstationMapView({ onNavigateToPass }) {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-[15px] font-bold text-[#0F172A]">Your preferences</h2>
-                <p className="text-xs text-[#64748B] mt-0.5">Up to 3 · ranked by priority of choice</p>
+                <p className="text-xs text-[#64748B] mt-0.5">Up to 3 · ranked by choice (3 recommended)</p>
               </div>
               {freeWorkstations.length > 0 && selectedMachineIds.length < 3 && (
                 <button
@@ -798,7 +798,7 @@ export default function WorkstationMapView({ onNavigateToPass }) {
               <div className="p-3.5 rounded-xl bg-[#EEF2FF] border border-[#E0E7FF]">
                 <div className="text-xs font-bold text-[#4338CA]">How it works</div>
                 <p className="text-[11px] text-[#4338CA]/85 mt-1 leading-relaxed">
-                  Uncontested seats confirm instantly; contested intervals join the fairness allocation queue and notify you on commit.
+                  Uncontested seats confirm instantly. Contested intervals are evaluated automatically by the fairness engine with zero admin delay. We recommend choosing 3 preferences to maximize assignment match.
                 </p>
               </div>
             </div>

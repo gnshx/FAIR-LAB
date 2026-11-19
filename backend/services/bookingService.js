@@ -792,14 +792,34 @@ async function runWindowAllocationRound({
       const currentReq = db.prepare('SELECT status FROM booking_requests WHERE request_id = ?').get(req.request_id);
       if (!currentReq || currentReq.status !== 'QUEUED') continue;
 
+      const reqStart = req.eff_start || winStart;
+      const reqEnd = req.eff_end || winEnd;
+      const reqDuration = computeDurationMinutes(reqStart, reqEnd, req.duration_minutes);
+
+      // CRITICAL OVERLAP INVARIANT: Check if student already holds a CONFIRMED or CHECKED_IN booking
+      // overlapping [reqStart, reqEnd) on targetDate. If so, auto-resolve/cancel this queued request
+      // without aborting the entire round for other students!
+      const userOverlap = db.prepare(`
+        SELECT booking_id, machine_id, start_time, end_time
+        FROM bookings
+        WHERE user_id = ?
+          AND booking_date = ?
+          AND status IN ('CONFIRMED', 'CHECKED_IN')
+          AND start_time IS NOT NULL AND end_time IS NOT NULL
+          AND start_time < ? AND ? < end_time
+        LIMIT 1
+      `).get(req.user_id, targetDate, reqEnd, reqStart);
+
+      if (userOverlap) {
+        db.prepare("UPDATE booking_requests SET status = 'CANCELLED' WHERE request_id = ?").run(req.request_id);
+        db.prepare("UPDATE waitlist_entries SET status = 'CANCELLED', updated_at = datetime('now') WHERE request_id = ?").run(req.request_id);
+        continue;
+      }
+
       if (allocations.length >= maxToAllocate) {
         remainingWaitlist.push(req);
         continue;
       }
-
-      const reqStart = req.eff_start || winStart;
-      const reqEnd = req.eff_end || winEnd;
-      const reqDuration = computeDurationMinutes(reqStart, reqEnd, req.duration_minutes);
 
       let assignedRig = null;
       let preferenceRankHonored = null;
@@ -849,30 +869,36 @@ async function runWindowAllocationRound({
 
       const bookingId = `L106-2026-${Date.now()}-${allocations.length + 1}-${Math.floor(Math.random() * 1000)}`;
 
-      db.prepare(`
-        INSERT INTO bookings (
-          booking_id, request_id, user_id, machine_id, slot_id, booking_date,
-          start_time, end_time, duration_minutes, demand_level, demand_ratio,
-          priority_snapshot, policy_version, allocation_mode, round_id, semester_id, status
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'SCHEDULED', ?, ?, 'CONFIRMED')
-      `).run(
-        bookingId,
-        req.request_id,
-        req.user_id,
-        assignedRig.machine_id,
-        req.slot_id || slotId,
-        targetDate,
-        reqStart,
-        reqEnd,
-        reqDuration,
-        demandMetrics.demandLevel,
-        demandMetrics.demandRatio,
-        req.priority_score_snapshot,
-        policy.policy_version || 'fairlab-v2',
-        roundId,
-        activeSem.semester_id
-      );
+      try {
+        db.prepare(`
+          INSERT INTO bookings (
+            booking_id, request_id, user_id, machine_id, slot_id, booking_date,
+            start_time, end_time, duration_minutes, demand_level, demand_ratio,
+            priority_snapshot, policy_version, allocation_mode, round_id, semester_id, status
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'SCHEDULED', ?, ?, 'CONFIRMED')
+        `).run(
+          bookingId,
+          req.request_id,
+          req.user_id,
+          assignedRig.machine_id,
+          req.slot_id || slotId,
+          targetDate,
+          reqStart,
+          reqEnd,
+          reqDuration,
+          demandMetrics.demandLevel,
+          demandMetrics.demandRatio,
+          req.priority_score_snapshot,
+          policy.policy_version || 'fairlab-v2',
+          roundId,
+          activeSem.semester_id
+        );
+      } catch (insertErr) {
+        console.warn(`[AllocationRound] Candidate ${req.user_id} (${req.request_id}) insert skipped: ${insertErr.message}`);
+        db.prepare("UPDATE booking_requests SET status = 'CANCELLED' WHERE request_id = ?").run(req.request_id);
+        continue;
+      }
 
       db.prepare("UPDATE booking_requests SET status = 'ALLOCATED' WHERE request_id = ?").run(req.request_id);
       db.prepare("UPDATE waitlist_entries SET status = 'PROMOTED', updated_at = datetime('now') WHERE request_id = ?").run(req.request_id);
@@ -979,6 +1005,64 @@ async function runWindowAllocationRound({
  */
 async function runAllocationRound(slotId, maxLimit = null, bookingDate = null) {
   return runWindowAllocationRound({ slotId, maxLimit, bookingDate });
+}
+
+/**
+ * Autonomous Allocation Engine:
+ * Continuously evaluates and resolves contested booking queues across all active slots and dates
+ * using the institutional fairness formula (P = max(10, 100 - 5T - 8H)) and deterministic tie-breaking.
+ * Eliminates the need for manual administrative queue commitments.
+ */
+async function autoProcessQueues({ broadcast = null } = {}) {
+  const db = getDb();
+  let totalAllocated = 0;
+  let processedQueues = 0;
+
+  try {
+    const activeQueues = db.prepare(`
+      SELECT DISTINCT booking_date, COALESCE(slot_id, 'custom') as slot_id,
+             start_time, end_time
+      FROM booking_requests
+      WHERE status = 'QUEUED'
+      ORDER BY booking_date ASC, start_time ASC
+    `).all();
+
+    if (!activeQueues || activeQueues.length === 0) {
+      return { processedQueues: 0, totalAllocated: 0 };
+    }
+
+    for (const q of activeQueues) {
+      try {
+        const res = await runWindowAllocationRound({
+          slotId: q.slot_id !== 'custom' ? q.slot_id : null,
+          bookingDate: q.booking_date,
+          startTime: q.start_time,
+          endTime: q.end_time
+        });
+
+        processedQueues++;
+        if (res && res.allocatedCount > 0) {
+          totalAllocated += res.allocatedCount;
+          if (broadcast) {
+            broadcast('allocation.completed', {
+              roundId: res.roundId,
+              bookingDate: res.bookingDate,
+              allocatedCount: res.allocatedCount,
+              automated: true
+            });
+            broadcast('QUEUE_CHANGED', { bookingDate: res.bookingDate });
+            broadcast('SLOT_UPDATED', { bookingDate: res.bookingDate });
+          }
+        }
+      } catch (err) {
+        console.warn(`[AutonomousEngine] Error auto-allocating queue for ${q.booking_date} (${q.start_time}–${q.end_time}):`, err.message);
+      }
+    }
+  } catch (err) {
+    console.warn('[AutonomousEngine] Error querying active queues:', err.message);
+  }
+
+  return { processedQueues, totalAllocated };
 }
 
 /**
@@ -1406,6 +1490,7 @@ module.exports = {
   cancelBookingRequest,
   runAllocationRound,
   runWindowAllocationRound,
+  autoProcessQueues,
   cancelBooking,
   processNoShows,
   getQueueForSlot,

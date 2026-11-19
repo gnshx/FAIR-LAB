@@ -109,8 +109,34 @@ export default function AdminAllocationView() {
       if (res.ok) {
         setSummary(data);
         await fetchRound();
+        await fetchPendingSummary();
       } else {
         setError(data.error || 'Allocation round failed.');
+      }
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setCommitting(false);
+    }
+  };
+
+  const handleTriggerImmediateCycle = async () => {
+    setCommitting(true);
+    setError('');
+    try {
+      const res = await fetch('/api/admin/autonomous-engine/trigger', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        setSummary({
+          allocatedCount: data.totalAllocated || 0,
+          waitlistedCount: 0,
+          demandLevel: 'AUTONOMOUS',
+          demandRatio: '0.00'
+        });
+        await fetchRound();
+        await fetchPendingSummary();
+      } else {
+        setError(data.error || 'Autonomous trigger failed.');
       }
     } catch (e) {
       setError(e.message);
@@ -131,11 +157,11 @@ export default function AdminAllocationView() {
 
   return (
     <div className="flex flex-col w-full gap-5">
-      {/* Header Row (Exact 08_admin_allocation_round.png) */}
+      {/* Header Row */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <h1 className="text-[26px] font-bold tracking-tight text-[#0F172A] leading-tight">
-            Allocation round
+            Autonomous allocation &amp; telemetry
           </h1>
           <p className="text-[13px] text-[#64748B] mt-1 tabular-nums">
             Interval {selectedDate} · {selectedSlot ? `${selectedSlot.start_time}–${selectedSlot.end_time}` : selectedSlotId} · {totalReq} eligible requests · {freeSeats} workstations free
@@ -168,6 +194,36 @@ export default function AdminAllocationView() {
             {isHighDemand ? 'High demand' : 'Normal'} · D = {ratio.toFixed(2)}
           </span>
         </div>
+      </div>
+
+      {/* Autonomous Engine Operational Banner */}
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-[#EEF2FF] to-[#F0FDF4] border border-[#C7D2FE] flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[#4F46E5] text-white flex items-center justify-center shrink-0 shadow-xs">
+            <span className="material-symbols-outlined text-[22px]">smart_toy</span>
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-bold text-[#0F172A]">Autonomous Fairness Allocation Engine</h2>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-[#DCFCE7] text-[#15803D] border border-[#BBF7D0]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#15803D] animate-ping" />
+                Active · Auto-Resolving
+              </span>
+            </div>
+            <p className="text-xs text-[#475569] mt-0.5 leading-relaxed">
+              Contested requests are evaluated and allocated automatically in the background using institutional policy <strong className="font-mono text-[#4F46E5]">P = max(10, 100 - 5T - 8H)</strong>. No manual admin clicks are needed.
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={handleTriggerImmediateCycle}
+          disabled={committing}
+          className="h-9 px-4 rounded-xl bg-white border border-[#CBD5E1] hover:bg-[#F8FAFC] text-[#0F172A] font-semibold text-xs shadow-xs transition-colors flex items-center gap-1.5 shrink-0 self-start md:self-auto"
+        >
+          <span className="material-symbols-outlined text-[16px]">sync</span>
+          <span>{committing ? 'Processing...' : 'Run cycle now'}</span>
+        </button>
       </div>
 
       {pendingSummary.length > 0 && (
@@ -379,10 +435,14 @@ export default function AdminAllocationView() {
               type="button"
               onClick={handleCommit}
               disabled={committing || queuedCount === 0}
-              className="w-full h-11 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] disabled:opacity-50 text-white font-semibold text-xs shadow-brand transition-colors"
+              className="w-full h-11 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] disabled:opacity-50 text-white font-semibold text-xs shadow-brand transition-colors flex items-center justify-center gap-1.5"
             >
-              {committing ? 'Committing round...' : `Commit allocation (${queuedCount} queued)`}
+              <span className="material-symbols-outlined text-[16px]">bolt</span>
+              <span>{committing ? 'Processing cycle...' : queuedCount > 0 ? `Trigger allocation round (${queuedCount} queued)` : 'Queue clear · All allocated'}</span>
             </button>
+            <p className="text-[10.5px] text-[#94A3B8] text-center">
+              Autonomous engine automatically checks and allocates queues every 5s
+            </p>
             <button
               type="button"
               onClick={fetchRound}

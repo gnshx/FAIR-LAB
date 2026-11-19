@@ -9,6 +9,7 @@ const { toggleWorkstationMaintenance } = require('../services/gpuResourceService
 const {
   runAllocationRound,
   runWindowAllocationRound,
+  autoProcessQueues,
   processNoShows,
   publishPendingOutboxEvents,
   recordOutboxEvent
@@ -227,7 +228,57 @@ router.get('/allocation-rounds', requireAdmin, (req, res) => {
   }
 });
 
-// Summary of all dates/intervals having active QUEUED requests across the lab
+// Status & Telemetry of the Autonomous Fairness Allocation Engine
+router.get('/autonomous-engine/status', requireAdmin, (req, res) => {
+  const db = getDb();
+  try {
+    const queuedCount = db.prepare("SELECT COUNT(*) as count FROM booking_requests WHERE status = 'QUEUED'").get()?.count || 0;
+    const completedRounds = db.prepare("SELECT COUNT(*) as count FROM allocation_rounds WHERE status = 'COMPLETED'").get()?.count || 0;
+    const recentRounds = db.prepare('SELECT * FROM allocation_rounds ORDER BY executed_at DESC LIMIT 10').all();
+    const pendingQueues = db.prepare(`
+      SELECT r.booking_date, r.slot_id,
+             COALESCE(s.slot_name, 'Custom Window') as slot_name,
+             COALESCE(r.start_time, s.start_time) as start_time,
+             COALESCE(r.end_time, s.end_time) as end_time,
+             COUNT(*) as queued_count
+      FROM booking_requests r
+      LEFT JOIN lab_slots s ON r.slot_id = s.slot_id
+      WHERE r.status = 'QUEUED'
+      GROUP BY r.booking_date, r.slot_id
+      ORDER BY r.booking_date ASC, start_time ASC
+    `).all();
+
+    res.json({
+      active: true,
+      mode: 'AUTONOMOUS',
+      intervalSeconds: 5,
+      policyFormula: 'P = max(10, 100 - 5T - 8H)',
+      queuedCount,
+      completedRounds,
+      pendingQueues,
+      recentRounds
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Trigger immediate evaluation cycle of the Autonomous Engine
+router.post('/autonomous-engine/trigger', requireAdmin, async (req, res) => {
+  try {
+    const broadcast = req.app.get('wssBroadcast') || null;
+    const result = await autoProcessQueues({ broadcast });
+    if (broadcast) {
+      publishPendingOutboxEvents(broadcast);
+      broadcast('QUEUE_CHANGED', { triggered: true });
+    }
+    res.json({ success: true, ...result });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Summary of all dates/intervals having active QUEUED requests across the lab (for queue navigator pills)
 router.get('/pending-queues-summary', requireAdmin, (req, res) => {
   const db = getDb();
   try {

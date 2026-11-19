@@ -118,7 +118,7 @@ export default function AdminOverviewView({ onNavigate }) {
 
   return (
     <div className="flex flex-col w-full gap-6">
-      {/* Header Row (Exact 07_admin_overview.png) */}
+      {/* Header Row */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-[26px] font-bold tracking-tight text-[#0F172A] leading-tight">
@@ -129,13 +129,26 @@ export default function AdminOverviewView({ onNavigate }) {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => onNavigate('admin-allocation')}
-          className="h-10 px-4 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] text-white font-semibold text-xs shadow-brand transition-colors self-start sm:self-auto"
-        >
-          Run allocation round
-        </button>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-[#DCFCE7] text-[#15803D] border border-[#BBF7D0]">
+            <span className="w-2 h-2 rounded-full bg-[#15803D] animate-pulse" />
+            Autonomous Engine: Active
+          </span>
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                await fetch('/api/admin/autonomous-engine/trigger', { method: 'POST' });
+                fetchOverview();
+              } catch {}
+            }}
+            className="h-9 px-3.5 rounded-xl bg-white border border-[#E2E8F0] hover:bg-[#F8FAFC] text-[#0F172A] font-semibold text-xs shadow-xs transition-colors flex items-center gap-1.5"
+            title="Force immediate evaluation cycle across all active queues"
+          >
+            <span className="material-symbols-outlined text-[15px]">sync</span>
+            <span>Trigger cycle</span>
+          </button>
+        </div>
       </div>
 
       {/* 4 KPI Cards */}
@@ -151,12 +164,13 @@ export default function AdminOverviewView({ onNavigate }) {
         </div>
 
         <div className="fl-card p-5">
-          <span className="text-xs text-[#64748B]">Pending requests</span>
-          <div className="text-[32px] font-bold text-[#0F172A] tabular-nums leading-tight mt-1.5">
-            {loading ? '—' : pendingCount}
+          <span className="text-xs text-[#64748B]">Fairness allocation</span>
+          <div className="text-[28px] font-bold text-[#0F172A] leading-tight mt-1.5">
+            Autonomous
           </div>
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#EEF2FF] text-[#4F46E5] mt-2.5">
-            Awaiting next round
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#DCFCE7] text-[#15803D] mt-2.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#15803D]" />
+            Zero admin delay
           </span>
         </div>
 
@@ -256,12 +270,15 @@ export default function AdminOverviewView({ onNavigate }) {
         {/* Right: Allocation Queue Card */}
         <div className="xl:col-span-4 fl-card p-6 flex flex-col justify-between">
           <div>
-            <h2 className="text-[14px] font-bold text-[#0F172A]">Allocation queue</h2>
-            <p className="text-xs text-[#64748B] mt-0.5">Live Lab L-106 contention status</p>
+            <div className="flex items-center justify-between">
+              <h2 className="text-[14px] font-bold text-[#0F172A]">Autonomous fairness engine</h2>
+              <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" title="Engine actively auto-allocating" />
+            </div>
+            <p className="text-xs text-[#64748B] mt-0.5">Self-governing contention resolution</p>
 
-            <div className="mt-8 space-y-7 text-xs">
+            <div className="mt-6 space-y-5 text-xs">
               <div className="flex items-center justify-between">
-                <span className="text-[#475569]">Queued / pending requests</span>
+                <span className="text-[#475569]">Contention requests in queue</span>
                 <strong className="text-base font-bold text-[#0F172A] tabular-nums">{pendingCount}</strong>
               </div>
               <div className="flex items-center justify-between">
@@ -269,9 +286,13 @@ export default function AdminOverviewView({ onNavigate }) {
                 <strong className="text-base font-bold text-[#0F172A] tabular-nums">{freeNow}</strong>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[#475569]">Current load ratio D</span>
+                <span className="text-[#475569]">Contention ratio D</span>
                 <strong className="text-base font-bold text-[#0F172A] font-mono tabular-nums">{demandRatio}</strong>
               </div>
+            </div>
+
+            <div className="mt-5 p-3 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-[11px] text-[#475569] leading-relaxed">
+              Queued requests resolve automatically by institutional fairness formula <strong className="font-mono text-[#4F46E5]">P = max(10, 100 - 5T - 8H)</strong> without requiring manual admin approval.
             </div>
           </div>
 
@@ -280,7 +301,7 @@ export default function AdminOverviewView({ onNavigate }) {
             onClick={() => onNavigate('admin-allocation')}
             className="mt-6 w-full h-10 rounded-xl bg-[#F8FAFC] hover:bg-[#EEF2FF] border border-[#E2E8F0] text-xs font-semibold text-[#4F46E5] transition-colors"
           >
-            Inspect allocation queue
+            Inspect allocation telemetry &amp; history
           </button>
         </div>
       </section>
