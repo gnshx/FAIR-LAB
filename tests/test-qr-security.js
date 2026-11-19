@@ -84,12 +84,21 @@ async function runQrSecurityTest() {
 
   console.log(`[Setup] Created genuine valid pass: ${validPass.signedToken}`);
 
+  const { signAuthToken } = require('../backend/middleware/auth');
+  const opToken = signAuthToken({
+    user_id: 'usr-watchman-ram',
+    email: 'accessdesk.l106@iitbhilai.ac.in',
+    role: 'admin',
+    permissions: ['ACCESS_OPERATOR']
+  });
+  const opHeaders = { 'Authorization': `Bearer ${opToken}` };
+
   // -------------------------------------------------------------
   // Test 1: Forged / Tampered HMAC Token
   // -------------------------------------------------------------
   console.log('\n[Vector 1] Testing Forged / Tampered HMAC Token...');
   const forgedToken = validPass.signedToken.replace(/.$/, 'x'); // alter last byte of hash
-  const forgeRes = await request('POST', '/api/access/verify', { token: forgedToken });
+  const forgeRes = await request('POST', '/api/access/verify', { token: forgedToken }, opHeaders);
 
   console.log(`   Verification result: authorized = ${forgeRes.data.authorized}, code = ${forgeRes.data.code}`);
   if (forgeRes.data.authorized === true) {
@@ -119,7 +128,7 @@ async function runQrSecurityTest() {
   // Artificially set expiry to past timestamp in DB
   db.prepare("UPDATE access_passes SET expires_at = datetime('now', '-2 hours') WHERE pass_id = ?").run(expiredPass.passId);
 
-  const expiredRes = await request('POST', '/api/access/verify', { token: expiredPass.signedToken });
+  const expiredRes = await request('POST', '/api/access/verify', { token: expiredPass.signedToken }, opHeaders);
   console.log(`   Verification result: authorized = ${expiredRes.data.authorized}, code = ${expiredRes.data.code}`);
   if (expiredRes.data.authorized === true || expiredRes.data.code !== 'PASS_EXPIRED') {
     throw new Error(`SECURITY BREACH: Expired pass was authorized or returned wrong code: ${expiredRes.data.code}`);
@@ -145,15 +154,6 @@ async function runQrSecurityTest() {
     '11:30 – 13:30'
   );
   db.prepare("UPDATE access_passes SET status = 'REVOKED' WHERE pass_id = ?").run(cancelledPass.passId);
-
-  const { signAuthToken } = require('../backend/middleware/auth');
-  const opToken = signAuthToken({
-    user_id: 'usr-watchman-ram',
-    email: 'accessdesk.l106@iitbhilai.ac.in',
-    role: 'admin',
-    permissions: ['ACCESS_OPERATOR']
-  });
-  const opHeaders = { 'Authorization': `Bearer ${opToken}` };
 
   const cancelRes = await request('POST', '/api/access/verify', { token: cancelledPass.signedToken }, opHeaders);
   console.log(`   Verification result: authorized = ${cancelRes.data.authorized}, code = ${cancelRes.data.code}`);
