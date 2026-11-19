@@ -26,6 +26,7 @@ async function runCustomIntervalSuite() {
   const testDate = '2026-12-29';
 
   const cleanup = () => {
+    db.prepare("UPDATE workstations SET status = 'AVAILABLE' WHERE display_label IN ('A-R1-PC01', 'A-R3-PC01', 'A-R3-PC02', 'A-R3-PC03') AND status = 'MAINTENANCE'").run();
     db.prepare("DELETE FROM entry_logs WHERE user_id LIKE 'usr-v3-%'").run();
     db.prepare("DELETE FROM allocation_history WHERE user_id LIKE 'usr-v3-%'").run();
     db.prepare("DELETE FROM access_passes WHERE user_id LIKE 'usr-v3-%'").run();
