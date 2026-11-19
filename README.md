@@ -26,6 +26,8 @@
 
 FairLab is actively deployed and running on the campus VM (**`10.1.75.40`**). It operates behind an **Nginx reverse proxy & load balancer**, dual backend replicas under **PM2**, cross-replica event synchronization via a **Transactional Outbox tailer**, and real-time **WebSockets**.
 
+The VM hostname is **`stu130_sys1`**. Its private container address (`172.17.0.2`) is for internal VM networking and may change; use `10.1.75.40` from the campus network. PostgreSQL is available on the VM for isolated evaluation, but the live FairLab API continues to use SQLite WAL until the PostgreSQL backend path is fully validated.
+
 ### 1. Web Application & View Endpoints
 
 | Service / View | Live Campus URL | Description |
@@ -54,7 +56,12 @@ FairLab is actively deployed and running on the campus VM (**`10.1.75.40`**). It
 | **Health Check (LB)** | [`http://10.1.75.40:3500/health`](http://10.1.75.40:3500/health) | HTTP `GET` · Port 3500 | Round-robin load-balanced probe returning upstream instance identity (`fairlab-api-1` / `fairlab-api-2`), state version, connected WS clients, and timestamp. |
 | **Nginx Status** | [`http://10.1.75.40:4500/lb-status`](http://10.1.75.40:4500/lb-status) | HTTP `GET` · Port 4500 | Live Nginx connection metrics (`active connections`, `accepts`, `handled requests`). |
 | **Round-Robin Probe** | [`http://10.1.75.40:4500/health`](http://10.1.75.40:4500/health) | HTTP `GET` · Port 4500 | Direct probe alternating between replicas via `fairlab_rr_backends`. |
+| **Backend Replica 1 Health** | [`http://10.1.75.40:5500/health`](http://10.1.75.40:5500/health) | HTTP `GET` · Port 5500 | Direct health endpoint for `fairlab-api-1` (host port mapped to VM port 5000). |
+| **Backend Replica 2 Health** | [`http://10.1.75.40:6500/health`](http://10.1.75.40:6500/health) | HTTP `GET` · Port 6500 | Direct health endpoint for `fairlab-api-2` (host port mapped to VM port 6000). |
+| **Stack Monitor** | [`http://10.1.75.40:7500/`](http://10.1.75.40:7500/) | HTTP `GET` · Port 7500 | Read-only status summary for Nginx, both API replicas, SQLite, and PostgreSQL. |
 | **WebSocket Hub** | `ws://10.1.75.40:3500/ws` | WS · Port 3500 | Full-duplex WebSocket hub for live seat updates (`SLOT_UPDATED`), queue changes (`QUEUE_CHANGED`), and gate events. |
+
+SSH access to the VM uses port `2500`: `ssh -p 2500 student@10.1.75.40`. The VM's PostgreSQL listener is internal on port `5432`; do not expose its credentials or connection string in this README.
 
 #### Sample Health Probe Response (`http://10.1.75.40:3500/health`)
 ```json
