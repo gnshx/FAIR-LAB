@@ -7,17 +7,123 @@
 **IIT Bhilai · Computer Lab L-106 · 84 Workstations (Block A `6×10` + Block B `4×6`)**
 
 [![Architecture](https://img.shields.io/badge/Architecture-Modular%20Monolith-4F46E5?style=flat-square)](#system-architecture)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-10.1.75.40%3A3500-2563EB?style=flat-square)](#live-campus-demonstration--endpoints)
 [![Backend](https://img.shields.io/badge/Backend-Node.js%20%2B%20Express%20%2B%20WS-0F172A?style=flat-square)](#backend-engineering--api-reference)
 [![Database](https://img.shields.io/badge/Database-PostgreSQL%2016%20%7C%20SQLite%20WAL-15803D?style=flat-square)](#database-invariants--concurrency-control)
 [![Frontend](https://img.shields.io/badge/Frontend-React%2018%20%2B%20Vite%20%2B%20Tailwind-4F46E5?style=flat-square)](#frontend-workspaces--ui-themes)
-[![Tests](https://img.shields.io/badge/Verification-13%2F13%20Suites%20Passing-16A34A?style=flat-square)](#verification--adversarial-testing)
+[![Tests](https://img.shields.io/badge/Verification-14%2F14%20Suites%20Passing-16A34A?style=flat-square)](#verification--adversarial-testing)
 [![Auth](https://img.shields.io/badge/Auth-%40iitbhilai.ac.in%20Only-B45309?style=flat-square)](#security-rbac--anti-abuse-hardening)
 
 *Movie-seat visual booking meets mathematically verified fair scheduling, academic timetable governance, ticket drops, and database-enforced zero-overlap guarantees.*
 
-[Architecture](#system-architecture) · [Fairness Model](#mathematical-fairness-model) · [Schedule & Tickets](#schedule-governance--ticket-releases) · [Security](#security-rbac--anti-abuse-hardening) · [Quickstart](#quickstart--local-development) · [VM Production Sizing](#production-vm-deployment-10-vcpu--10-gb-ram)
+[Live Demo](#live-campus-demonstration--endpoints) · [Architecture](#system-architecture) · [Fairness Model](#mathematical-fairness-model) · [Schedule & Tickets](#schedule-governance--ticket-releases) · [Security](#security-rbac--anti-abuse-hardening) · [Quickstart](#quickstart--local-development) · [VM Deployment](#production-vm-deployment-10-vcpu--10-gb-ram)
 
 </div>
+
+---
+
+## Live Campus Demonstration & Endpoints
+
+FairLab is actively deployed and running on the campus VM (**`10.1.75.40`**). It operates behind an **Nginx reverse proxy & load balancer**, dual backend replicas under **PM2**, cross-replica event synchronization via a **Transactional Outbox tailer**, and real-time **WebSockets**.
+
+### 1. Web Application & View Endpoints
+
+| Service / View | Live Campus URL | Description |
+| :--- | :--- | :--- |
+| **Student Dashboard** | [`http://10.1.75.40:3500/`](http://10.1.75.40:3500/) or [`/dashboard`](http://10.1.75.40:3500/dashboard) | Main landing, active reservations, instant booking |
+| **84-PC Workstation Map** | [`http://10.1.75.40:3500/book`](http://10.1.75.40:3500/book) | Interactive Block A (`6×10`) & Block B (`4×6`) visual grid |
+| **My Bookings & QR Passes** | [`http://10.1.75.40:3500/bookings`](http://10.1.75.40:3500/bookings) | Active cryptographic QR entry passes & countdown timer |
+| **Fairness Priority Score** | [`http://10.1.75.40:3500/fairness`](http://10.1.75.40:3500/fairness) | Student priority breakdown, deduction log, score floor |
+| **Student Notifications** | [`http://10.1.75.40:3500/notifications`](http://10.1.75.40:3500/notifications) | Booking confirmation inbox & real-time delivery alerts |
+| **Admin Overview** | [`http://10.1.75.40:3500/overview`](http://10.1.75.40:3500/overview) | Lab occupancy heatmap, today's schedule, pending queue |
+| **Admin Policy & Settings** | [`http://10.1.75.40:3500/settings`](http://10.1.75.40:3500/settings) | Dynamic scoring parameters, quotas, semester rollover |
+| **Admin Allocation Queue** | [`http://10.1.75.40:3500/allocation`](http://10.1.75.40:3500/allocation) | Contention resolution & batch allocation round triggers |
+| **Admin Timetable & Tickets** | [`http://10.1.75.40:3500/schedule`](http://10.1.75.40:3500/schedule) | Mon–Fri course blocking, holiday overrides & ticket drops |
+| **Admin Workstation Fleet** | [`http://10.1.75.40:3500/workstations`](http://10.1.75.40:3500/workstations) | 84-PC inventory, GPU VRAM status & maintenance toggle |
+| **Admin Student Directory** | [`http://10.1.75.40:3500/students`](http://10.1.75.40:3500/students) | Priority scores, completed bookings, penalty history |
+| **Admin Access Control Desk** | [`http://10.1.75.40:3500/access`](http://10.1.75.40:3500/access) | Turnstile gate scanner, QR check-in & check-out |
+| **Fairness Analytics** | [`http://10.1.75.40:3500/analytics`](http://10.1.75.40:3500/analytics) | Live Gini coefficient (`0.022`), Jain's index (`0.998`) |
+| **Audit Trail Log** | [`http://10.1.75.40:3500/audit`](http://10.1.75.40:3500/audit) | Immutable security & allocation transaction ledger |
+
+---
+
+### 2. Load Balancer, Health & Diagnostic Endpoints
+
+| Target | Live Endpoint | Protocol / Port | Function & Response |
+| :--- | :--- | :--- | :--- |
+| **Health Check (LB)** | [`http://10.1.75.40:3500/health`](http://10.1.75.40:3500/health) | HTTP `GET` · Port 3500 | Round-robin load-balanced probe returning upstream instance identity (`fairlab-api-1` / `fairlab-api-2`), state version, connected WS clients, and timestamp. |
+| **Nginx Status** | [`http://10.1.75.40:4500/lb-status`](http://10.1.75.40:4500/lb-status) | HTTP `GET` · Port 4500 | Live Nginx connection metrics (`active connections`, `accepts`, `handled requests`). |
+| **Round-Robin Probe** | [`http://10.1.75.40:4500/health`](http://10.1.75.40:4500/health) | HTTP `GET` · Port 4500 | Direct probe alternating between replicas via `fairlab_rr_backends`. |
+| **WebSocket Hub** | `ws://10.1.75.40:3500/ws` | WS · Port 3500 | Full-duplex WebSocket hub for live seat updates (`SLOT_UPDATED`), queue changes (`QUEUE_CHANGED`), and gate events. |
+
+#### Sample Health Probe Response (`http://10.1.75.40:3500/health`)
+```json
+{
+  "status": "ok",
+  "instance": "fairlab-api-1",
+  "port": 5000,
+  "lab": "IIT Bhilai L-106",
+  "system": "FairLab Workstation Booking & Fairness System",
+  "workstations": 84,
+  "version": 1,
+  "clientsConnected": 1,
+  "time": "2026-11-19T17:34:05.123Z"
+}
+```
+**HTTP Response Headers (Inspected via `curl -sI`):**
+- `X-Load-Balancer: nginx-fairlab-l106`
+- `X-FairLab-Instance: fairlab-api-1` *(or `fairlab-api-2`)*
+- `X-Upstream-Addr: 127.0.0.1:5000` *(or `127.0.0.1:6000`)*
+
+---
+
+### 3. Deployed Architecture & Replica Topology
+
+```
+                         [ Campus Browser Traffic ]
+                                     │
+                                     ▼
+                   ┌──────────────────────────────────┐
+                   │   Nginx Load Balancer (Port 3500)│
+                   │   - Static Vite asset caching    │
+                   │   - Least-connections proxy      │
+                   │   - WebSocket connection upgrade │
+                   │   - Status endpoint on Port 4500 │
+                   └──────────────┬───────────────────┘
+                                  │
+                 ┌────────────────┴────────────────┐
+                 ▼                                 ▼
+   ┌───────────────────────────┐     ┌───────────────────────────┐
+   │ Replica 1 (fairlab-api-1) │     │ Replica 2 (fairlab-api-2) │
+   │ Port: 5000 · PM2 managed  │     │ Port: 6000 · PM2 managed  │
+   └─────────────┬─────────────┘     └─────────────┬─────────────┘
+                 │                                 │
+                 │   Transactional Outbox Tailer   │
+                 │   (1s sync · cross-replica WS)  │
+                 └────────────────┬────────────────┘
+                                  │
+                                  ▼
+                   ┌──────────────────────────────────┐
+                   │    SQLite WAL (Live Application) │
+                   │    - Shared multi-process WAL    │
+                   │    - Immediate ACID transactions │
+                   │    - Database exclusion triggers │
+                   ├──────────────────────────────────┤
+                   │    PostgreSQL 16 (Enterprise)    │
+                   │    - 18 tables · btree_gist      │
+                   │    - 8/8 verification suites     │
+                   └──────────────────────────────────┘
+```
+
+---
+
+### 4. Demo Evaluation Personas (`@iitbhilai.ac.in`)
+
+| Role | Name & Email | Permissions | Scope / Views Accessible |
+| :--- | :--- | :--- | :--- |
+| **Student** | **Ganesh Kumar**<br>`ganesh.k@iitbhilai.ac.in` | Standard Student | Student Workspace (`/dashboard`, `/book`, `/bookings`, `/fairness`, `/notifications`) |
+| **Admin** | **Dr. A. K. Sharma**<br>`aksharma@iitbhilai.ac.in` | `POLICY_ADMIN`<br>`ALLOCATION_ADMIN`<br>`ACCESS_OPERATOR` | Full Admin Workspace (`/overview`, `/settings`, `/allocation`, `/schedule`, `/workstations`, `/students`, `/analytics`, `/access`, `/audit`) |
+| **Gate Desk** | **Access Operator**<br>`accessdesk.l106@iitbhilai.ac.in` | `ACCESS_OPERATOR` | Access Control Gate Desk (`/access` only; policy & settings blocked `403`) |
 
 ---
 
@@ -310,14 +416,19 @@ cd backend && node server.js
 
 ## Verification & Adversarial Testing
 
-Execute all **13 automated test suites** (covering concurrency, PostgreSQL 16 `btree_gist`, QR cryptography, 13 red-team security attacks, strict `@iitbhilai.ac.in` enforcement, 2-hour max limit, Mon–Fri timetable, holidays, ticket releases, and 50-seed fairness benchmarks):
+Execute all **14 automated test suites** including the comprehensive Phase 10 validation suite (covering concurrency, PostgreSQL 16 `btree_gist`, QR cryptography, 13 red-team security attacks, strict `@iitbhilai.ac.in` enforcement, 2-hour max limit, Mon–Fri timetable, holidays, ticket releases, 50-seed fairness benchmarks, and URL route integrity):
 
 ```bash
+# Run the master automated test runner across all suites
 npm test
+
+# Run the Phase 10 demonstration & regression validation suite (76 assertions)
+node tests/test-phase10-validation.js
 ```
 
 | Suite | Focus | Status |
 | :--- | :--- | :---: |
+| `test-phase10-validation.js` | Comprehensive end-to-end regression across all 8 validation sections (76 assertions) | PASS (76/76) |
 | `test-system.js` | Full E2E booking, QR check-in, replay block, check-out deduction, simulation | PASS |
 | `test-concurrency.js` | 100 simultaneous requests vs 5 slots — zero races, exact top-5 selection | PASS |
 | `test-semester-reset.js` | Semester rollover archive integrity & clean 100-pt reset | PASS |
@@ -330,25 +441,35 @@ npm test
 | `test-adversarial-redteam.js` | **13 attack vectors**: score spoof, RBAC, IDOR, race storms, SQLi/XSS, `429` flood, `@iitbhilai.ac.in` spoofs | PASS |
 | `test-schedule-timetable-tickets.js` | 2h max limit, Mon–Fri timetable blocking, Holiday/Extra Day overrides, Ticket Releases & quotas | PASS |
 | `benchmark-fairness-50seeds.js` | 50-seed statistical fairness evaluation across 4 workloads | PASS |
+| `test-routes.js` | Bidirectional URL history synchronization across 14 views & aliases | PASS |
 
 ---
 
-## Production VM Deployment (10 vCPU / 10 GB RAM)
+## Production VM Deployment & Live Topology
 
-Measured local baseline vs projected campus sizing estimates *(peak capacity estimates should be load-tested via k6 before SLA certification)*:
+FairLab is actively running on the campus VM (**`10.1.75.40`**) with the following production architecture:
 
-| Layer | Measured Local Baseline | Projected Peak Estimate *(500–2,000 concurrent users)* |
-| :--- | :---: | :---: |
-| Frontend (`frontend/dist`) | `360 KB` disk *(measured)* | Served statically via Nginx |
-| Backend (`node server.js` + WS) | `~86 MB` RAM · `0.6%` CPU *(measured)* | `~300–500 MB` RAM · `1–2` vCPU *(estimate)* |
-| PostgreSQL 16 (`shared_buffers=2GB`) | `~200 MB` RAM *(idle)* | `~2 GB` RAM · `1–2` vCPU *(estimate)* |
-| Nginx (TLS + `/api` & `/ws` proxy) | `~20 MB` RAM *(estimate)* | `~50 MB` RAM *(estimate)* |
+| Component | Port Mapping | Process / Manager | Configuration |
+| :--- | :--- | :--- | :--- |
+| **Nginx Reverse Proxy** | `Host 3500 -> VM 3000` | Systemd service | Least-connections load balancer, static gzip caching, WS upgrade |
+| **Nginx Status & Probe** | `Host 4500 -> VM 4000` | Systemd service | Round-robin health check probe & `stub_status` metrics |
+| **Backend Replica 1** | `127.0.0.1:5000` | PM2 (`fairlab-api-1`) | Node.js v22 · Express REST API + WebSocket Hub |
+| **Backend Replica 2** | `127.0.0.1:6000` | PM2 (`fairlab-api-2`) | Node.js v22 · Express REST API + WebSocket Hub |
+| **Cross-Replica Sync** | Background (1s poll) | Transactional Outbox | Shared SQLite WAL with atomic lease claim (`PENDING -> PUBLISHED`) |
+| **Live Database** | Disk (`fairlab.db`) | SQLite 3 WAL Mode | Multi-process concurrent reads, serial atomic writes |
+| **Target Database** | `127.0.0.1:5432` | PostgreSQL 16 | 18 tables · `btree_gist` exclusion constraints · 8/8 tests passed |
 
+### Live Operational Commands on VM
 ```bash
-# Generate runtime secrets before deploying via Docker Compose
-cp .env.example .env
-sed -i "s/replace_with_openssl_rand_hex_32/$(openssl rand -hex 32)/g" .env
-docker compose up -d --build
+# Check PM2 process health & cluster uptime
+pm2 status
+
+# Inspect real-time multi-replica logs
+pm2 logs --lines 50
+
+# Probe load balancer round-robin distribution
+curl -sI http://10.1.75.40:3500/health | grep -E 'X-FairLab-Instance|X-Upstream-Addr'
+curl -s http://10.1.75.40:4500/lb-status
 ```
 
 ---
@@ -364,5 +485,5 @@ docker compose up -d --build
 ---
 
 <div align="center">
-<sub>Built for IIT Bhilai · Computer Lab L-106 · Verified across 13 automated test suites</sub>
+<sub>Built for IIT Bhilai · Computer Lab L-106 · Verified across 14 automated test suites</sub>
 </div>
