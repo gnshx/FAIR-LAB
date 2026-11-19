@@ -159,9 +159,20 @@ export default function StudentPassView({ onNavigateToMap, onNavigateToQueue }) 
   const [bookings, setBookings] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [activePass, setActivePass] = useState(null);
+  const [isQrMaximized, setIsQrMaximized] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [actionMsg, setActionMsg] = useState(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setIsQrMaximized(false);
+    };
+    if (isQrMaximized) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isQrMaximized]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -551,16 +562,41 @@ export default function StudentPassView({ onNavigateToMap, onNavigateToQueue }) 
                 </div>
 
                 <div className="my-4 flex flex-col items-center">
-                  <div className="p-3 bg-white rounded-2xl border-2 border-[#1D2939] shadow-sm">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onDoubleClick={() => setIsQrMaximized(true)}
+                    className="relative group p-3 bg-white rounded-2xl border-2 border-[#1D2939] shadow-sm cursor-zoom-in hover:border-[#4F46E5] hover:shadow-md transition-all select-none"
+                    title="Double-click to maximize QR pass"
+                  >
                     {activePass.qrDataUrl ? (
-                      <img src={activePass.qrDataUrl} alt="Signed Access Pass QR" className="w-32 h-32 object-contain" />
+                      <img src={activePass.qrDataUrl} alt="Signed Access Pass QR" className="w-36 h-36 object-contain pointer-events-none" />
                     ) : (
-                      <div className="w-32 h-32 bg-[#F7F8FC] flex items-center justify-center text-[#98A2B3] text-xs font-mono">
+                      <div className="w-36 h-36 bg-[#F7F8FC] flex items-center justify-center text-[#98A2B3] text-xs font-mono">
                         Generating...
                       </div>
                     )}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsQrMaximized(true);
+                      }}
+                      className="absolute top-2 right-2 w-6 h-6 rounded-md bg-[#1D2939]/70 hover:bg-[#4F46E5] text-white flex items-center justify-center opacity-70 group-hover:opacity-100 transition-opacity"
+                      title="Maximize QR pass"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">fullscreen</span>
+                    </button>
                   </div>
-                  <span className="font-mono text-xs font-bold text-[#1D2939] mt-2.5">{activePass.booking_id}</span>
+                  <button
+                    type="button"
+                    onClick={() => setIsQrMaximized(true)}
+                    className="text-[10px] text-[#667085] hover:text-[#4F46E5] flex items-center gap-1 mt-1.5 transition-colors cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-[13px]">zoom_in</span>
+                    <span>Double-click to maximize</span>
+                  </button>
+                  <span className="font-mono text-xs font-bold text-[#1D2939] mt-2">{activePass.booking_id}</span>
                   <span className="text-[11px] text-[#667085] mt-0.5">HMAC-SHA256 Signed · Single Entry</span>
                 </div>
 
@@ -708,6 +744,89 @@ export default function StudentPassView({ onNavigateToMap, onNavigateToQueue }) 
           )}
         </div>
       </section>
+
+      {/* Maximized QR Pass Lightbox Modal */}
+      {isQrMaximized && activePass && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setIsQrMaximized(false)}
+          className="fixed inset-0 z-50 bg-[#0F172A]/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            onDoubleClick={() => setIsQrMaximized(false)}
+            className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-[#E2E8F0] relative text-center flex flex-col items-center select-none"
+          >
+            {/* Close button */}
+            <button
+              type="button"
+              onClick={() => setIsQrMaximized(false)}
+              className="absolute top-4 right-4 w-9 h-9 rounded-full bg-[#F1F5F9] hover:bg-[#E2E8F0] text-[#475569] flex items-center justify-center transition-colors"
+              title="Close (Esc)"
+            >
+              <span className="material-symbols-outlined text-[20px]">close</span>
+            </button>
+
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EEF2FF] text-[#4F46E5] text-xs font-bold uppercase tracking-wider mb-2">
+              <span className="w-2 h-2 rounded-full bg-[#4F46E5]" />
+              IIT Bhilai · Lab L-106 Pass
+            </div>
+
+            <h3 className="text-2xl font-black text-[#0F172A] tracking-tight font-mono">
+              {activePass.machine_id}
+            </h3>
+            <p className="text-xs text-[#64748B] mt-0.5 font-medium">
+              {activePass.booking_date} · {activePass.start_time} – {activePass.end_time}
+            </p>
+
+            {/* High-Resolution QR Container */}
+            <div
+              onDoubleClick={() => setIsQrMaximized(false)}
+              className="my-5 p-5 bg-white rounded-3xl border-2 border-[#0F172A] shadow-lg flex items-center justify-center w-72 h-72 sm:w-80 sm:h-80 cursor-zoom-out"
+              title="Double-click to minimize"
+            >
+              {activePass.qrDataUrl ? (
+                <img
+                  src={activePass.qrDataUrl}
+                  alt="Maximized Signed QR Pass"
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <span className="material-symbols-outlined text-[96px] text-[#0F172A]">qr_code_2</span>
+              )}
+            </div>
+
+            <div className="w-full bg-[#F8FAFC] rounded-2xl p-3 border border-[#E2E8F0] text-xs space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[#64748B]">Pass ID:</span>
+                <span className="font-mono text-[11px] font-semibold text-[#475569]">
+                  {activePass.booking_id}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[#64748B]">Security:</span>
+                <span className="text-[#15803D] font-bold text-[11px]">HMAC-SHA256 Signed</span>
+              </div>
+            </div>
+
+            <div className="mt-5 w-full flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="flex-1 h-11 rounded-xl bg-[#4F46E5] hover:bg-[#4338CA] text-white font-semibold text-xs shadow-brand flex items-center justify-center gap-1.5 transition-colors"
+              >
+                <span className="material-symbols-outlined text-[16px]">print</span>
+                <span>Print Pass</span>
+              </button>
+            </div>
+
+            <p className="text-[11px] text-[#94A3B8] mt-3">
+              Press <kbd className="px-1.5 py-0.5 rounded bg-[#F1F5F9] font-mono text-[10px]">Esc</kbd> or double-click to minimize
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
