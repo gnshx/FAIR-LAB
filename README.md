@@ -179,7 +179,7 @@ Shared university compute laboratories suffer from four classic systems failures
 
 ## System Architecture
 
-FairLab is built as a **Modular Monolith** with real-time WebSocket synchronization and dual database support (**SQLite WAL** for zero-dependency single-node dev/testing and **PostgreSQL 16** with `btree_gist` for production concurrency).
+FairLab is built as a **Modular Monolith** with real-time WebSocket synchronization. The current live VM and local application runtime use **SQLite WAL**. A PostgreSQL 16 schema and adapter exist as a separate evaluation target; PostgreSQL is not connected to or serving live application traffic yet. We will compare both databases in isolated test environments before choosing whether to migrate.
 
 ```mermaid
 flowchart TD
@@ -489,7 +489,7 @@ FairLab is actively running on the campus VM (**`10.1.75.40`**) with the followi
 | **Backend Replica 2** | `127.0.0.1:6000` | PM2 (`fairlab-api-2`) | Node.js v22 · Express REST API + WebSocket Hub |
 | **Cross-Replica Sync** | Background (1s poll) | Transactional Outbox | Shared SQLite WAL with atomic lease claim (`PENDING -> PUBLISHED`) |
 | **Live Database** | Disk (`fairlab.db`) | SQLite 3 WAL Mode | Multi-process concurrent reads, serial atomic writes |
-| **Target Database** | `127.0.0.1:5432` | PostgreSQL 16 | 18 tables · `btree_gist` exclusion constraints · 8/8 tests passed |
+| **Evaluation Target** | Not connected to FairLab runtime | PostgreSQL 16 | Schema and adapter available; compare in isolated tests before deciding on migration |
 
 ### Live Operational Commands on VM
 ```bash
@@ -510,6 +510,7 @@ curl -s http://10.1.75.40:4500/lb-status
 
 - **Active Production Core**: 84-seat logical floor map, custom `[start, end)` booking (`≤ 2h`), fairness-aware allocation, Mon–Fri academic timetable, Holiday/Extra-Day overrides, Admin ticket drops, `@iitbhilai.ac.in` login gate, and HMAC-SHA256 QR verification.
 - **Planned Future Work**:
+  - Compare SQLite WAL and PostgreSQL 16 using the same booking, concurrency, and recovery workloads; review correctness, latency, write contention, operational effort, and restore behavior before selecting a live database. PostgreSQL is an evaluation candidate, not the current live database.
   - Institute SSO via IIT Bhilai Google Workspace OAuth (`hd=iitbhilai.ac.in`) / campus LDAP.
   - Physical turnstile relay controller integration (`RELAY_CONTROLLER_URL`).
   - Optional lab-side hardware telemetry agents (`agents/`) once physical L-106 workstations are onboarded — until then, telemetry fields honestly display `—` and are never fabricated.
