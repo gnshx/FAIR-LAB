@@ -128,7 +128,7 @@ async function runConcurrencyTest() {
 
   const responses = await Promise.all(requestPromises);
   const elapsed = Date.now() - startTime;
-  console.log(`[Phase 1] Completed 100 requests in ${elapsed}ms. All responded. Sample response:`, responses[0]);
+  console.log(`[Phase 1] Completed 100 requests in ${elapsed}ms. All responded.`);
 
   const successfulQueued = responses.filter(r => r.status === 201);
   console.log(`[Assertion 1] Successfully queued requests: ${successfulQueued.length} / 100`);

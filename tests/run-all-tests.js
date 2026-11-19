@@ -2,6 +2,11 @@ const { execSync, spawn } = require('child_process');
 const http = require('http');
 const path = require('path');
 
+// Load environment variables from .env if present (e.g. on live servers)
+try {
+  require('dotenv').config({ path: path.join(__dirname, '../.env') });
+} catch {}
+
 // Ensure consistent JWT/HMAC secret across test runner and child processes
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'fairlab-jwt-secret-stable-for-all-test-suites-32chars';
 process.env.HMAC_SECRET = process.env.HMAC_SECRET || 'fairlab-hmac-secret-stable-for-all-test-suites-32chars';
