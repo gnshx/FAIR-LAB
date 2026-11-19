@@ -219,7 +219,7 @@ function ensureTodayBookingsSeeded(db) {
 
       const insertWaitlist = db.prepare(`
         INSERT OR REPLACE INTO waitlist_entries (
-          entry_id, request_id, user_id, slot_id, booking_date, priority_score, position
+          waitlist_id, request_id, user_id, slot_id, booking_date, priority_score, position
         ) VALUES (?, ?, ?, ?, ?, ?, ?)
       `);
 
