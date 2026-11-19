@@ -118,8 +118,10 @@ async function runTests() {
     VALUES (?, 'E2E Queue Tester', ?, ?, 'student', 'CSE')
   `).run(testStudentId, testRoll, `${testStudentId}@iitbhilai.ac.in`);
 
+  const testDate = '2026-12-28';
   const submitRes = await request('POST', '/api/bookings/request', {
     slotId: 'slot-5',
+    bookingDate: testDate,
     computePurpose: 'Distributed Reinforcement Learning on Gymnasium Environment',
     researchField: 'AI / Machine Learning'
   }, { 'x-user-id': testStudentId });
@@ -128,7 +130,7 @@ async function runTests() {
   if (submitRes.status !== 201) throw new Error('Booking request submission failed: ' + JSON.stringify(submitRes.data));
 
   // Test 9: Run Allocation Round
-  const allocRes = await request('POST', `/api/bookings/queue/slot-5/allocate`);
+  const allocRes = await request('POST', `/api/bookings/queue/slot-5/allocate`, { bookingDate: testDate });
   console.log(`[Test 9] Batch Allocation Round: allocated = ${allocRes.data.allocatedCount}, waitlisted = ${allocRes.data.waitlistedCount}`);
   if (allocRes.status !== 200) throw new Error('Allocation round failed');
 

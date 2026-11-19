@@ -138,6 +138,7 @@ export default function QueueFloorMapView() {
             </label>
             <input
               type="date"
+              min={getTodayStr()}
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
               className="w-full h-10 px-3 rounded-lg bg-white border border-[#D0D5DD] text-xs font-mono text-[#1D2939] outline-none focus:border-[#5B4CF5] focus:ring-2 focus:ring-[#5B4CF5]/15"

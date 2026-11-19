@@ -144,13 +144,15 @@ async function runAuditEdgeCaseSuite() {
   db.prepare("INSERT INTO users (user_id, name, roll_no, email, role, department) VALUES (?, 'Audit User 1', 'BT23AUD01', 'audit1@test.com', 'student', 'CSE')").run(uAudit1);
   db.prepare("INSERT INTO student_fairness (fairness_id, user_id, semester_id, initial_score, current_score) VALUES ('fair-aud-1', ?, ?, 100, 100)").run(uAudit1, activeSem.semester_id);
 
+  const testDate = '2026-12-28';
   submitBookingRequest({
     userId: uAudit1,
     slotId: testSlot.id,
+    bookingDate: testDate,
     computePurpose: 'Audit Verification'
   });
 
-  const allocRound = await runAllocationRound(testSlot.id, 1);
+  const allocRound = await runAllocationRound(testSlot.id, 1, testDate);
   if (allocRound.allocatedCount !== 1) throw new Error('Failed to allocate single slot in audit round');
 
   const confirmedBooking = db.prepare('SELECT * FROM bookings WHERE user_id = ? AND slot_id = ?').get(uAudit1, testSlot.id);

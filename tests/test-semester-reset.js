@@ -139,6 +139,7 @@ async function runSemesterResetTest() {
 
   const reqRes = await request('POST', '/api/bookings/request', {
     slotId: freshSlotId,
+    bookingDate: '2026-12-28',
     computePurpose: 'New Term Research Workload',
     researchField: 'AI / Machine Learning'
   }, { 'x-user-id': testStudentId });
@@ -148,8 +149,10 @@ async function runSemesterResetTest() {
   }
   console.log(`   ✓ PASS: Student queued with maximum priority score (${reqRes.data.priorityScore} PTS) despite prior semester history.`);
 
-  // Deactivate synthetic test slot so live schedule stays clean
-  db.prepare("UPDATE lab_slots SET is_active = 0 WHERE slot_id = ?").run(freshSlotId);
+  // Clean up synthetic test slot so live schedule stays clean
+  db.prepare("DELETE FROM booking_requests WHERE slot_id = ?").run(freshSlotId);
+  db.prepare("DELETE FROM bookings WHERE slot_id = ?").run(freshSlotId);
+  db.prepare("DELETE FROM lab_slots WHERE slot_id = ?").run(freshSlotId);
 
   // D. Check audit trail logged the reset event
   const auditLog = db.prepare("SELECT * FROM audit_logs WHERE action = 'SEMESTER_RESET' ORDER BY created_at DESC LIMIT 1").get();

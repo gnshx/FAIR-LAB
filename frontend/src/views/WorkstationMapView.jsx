@@ -6,6 +6,29 @@ function getTodayStr() {
   return new Date().toISOString().split('T')[0];
 }
 
+function getInitialDateStr() {
+  const now = new Date();
+  if (now.getHours() >= 18) {
+    const tomorrow = new Date(now.getTime() + 24 * 3600 * 1000);
+    return tomorrow.toISOString().split('T')[0];
+  }
+  return now.toISOString().split('T')[0];
+}
+
+function getInitialTimeWindow() {
+  const now = new Date();
+  const currentHour = now.getHours();
+  if (currentHour >= 18 || currentHour < 9) {
+    return { start: '10:00', end: '12:00' };
+  }
+  const nextStart = Math.min(16, currentHour + 1);
+  const nextEnd = Math.min(18, nextStart + 2);
+  return {
+    start: `${String(nextStart).padStart(2, '0')}:00`,
+    end: `${String(nextEnd).padStart(2, '0')}:00`
+  };
+}
+
 function calcDurationMinutes(start, end) {
   const [sh, sm] = String(start || '10:00').split(':').map(Number);
   const [eh, em] = String(end || '12:00').split(':').map(Number);
@@ -24,9 +47,9 @@ export default function WorkstationMapView({ onNavigateToPass }) {
   const { currentUser, profile, refreshProfile } = useAuth();
   const { subscribe } = useSocket();
 
-  const [selectedDate, setSelectedDate] = useState(getTodayStr());
-  const [startTime, setStartTime] = useState('10:00');
-  const [endTime, setEndTime] = useState('12:00');
+  const [selectedDate, setSelectedDate] = useState(getInitialDateStr);
+  const [startTime, setStartTime] = useState(() => getInitialTimeWindow().start);
+  const [endTime, setEndTime] = useState(() => getInitialTimeWindow().end);
   const [availability, setAvailability] = useState(null);
   const [selectedMachineIds, setSelectedMachineIds] = useState([]);
   const [purpose, setPurpose] = useState('ML coursework & CUDA lab');
@@ -167,9 +190,10 @@ export default function WorkstationMapView({ onNavigateToPass }) {
   const durationLabel = calcDurationLabel(startTime, endTime);
   const exceedsMax2Hrs = durationMins > 120;
   const tooShort = durationMins > 0 && durationMins < 30;
+  const isPastDate = selectedDate < getTodayStr();
   const daySchedule = availability?.daySchedule;
   const intervalSchedule = availability?.intervalSchedule;
-  const scheduleBlocked = Boolean(intervalSchedule && !intervalSchedule.allowed);
+  const scheduleBlocked = Boolean(intervalSchedule && !intervalSchedule.allowed) || isPastDate;
   const matchingRelease = intervalSchedule?.matchingRelease || daySchedule?.ticketReleases?.find(r => r.status === 'RELEASED') || null;
   const selectedObjects = selectedMachineIds
     .map(id => allWorkstations.find(w => w.machine_id === id))
@@ -241,6 +265,7 @@ export default function WorkstationMapView({ onNavigateToPass }) {
             <label className="block text-[11px] font-medium text-[#64748B] mb-1.5">Date</label>
             <input
               type="date"
+              min={getTodayStr()}
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
               className="w-full h-10 px-3.5 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-xs font-medium text-[#0F172A] outline-none focus:bg-white focus:border-[#4F46E5]"
@@ -348,7 +373,7 @@ export default function WorkstationMapView({ onNavigateToPass }) {
       {!exceedsMax2Hrs && scheduleBlocked && (
         <div className="px-4 py-3 rounded-xl bg-[#FEF3C7] border border-[#FDE68A] text-xs font-semibold text-[#92400E] flex items-center gap-2">
           <span className="material-symbols-outlined text-[18px]">event_busy</span>
-          <span>{intervalSchedule.reason}</span>
+          <span>{isPastDate ? `Cannot book workstations for a past date (${selectedDate}). Please choose today or a future date.` : (intervalSchedule?.reason || 'Selected interval is unavailable.')}</span>
         </div>
       )}
 

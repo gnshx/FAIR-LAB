@@ -102,9 +102,11 @@ async function runConcurrencyTest() {
   console.log('[Phase 1] Firing 100 simultaneous booking requests via Promise.all...');
   const startTime = Date.now();
 
+  const testDate = '2026-12-28';
   const requestPromises = studentIds.map((uid, idx) => {
     return request('POST', '/api/bookings/request', {
       slotId: testSlotId,
+      bookingDate: testDate,
       computePurpose: `Distributed Parallel Benchmarking - Process ${idx + 1}`,
       researchField: 'AI / Machine Learning'
     }, { 'x-user-id': uid });
@@ -122,7 +124,7 @@ async function runConcurrencyTest() {
 
   // Phase 2: Run Batch Allocation with limit 5
   console.log('[Phase 2] Triggering Fairness Allocation Round (Capped at 5 available nodes)...');
-  const allocRes = await request('POST', `/api/bookings/queue/${testSlotId}/allocate`);
+  const allocRes = await request('POST', `/api/bookings/queue/${testSlotId}/allocate`, { bookingDate: testDate });
   
   console.log(`[Phase 2] Allocation result: Allocated = ${allocRes.data.allocatedCount}, Waitlisted = ${allocRes.data.waitlistedCount}`);
 

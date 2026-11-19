@@ -581,6 +581,7 @@ export default function AdminScheduleView() {
               <label className="block text-[11px] font-medium text-[#64748B] mb-1.5">Target date</label>
               <input
                 type="date"
+                min={getTodayStr()}
                 value={ovrForm.overrideDate}
                 onChange={(e) => setOvrForm({ ...ovrForm, overrideDate: e.target.value })}
                 required
@@ -816,6 +817,7 @@ export default function AdminScheduleView() {
                 <label className="block text-[11px] font-medium text-[#64748B] mb-1.5">Release date</label>
                 <input
                   type="date"
+                  min={getTodayStr()}
                   value={relForm.releaseDate}
                   onChange={(e) => setRelForm({ ...relForm, releaseDate: e.target.value })}
                   required

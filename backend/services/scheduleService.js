@@ -1,5 +1,5 @@
 const { getDb } = require('../db/database');
-const { parseTimeToMinutes } = require('../db/seed');
+const { parseTimeToMinutes, formatMinutesToTime, getTodayDateString, getCurrentTimeMinutes } = require('../db/seed');
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -138,8 +138,19 @@ function getEffectiveDaySchedule(labId = 'lab-l106', dateStr, policy = null) {
  * against Holidays, Extra Day Hours, Mon–Fri Academic Timetable, Max 2h Limit, and Ticket Releases.
  * Returns { allowed: true, daySchedule, matchingRelease } OR { allowed: false, code, reason, daySchedule }.
  */
-function checkIntervalScheduleStatus(labId, dateStr, startTime, endTime, policy = null, { isExplicitSlot = false } = {}) {
+function checkIntervalScheduleStatus(labId, dateStr, startTime, endTime, policy = null, { isExplicitSlot = false, bypassPastCheck = false } = {}) {
   const daySchedule = getEffectiveDaySchedule(labId, dateStr, policy);
+
+  // 0. Past Date Check
+  const todayStr = getTodayDateString();
+  if (!bypassPastCheck && dateStr < todayStr) {
+    return {
+      allowed: false,
+      code: 'PAST_DATE',
+      reason: `Cannot book workstations for past date (${dateStr}). Please select today or an upcoming date.`,
+      daySchedule
+    };
+  }
 
   // 1. Holiday / Closed Day check
   if (!daySchedule.isOpen) {
@@ -156,6 +167,35 @@ function checkIntervalScheduleStatus(labId, dateStr, startTime, endTime, policy 
   const eMin = parseTimeToMinutes(endTime);
   const openMin = parseTimeToMinutes(daySchedule.openTime);
   const closeMin = parseTimeToMinutes(daySchedule.closeTime);
+
+  // Check if date is today and interval or operating day has already elapsed
+  if (!bypassPastCheck && dateStr === todayStr) {
+    const nowMin = getCurrentTimeMinutes();
+    if (nowMin >= closeMin) {
+      return {
+        allowed: false,
+        code: 'LAB_CLOSED_FOR_TODAY',
+        reason: `Lab L-106 operating hours for today (${daySchedule.openTime}–${daySchedule.closeTime}) have concluded. Please select tomorrow or an upcoming date.`,
+        daySchedule
+      };
+    }
+    if (eMin <= nowMin) {
+      return {
+        allowed: false,
+        code: 'PAST_TIME_INTERVAL',
+        reason: `Requested interval ${startTime}–${endTime} has already passed for today. Please select an upcoming interval.`,
+        daySchedule
+      };
+    }
+    if (sMin < nowMin - 10) {
+      return {
+        allowed: false,
+        code: 'PAST_START_TIME',
+        reason: `Requested start time ${startTime} has already passed for today. Please select a time starting after ${formatMinutesToTime(nowMin)}.`,
+        daySchedule
+      };
+    }
+  }
 
   if (eMin <= sMin) {
     return {

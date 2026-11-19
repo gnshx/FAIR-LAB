@@ -16,8 +16,7 @@ async function runOverlapAndConcurrencyTests() {
   console.log('========================================================================\n');
 
   const db = getDb();
-  const { getTodayDateString } = require('../backend/db/seed');
-  const todayIso = getTodayDateString();
+  const todayIso = '2026-12-28';
 
   // Clean up any test artifacts from prior runs (respecting foreign key dependencies)
   function cleanup() {
@@ -93,9 +92,10 @@ async function runOverlapAndConcurrencyTests() {
   const req1 = submitBookingRequest({
     userId: 'usr-test-ovl-1',
     slotId: slotA.id,
+    bookingDate: todayIso,
     computePurpose: 'Slot A Initial Reservation'
   });
-  const allocRoundA = await runAllocationRound(slotA.id, 1);
+  const allocRoundA = await runAllocationRound(slotA.id, 1, todayIso);
   const bookingA = allocRoundA.allocations[0].bookingId;
   const assignedRigA = allocRoundA.allocations[0].machineId;
   console.log(`✓ Confirmed Machine ${assignedRigA} (Booking: ${bookingA}) for Slot A (${slotA.start} - ${slotA.end})`);
@@ -104,12 +104,13 @@ async function runOverlapAndConcurrencyTests() {
   const req2 = submitBookingRequest({
     userId: 'usr-test-ovl-2',
     slotId: slotB.id,
+    bookingDate: todayIso,
     computePurpose: 'Testing Overlap Allocation'
   });
   console.log(`✓ Student 2 submitted request for overlapping Slot B (${slotB.start} - ${slotB.end})`);
 
   // Run allocation for Slot B (cap at 1)
-  const allocRoundB = await runAllocationRound(slotB.id, 1);
+  const allocRoundB = await runAllocationRound(slotB.id, 1, todayIso);
   const assignedRigB = allocRoundB.allocations[0].machineId;
   console.log(`✓ Slot B allocated machine: ${assignedRigB}`);
 
@@ -122,9 +123,10 @@ async function runOverlapAndConcurrencyTests() {
   const req3 = submitBookingRequest({
     userId: 'usr-test-ovl-3',
     slotId: slotC.id,
+    bookingDate: todayIso,
     computePurpose: 'Testing Non-overlapping Allocation'
   });
-  const allocRoundC = await runAllocationRound(slotC.id, 1);
+  const allocRoundC = await runAllocationRound(slotC.id, 1, todayIso);
   const assignedRigC = allocRoundC.allocations[0].machineId;
   console.log(`✓ Non-overlapping Slot C allocated machine: ${assignedRigC}`);
   console.log('   ✓ PASS: Workstation time-overlap exclusion correctly differentiates overlapping from non-overlapping slots.');
@@ -139,6 +141,7 @@ async function runOverlapAndConcurrencyTests() {
     submitBookingRequest({
       userId: 'usr-test-ovl-1',
       slotId: slotB.id,
+      bookingDate: todayIso,
       computePurpose: 'Attempting Double Booking'
     });
   } catch (err) {
@@ -159,14 +162,15 @@ async function runOverlapAndConcurrencyTests() {
   submitBookingRequest({
     userId: 'usr-test-ovl-4',
     slotId: slotC.id,
+    bookingDate: todayIso,
     computePurpose: 'Concurrent Worker Contention Test'
   });
 
   // Fire two allocation worker rounds simultaneously via Promise.all
   console.log('Fired 2 allocation workers simultaneously for Slot C...');
   const [worker1, worker2] = await Promise.all([
-    runAllocationRound(slotC.id),
-    runAllocationRound(slotC.id)
+    runAllocationRound(slotC.id, null, todayIso),
+    runAllocationRound(slotC.id, null, todayIso)
   ]);
 
   const totalAllocated = worker1.allocatedCount + worker2.allocatedCount;
@@ -202,9 +206,10 @@ async function runOverlapAndConcurrencyTests() {
   submitBookingRequest({
     userId: 'usr-test-ovl-1',
     slotId: slotA.id,
+    bookingDate: todayIso,
     computePurpose: 'Re-booking after cancellation'
   });
-  const reAlloc = await runAllocationRound(slotA.id, 1);
+  const reAlloc = await runAllocationRound(slotA.id, 1, todayIso);
   console.log(`Re-allocated Machine: ${reAlloc.allocations[0].machineId} to ${reAlloc.allocations[0].userId}`);
   if (reAlloc.allocations[0].machineId !== assignedRigA) {
     throw new Error(`❌ FAILED: Freed machine ${assignedRigA} was not reallocated!`);

@@ -2,8 +2,28 @@ const { getDb } = require('./database');
 const crypto = require('crypto');
 const config = require('../config');
 
-function getTodayDateString() {
-  return new Date().toISOString().split('T')[0];
+function getTodayDateString(date = new Date()) {
+  try {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(date);
+  } catch (e) {
+    return date.toISOString().split('T')[0];
+  }
+}
+
+function getCurrentTimeMinutes(date = new Date()) {
+  try {
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Kolkata',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).formatToParts(date);
+    const hour = parseInt(parts.find(p => p.type === 'hour')?.value || '0', 10);
+    const minute = parseInt(parts.find(p => p.type === 'minute')?.value || '0', 10);
+    return hour * 60 + minute;
+  } catch (e) {
+    return date.getHours() * 60 + date.getMinutes();
+  }
 }
 
 function parseTimeToMinutes(timeStr) {
@@ -600,5 +620,6 @@ module.exports = {
   ensureLayoutUpgraded,
   parseTimeToMinutes,
   formatMinutesToTime,
-  getTodayDateString
+  getTodayDateString,
+  getCurrentTimeMinutes
 };
