@@ -247,6 +247,10 @@ apiRouter.get('/workstations/:id/availability', (req, res) => {
 
 // Hybrid Booking Request API with strict auth, Zod validation & rate limiting
 apiRouter.post('/booking-requests', requireUser, bookingRateLimiter, validateBody(hybridRequestSchema), async (req, res) => {
+  const perms = Array.isArray(req.user.permissions) ? req.user.permissions : [];
+  if (req.user.email === 'accessdesk.l106@iitbhilai.ac.in' || (perms.includes('ACCESS_OPERATOR') && !perms.includes('POLICY_ADMIN'))) {
+    return res.status(403).json({ error: 'Gate operators are authorized exclusively for QR pass verification and cannot submit workstation reservations.' });
+  }
   const userId = req.user.user_id;
   const idempKey = req.body.idempotencyKey || req.headers['idempotency-key'] || null;
   try {

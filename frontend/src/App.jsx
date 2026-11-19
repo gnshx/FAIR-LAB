@@ -47,16 +47,14 @@ function MainLayout() {
   const [currentView, setCurrentView] = useState(initialRoute.view);
 
   const handleNavigate = (viewId, replace = false) => {
-    const targetPath = VIEW_TO_PATH[viewId] || '/dashboard';
-    const route = PATH_TO_ROUTE[targetPath] || { workspace: 'student', view: viewId, path: targetPath };
-
-    let targetWs = route.workspace;
-    if (isGateUser && (viewId === 'admin-access' || viewId === 'student-book')) {
-      targetWs = 'gate';
-    } else if (viewId === 'admin-access' && workspace === 'gate') {
-      targetWs = 'gate';
+    // Gate operators are restricted strictly to the QR Pass Verifier / Access Control
+    if (isGateUser) {
+      viewId = 'admin-access';
     }
+    const targetPath = isGateUser ? '/access' : (VIEW_TO_PATH[viewId] || '/dashboard');
+    const route = PATH_TO_ROUTE[targetPath] || { workspace: isGateUser ? 'gate' : 'student', view: viewId, path: targetPath };
 
+    const targetWs = isGateUser ? 'gate' : route.workspace;
     setWorkspace(targetWs);
     setCurrentView(viewId);
     sessionStorage.setItem('fairlab_last_workspace', targetWs);
@@ -82,6 +80,12 @@ function MainLayout() {
     setWorkspace(targetWs);
     handleNavigate(nextView);
   };
+
+  useEffect(() => {
+    if (isGateUser && currentView !== 'admin-access') {
+      handleNavigate('admin-access', true);
+    }
+  }, [isGateUser, currentView]);
 
   const handleSignOut = () => {
     clearSession();

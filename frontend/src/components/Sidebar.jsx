@@ -10,8 +10,7 @@ export const STUDENT_NAV = [
 ];
 
 export const GATE_NAV = [
-  { id: 'admin-access', label: 'Access control (Scanner)' },
-  { id: 'student-book', label: 'Workstation live map' }
+  { id: 'admin-access', label: 'Access control (Scanner)' }
 ];
 
 export const ADMIN_NAV = [
@@ -35,7 +34,7 @@ export default function Sidebar({ workspace, currentView, setCurrentView, onSwit
     ((Array.isArray(user?.permissions) ? user.permissions : []).includes('ACCESS_OPERATOR') &&
      !(Array.isArray(user?.permissions) ? user.permissions : []).includes('POLICY_ADMIN'));
 
-  const isGateWorkspace = workspace === 'gate' || (isGateOp && (currentView === 'admin-access' || currentView === 'student-book'));
+  const isGateWorkspace = workspace === 'gate' || isGateOp;
   const isAdminWorkspace = workspace === 'admin' && !isGateWorkspace;
 
   let navItems = STUDENT_NAV;
