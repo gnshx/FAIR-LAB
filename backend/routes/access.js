@@ -96,7 +96,7 @@ router.get('/sample-pass', async (req, res) => {
       JOIN bookings b ON p.booking_id = b.booking_id
       JOIN users u ON p.user_id = u.user_id
       LEFT JOIN workstations w ON b.machine_id = w.machine_id
-      WHERE p.status = 'VALID' AND (p.expires_at > datetime('now') OR p.expires_at > date('now'))
+      WHERE p.status = 'VALID' AND datetime(p.expires_at) > datetime('now')
       ORDER BY p.issued_at DESC
       LIMIT 1
     `).get();
