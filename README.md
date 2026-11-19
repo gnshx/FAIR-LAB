@@ -11,12 +11,13 @@
 [![Backend](https://img.shields.io/badge/Backend-Node.js%20%2B%20Express%20%2B%20WS-0F172A?style=flat-square)](#backend-engineering--api-reference)
 [![Database](https://img.shields.io/badge/Database-PostgreSQL%2016%20%7C%20SQLite%20WAL-15803D?style=flat-square)](#database-invariants--concurrency-control)
 [![Frontend](https://img.shields.io/badge/Frontend-React%2018%20%2B%20Vite%20%2B%20Tailwind-4F46E5?style=flat-square)](#frontend-workspaces--ui-themes)
-[![Tests](https://img.shields.io/badge/Verification-14%2F14%20Suites%20Passing-16A34A?style=flat-square)](#verification--adversarial-testing)
+[![Tests](https://img.shields.io/badge/Verification-15%2F15%20Suites%20Passing-16A34A?style=flat-square)](#verification--adversarial-testing)
 [![Auth](https://img.shields.io/badge/Auth-%40iitbhilai.ac.in%20Only-B45309?style=flat-square)](#security-rbac--anti-abuse-hardening)
+[![Mistakes & Fixes](https://img.shields.io/badge/Audit-Mistakes%20%26%20Fixes%20Log-6366F1?style=flat-square)](MISTAKES_AND_FIXES.md)
 
 *Movie-seat visual booking meets mathematically verified fair scheduling, academic timetable governance, ticket drops, and database-enforced zero-overlap guarantees.*
 
-[Live Demo](#live-campus-demonstration--endpoints) · [Architecture](#system-architecture) · [Fairness Model](#mathematical-fairness-model) · [Schedule & Tickets](#schedule-governance--ticket-releases) · [Security](#security-rbac--anti-abuse-hardening) · [Quickstart](#quickstart--local-development) · [VM Deployment](#production-vm-deployment-10-vcpu--10-gb-ram)
+[Live Demo](#live-campus-demonstration--endpoints) · [Architecture](#system-architecture) · [Fairness Model](#mathematical-fairness-model) · [Schedule & Tickets](#schedule-governance--ticket-releases) · [Security](#security-rbac--anti-abuse-hardening) · [Mistakes & Fixes Log](MISTAKES_AND_FIXES.md) · [Quickstart](#quickstart--local-development) · [VM Deployment](#production-vm-deployment-10-vcpu--10-gb-ram)
 
 </div>
 
