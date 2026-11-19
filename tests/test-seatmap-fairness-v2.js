@@ -31,17 +31,19 @@ async function runSuite() {
   const testDate = '2026-12-28'; // Isolated future date so live today seed data stays clean
 
   const cleanup = () => {
+    db.prepare("UPDATE workstations SET status = 'AVAILABLE', current_user_id = NULL, active_job = NULL WHERE current_user_id LIKE 'usr-v2-%' OR machine_id IN ('L106-PC-01', 'L106-PC-02', 'L106-PC-03', 'L106-PC-83')").run();
+    db.prepare("DELETE FROM notifications WHERE user_id LIKE 'usr-v2-%'").run();
     db.prepare("DELETE FROM entry_logs WHERE user_id LIKE 'usr-v2-%'").run();
     db.prepare("DELETE FROM allocation_history WHERE user_id LIKE 'usr-v2-%'").run();
     db.prepare("DELETE FROM access_passes WHERE user_id LIKE 'usr-v2-%' OR booking_id IN (SELECT booking_id FROM bookings WHERE booking_date = ?)").run(testDate);
     db.prepare("DELETE FROM bookings WHERE booking_date = ? OR user_id LIKE 'usr-v2-%'").run(testDate);
     db.prepare("DELETE FROM waitlist_entries WHERE booking_date = ? OR user_id LIKE 'usr-v2-%'").run(testDate);
+    db.prepare("DELETE FROM booking_preferences WHERE request_id IN (SELECT request_id FROM booking_requests WHERE booking_date = ? OR user_id LIKE 'usr-v2-%')").run(testDate);
     db.prepare("DELETE FROM booking_requests WHERE booking_date = ? OR user_id LIKE 'usr-v2-%'").run(testDate);
     db.prepare("DELETE FROM student_fairness WHERE user_id LIKE 'usr-v2-%'").run();
     db.prepare("DELETE FROM users WHERE user_id LIKE 'usr-v2-%'").run();
     db.prepare("DELETE FROM ticket_releases WHERE release_id = ?").run(`rel-v2-${testDate}`);
     db.prepare("DELETE FROM lab_slots WHERE slot_id LIKE 'slot-conc-%' OR slot_id LIKE 'slot-term2-%' OR slot_id LIKE 'slot-audit-%'").run();
-    db.prepare("UPDATE workstations SET status = 'AVAILABLE', current_user_id = NULL, active_job = NULL WHERE machine_id = 'L106-PC-83'").run();
     invalidateAvailabilityCache();
   };
 
