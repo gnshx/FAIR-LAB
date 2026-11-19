@@ -177,7 +177,7 @@ async function V1_cleanDatabaseSeed() {
   assert(accessOps.length >= 2, 'V1.10 Designated admins hold ACCESS_OPERATOR permission');
   assert(nonOpAdmins.length >= 1, 'V1.11 Ordinary admin without ACCESS_OPERATOR exists for RBAC separation');
 
-  const sched = await fetchJSON(`${DEV_API}/admin/schedule-overview`);
+  const sched = await fetchJSON(`${DEV_API}/admin/schedule-overview`, { headers: { 'x-user-id': 'usr-admin-sharma' } });
   assert(sched.status === 200, 'V1.12 Schedule overview responds on clean DB');
   assert(Array.isArray(sched.json?.timetable) && sched.json.timetable.length >= 1, 'V1.13 Mon–Fri academic timetable seeded');
   assert(Array.isArray(sched.json?.ticketReleases) && sched.json.ticketReleases.length >= 1, 'V1.14 Admin ticket releases seeded');
@@ -596,11 +596,11 @@ async function V6_jwtAndProductionSecurity() {
   try {
     await waitForHealth(PROD_BASE);
 
-    // Production login sets Secure + HttpOnly + SameSite=Lax
+    // Production login must fail closed until a real credential provider exists.
     const pLogin = await login(PROD_API, 'aksharma@iitbhilai.ac.in');
     const pCookie = pLogin.headers.get('set-cookie') || '';
-    assert(pLogin.status === 200 && pCookie.includes('Secure') && pCookie.includes('HttpOnly') && pCookie.includes('SameSite=Lax'),
-      'V6.5  Production login cookie sets HttpOnly; SameSite=Lax; Secure', pCookie);
+    assert(pLogin.status === 503 && pLogin.json?.code === 'AUTH_PROVIDER_NOT_CONFIGURED' && !pCookie,
+      'V6.5  Production login fails closed without verified credentials', pCookie);
 
     const pLogout = await fetchJSON(`${PROD_API}/auth/logout`, { method: 'POST' });
     const pLogoutCookie = pLogout.headers.get('set-cookie') || '';
