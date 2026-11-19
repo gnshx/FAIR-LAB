@@ -14,7 +14,9 @@ export default function AdminWorkstationsView() {
 
   const fetchWorkstations = useCallback(async () => {
     try {
-      const res = await fetch('/api/v1/availability?labId=L106');
+      const res = await fetch(`/api/v1/availability?labId=L106&_t=${Date.now()}`, {
+        cache: 'no-store'
+      });
       if (res.ok) {
         const data = await res.json();
         setWorkstations(data.workstations || []);
@@ -32,7 +34,9 @@ export default function AdminWorkstationsView() {
   useEffect(() => {
     const unsubs = [
       subscribe('workstation.status_changed', fetchWorkstations),
-      subscribe('SLOT_UPDATED', fetchWorkstations)
+      subscribe('SLOT_UPDATED', fetchWorkstations),
+      subscribe('allocation.completed', fetchWorkstations),
+      subscribe('QUEUE_CHANGED', fetchWorkstations)
     ];
     return () => unsubs.forEach(fn => fn && fn());
   }, [subscribe, fetchWorkstations]);
@@ -47,6 +51,22 @@ export default function AdminWorkstationsView() {
   const handleToggleMaintenance = async (ws) => {
     const isCurrentlyMaint = checkIsMaintenance(ws);
     const nextMaint = !isCurrentlyMaint;
+
+    // Optimistic UI update so button and cards immediately reflect new status with 0ms delay
+    setWorkstations(prev => prev.map(item => {
+      if (item.machine_id === ws.machine_id || item.display_label === ws.display_label) {
+        return {
+          ...item,
+          status: nextMaint ? 'MAINTENANCE' : 'AVAILABLE',
+          operational_status: nextMaint ? 'MAINTENANCE' : 'ONLINE',
+          hardware_state: nextMaint ? 'MAINTENANCE' : 'ONLINE',
+          is_maintenance: nextMaint,
+          slot_status: nextMaint ? 'MAINTENANCE' : 'AVAILABLE'
+        };
+      }
+      return item;
+    }));
+
     const res = await fetch('/api/admin/workstation/toggle-maintenance', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-user-id': currentUser },
@@ -63,6 +83,7 @@ export default function AdminWorkstationsView() {
       await fetchWorkstations();
     } else {
       setBanner({ type: 'error', text: data.error || 'Admin permission required (HTTP 403).' });
+      await fetchWorkstations();
     }
   };
 

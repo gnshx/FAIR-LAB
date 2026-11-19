@@ -456,10 +456,12 @@ router.post('/workstation/toggle-maintenance', requireAdmin, validateBody(toggle
   const actorId = req.user.user_id;
   try {
     const result = toggleWorkstationMaintenance(req.body.machineId, req.body.isMaintenance, actorId);
+    invalidateAvailabilityCache();
 
     if (req.app.get('wssBroadcast')) {
       req.app.get('wssBroadcast')('workstation.status_changed', {
-        machineId: req.body.machineId,
+        machineId: result.machineId,
+        display_label: result.display_label,
         isMaintenance: req.body.isMaintenance,
         status: result.newStatus,
         hardware_state: req.body.isMaintenance ? 'MAINTENANCE' : 'ONLINE',
@@ -467,7 +469,8 @@ router.post('/workstation/toggle-maintenance', requireAdmin, validateBody(toggle
       });
       req.app.get('wssBroadcast')('SLOT_UPDATED', {
         type: 'WORKSTATION_MAINTENANCE',
-        machineId: req.body.machineId,
+        machineId: result.machineId,
+        display_label: result.display_label,
         isMaintenance: req.body.isMaintenance,
         status: result.newStatus
       });

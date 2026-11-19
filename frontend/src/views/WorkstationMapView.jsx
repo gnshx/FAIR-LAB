@@ -72,9 +72,12 @@ export default function WorkstationMapView({ onNavigateToPass }) {
         labId: 'L106',
         date: selectedDate,
         start: startTime,
-        end: endTime
+        end: endTime,
+        _t: String(Date.now())
       });
-      const res = await fetch(`/api/v1/availability?${params.toString()}`);
+      const res = await fetch(`/api/v1/availability?${params.toString()}`, {
+        cache: 'no-store'
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to check availability');
       setAvailability(data);
@@ -102,9 +105,9 @@ export default function WorkstationMapView({ onNavigateToPass }) {
     await fetchAvailability();
     setTimeout(() => {
       if (mapSectionRef.current) {
-        mapSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        mapSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
-    }, 50);
+    }, 60);
   };
 
   useEffect(() => {
@@ -146,8 +149,21 @@ export default function WorkstationMapView({ onNavigateToPass }) {
 
   const toggleSelectSeat = (ws) => {
     const st = (ws.slot_status || ws.status || '').toUpperCase();
-    if (st === 'MAINTENANCE' || st === 'OFFLINE' || st === 'BOOKED') return;
+    if (st === 'MAINTENANCE' || st === 'OFFLINE') {
+      setError(`Workstation ${ws.display_label || ws.machine_id} is currently offline for maintenance.`);
+      return;
+    }
+    if (st === 'BOOKED' || st === 'OCCUPIED') {
+      const neighbor = freeWorkstations.find(w => w.block_code === ws.block_code && Math.abs((w.seat_num || 0) - (ws.seat_num || 0)) <= 2);
+      if (neighbor) {
+        setError(`${ws.display_label || ws.machine_id} is already reserved. Suggested available system in ${ws.block_code === 'A' ? 'Block A' : 'Block B'}: ${neighbor.display_label}. (Click green systems or "Auto-fill 3 free seats").`);
+      } else {
+        setError(`${ws.display_label || ws.machine_id} is already reserved for this interval. Pick any green workstation.`);
+      }
+      return;
+    }
 
+    setError('');
     setSelectedMachineIds(prev => {
       if (prev.includes(ws.machine_id)) {
         return prev.filter(id => id !== ws.machine_id);
@@ -332,7 +348,7 @@ export default function WorkstationMapView({ onNavigateToPass }) {
           }
         }}
         title={`${ws.display_label || ws.machine_id} · ${st}`}
-        className={`relative overflow-visible h-9 sm:h-[38px] rounded-lg border text-xs font-semibold tabular-nums select-none transition-all flex items-center justify-center ${tileStyle}`}
+        className={`relative overflow-visible h-8 sm:h-9 rounded-lg border text-[11px] sm:text-xs font-semibold tabular-nums select-none transition-all flex items-center justify-center ${tileStyle}`}
       >
         <span>{numStr}</span>
         {isSelected && (
@@ -796,9 +812,9 @@ export default function WorkstationMapView({ onNavigateToPass }) {
               </div>
 
               <div className="p-3.5 rounded-xl bg-[#EEF2FF] border border-[#E0E7FF]">
-                <div className="text-xs font-bold text-[#4338CA]">How it works</div>
+                <div className="text-xs font-bold text-[#4338CA]">How fairness allocation works</div>
                 <p className="text-[11px] text-[#4338CA]/85 mt-1 leading-relaxed">
-                  Uncontested seats confirm instantly. Contested intervals are evaluated automatically by the fairness engine with zero admin delay. We recommend choosing 3 preferences to maximize assignment match.
+                  Uncontested seats confirm instantly. Contested intervals are evaluated autonomously with 0 admin delay. If all 3 preferences are booked by peers with equal/higher priority, you are automatically assigned another available PC in the lab. You only waitlist if all 84 PCs are 100% full.
                 </p>
               </div>
             </div>

@@ -34,9 +34,10 @@ function toggleWorkstationMaintenance(machineId, isMaintenance, actorId = 'usr-a
   const db = getDb();
 
   const tx = db.transaction(() => {
-    const current = db.prepare('SELECT * FROM workstations WHERE machine_id = ?').get(machineId);
-    if (!current) throw new Error('Workstation not found');
+    const current = db.prepare('SELECT * FROM workstations WHERE machine_id = ? OR display_label = ? LIMIT 1').get(machineId, machineId);
+    if (!current) throw new Error(`Workstation "${machineId}" not found`);
 
+    const targetMachineId = current.machine_id;
     const newStatus = isMaintenance ? 'MAINTENANCE' : 'AVAILABLE';
     const activeJob = isMaintenance ? 'Offline for Maintenance' : null;
 
@@ -44,7 +45,7 @@ function toggleWorkstationMaintenance(machineId, isMaintenance, actorId = 'usr-a
       UPDATE workstations
       SET status = ?, active_job = ?, current_user_id = CASE WHEN ? = 'MAINTENANCE' THEN NULL ELSE current_user_id END
       WHERE machine_id = ?
-    `).run(newStatus, activeJob, newStatus, machineId);
+    `).run(newStatus, activeJob, newStatus, targetMachineId);
 
     const reallocated = [];
     const waitlisted = [];
@@ -56,7 +57,7 @@ function toggleWorkstationMaintenance(machineId, isMaintenance, actorId = 'usr-a
         FROM bookings b
         JOIN lab_slots s ON b.slot_id = s.slot_id
         WHERE b.machine_id = ? AND b.status = 'CONFIRMED'
-      `).all(machineId);
+      `).all(targetMachineId);
 
       for (const b of impacted) {
         // Find a replacement workstation free for the same slot/overlapping time & date (prefer same block)
@@ -74,21 +75,21 @@ function toggleWorkstationMaintenance(machineId, isMaintenance, actorId = 'usr-a
             )
           ORDER BY CASE WHEN w.block_code = ? THEN 0 ELSE 1 END, w.block_code ASC, w.row_num ASC, w.seat_num ASC
           LIMIT 1
-        `).get(b.lab_id, machineId, b.booking_date, b.slot_id, b.end_time, b.start_time, current.block_code || 'A');
+        `).get(b.lab_id, targetMachineId, b.booking_date, b.slot_id, b.end_time, b.start_time, current.block_code || 'A');
 
         if (replacement) {
           db.prepare('UPDATE bookings SET machine_id = ? WHERE booking_id = ?').run(replacement.machine_id, b.booking_id);
           db.prepare(`
             UPDATE workstations SET status = 'BOOKED', current_user_id = ?, active_job = ?
             WHERE machine_id = ? AND status = 'AVAILABLE'
-          `).run(b.user_id, `Reallocated from ${machineId}`, replacement.machine_id);
+          `).run(b.user_id, `Reallocated from ${targetMachineId}`, replacement.machine_id);
 
           reallocated.push({
             bookingId: b.booking_id,
             userId: b.user_id,
             slotId: b.slot_id,
             bookingDate: b.booking_date,
-            fromMachineId: machineId,
+            fromMachineId: targetMachineId,
             toMachineId: replacement.machine_id
           });
 
@@ -100,7 +101,7 @@ function toggleWorkstationMaintenance(machineId, isMaintenance, actorId = 'usr-a
             actorId,
             actorName,
             b.booking_id,
-            `Automatically reallocated booking from offline ${machineId} to ${replacement.machine_id} for slot ${b.slot_id} (${b.booking_date}).`
+            `Automatically reallocated booking from offline ${targetMachineId} to ${replacement.machine_id} for slot ${b.slot_id} (${b.booking_date}).`
           );
 
           db.prepare(`
@@ -110,7 +111,7 @@ function toggleWorkstationMaintenance(machineId, isMaintenance, actorId = 'usr-a
             `notif-realloc-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
             b.user_id,
             `Workstation Reallocated: ${replacement.display_label || replacement.machine_id}`,
-            `Your booking for ${b.booking_date} (${b.start_time || '10:00'}–${b.end_time || '11:00'}) was automatically moved from ${current.display_label || machineId} (offline for maintenance) to ${replacement.display_label || replacement.machine_id}.`
+            `Your booking for ${b.booking_date} (${b.start_time || '10:00'}–${b.end_time || '11:00'}) was automatically moved from ${current.display_label || targetMachineId} (offline for maintenance) to ${replacement.display_label || replacement.machine_id}.`
           );
         } else {
           // Lab 100% full: cancel booking with 0 penalty and return request to top of queue
@@ -126,7 +127,7 @@ function toggleWorkstationMaintenance(machineId, isMaintenance, actorId = 'usr-a
             `notif-realloc-cancel-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
             b.user_id,
             `Reservation Cancelled: Workstation Offline`,
-            `Your booking on ${current.display_label || machineId} for ${b.booking_date} was cancelled because all replacement workstations are fully occupied. You have been placed at the top of the queue with 0 penalty.`
+            `Your booking on ${current.display_label || targetMachineId} for ${b.booking_date} was cancelled because all replacement workstations are fully occupied. You have been placed at the top of the queue with 0 penalty.`
           );
           waitlisted.push({ bookingId: b.booking_id, userId: b.user_id, slotId: b.slot_id });
         }
@@ -145,8 +146,8 @@ function toggleWorkstationMaintenance(machineId, isMaintenance, actorId = 'usr-a
       `audit-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       actorId,
       actorName,
-      machineId,
-      `Workstation ${machineId} status changed from ${current.status} to ${newStatus}. Reallocated: ${reallocated.length}, Waitlisted: ${waitlisted.length}.`
+      targetMachineId,
+      `Workstation ${current.display_label || targetMachineId} (${targetMachineId}) status changed from ${current.status} to ${newStatus}. Reallocated: ${reallocated.length}, Waitlisted: ${waitlisted.length}.`
     );
 
     // Cross-replica transactional outbox events
@@ -156,10 +157,11 @@ function toggleWorkstationMaintenance(machineId, isMaintenance, actorId = 'usr-a
       VALUES (?, 'workstation.status_changed', ?, ?, 'PENDING')
     `).run(
       eventId,
-      machineId,
+      targetMachineId,
       JSON.stringify({
         eventId,
-        machineId,
+        machineId: targetMachineId,
+        display_label: current.display_label,
         isMaintenance,
         status: newStatus,
         hardware_state: isMaintenance ? 'MAINTENANCE' : 'ONLINE',
@@ -174,11 +176,12 @@ function toggleWorkstationMaintenance(machineId, isMaintenance, actorId = 'usr-a
       VALUES (?, 'SLOT_UPDATED', ?, ?, 'PENDING')
     `).run(
       slotEventId,
-      machineId,
+      targetMachineId,
       JSON.stringify({
         eventId: slotEventId,
         type: 'WORKSTATION_MAINTENANCE',
-        machineId,
+        machineId: targetMachineId,
+        display_label: current.display_label,
         isMaintenance,
         status: newStatus,
         timestamp: new Date().toISOString()
@@ -186,7 +189,8 @@ function toggleWorkstationMaintenance(machineId, isMaintenance, actorId = 'usr-a
     );
 
     return {
-      machineId,
+      machineId: targetMachineId,
+      display_label: current.display_label,
       previousStatus: current.status,
       newStatus,
       reallocatedCount: reallocated.length,
