@@ -190,6 +190,106 @@ function ensureLayoutUpgraded(db) {
   }
 }
 
+function ensureTodayBookingsSeeded(db) {
+  const today = getTodayDateString();
+  const count = db.prepare("SELECT COUNT(*) as c FROM bookings WHERE booking_date = ?").get(today).c;
+  if (count >= 20) return;
+
+  const sem = db.prepare("SELECT semester_id FROM semesters WHERE status = 'active' LIMIT 1").get();
+  if (!sem) return;
+  const semId = sem.semester_id;
+
+  const cohortUsers = db.prepare("SELECT user_id FROM users WHERE role = 'student' AND user_id != 'usr-student-ganesh'").all();
+  if (!cohortUsers || cohortUsers.length === 0) return;
+  const cohortIds = cohortUsers.map(u => u.user_id);
+
+  const slots = [
+    { id: 'slot-1', start: '09:00', end: '10:00', durationMinutes: 60 },
+    { id: 'slot-2', start: '10:00', end: '11:00', durationMinutes: 60 },
+    { id: 'slot-3', start: '11:00', end: '12:00', durationMinutes: 60 },
+    { id: 'slot-4', start: '12:00', end: '13:00', durationMinutes: 60 },
+    { id: 'slot-5', start: '13:00', end: '14:00', durationMinutes: 60 },
+    { id: 'slot-6', start: '14:00', end: '15:00', durationMinutes: 60 },
+    { id: 'slot-7', start: '15:00', end: '16:00', durationMinutes: 60 },
+    { id: 'slot-8', start: '16:00', end: '17:00', durationMinutes: 60 },
+    { id: 'slot-9', start: '17:00', end: '18:00', durationMinutes: 60 }
+  ];
+
+  const insertBooking = db.prepare(`
+    INSERT OR IGNORE INTO bookings (
+      booking_id, request_id, user_id, machine_id, slot_id, booking_date,
+      start_time, end_time, duration_minutes, demand_level, priority_score_at_booking,
+      semester_id, status, created_at, confirmed_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  const existingBookings = db.prepare("SELECT user_id, slot_id FROM bookings WHERE booking_date = ?").all(today);
+  const usedUserSlots = new Set(existingBookings.map(b => `${b.user_id}:${b.slot_id}`));
+  usedUserSlots.add('usr-student-ganesh:slot-3');
+
+  let bSeq = 1;
+  let cohortCursor = 0;
+
+  function seedMachineSlots(machineId, slotNums, demandLevel = 'NORMAL') {
+    for (const sNum of slotNums) {
+      const sId = `slot-${sNum}`;
+      const slotMeta = slots.find(s => s.id === sId) || { start: '09:00', end: '10:00', durationMinutes: 60 };
+      let chosenUser = null;
+      for (let tries = 0; tries < cohortIds.length; tries++) {
+        const candidate = cohortIds[(cohortCursor + tries) % cohortIds.length];
+        if (!usedUserSlots.has(`${candidate}:${sId}`)) {
+          chosenUser = candidate;
+          cohortCursor = (cohortCursor + tries + 1) % cohortIds.length;
+          break;
+        }
+      }
+      if (!chosenUser) continue;
+      usedUserSlots.add(`${chosenUser}:${sId}`);
+      const bid = `L106-SEED-${today.replace(/-/g, '')}-${String(bSeq++).padStart(4, '0')}`;
+      insertBooking.run(
+        bid, null, chosenUser, machineId, sId, today,
+        slotMeta.start, slotMeta.end, slotMeta.durationMinutes,
+        demandLevel, demandLevel === 'HIGH_DEMAND' ? 1.8 : 0.6,
+        semId, 'CONFIRMED', `${today} 08:30:00`, `${today} 08:35:00`
+      );
+    }
+  }
+
+  const tx = db.transaction(() => {
+    seedMachineSlots('L106-PC-01', [1, 2, 3, 4, 5, 6, 7, 8, 9], 'HIGH_DEMAND');
+    seedMachineSlots('L106-PC-26', [1, 2, 3, 4, 5, 6, 7, 8, 9], 'HIGH_DEMAND');
+    seedMachineSlots('L106-PC-62', [1, 2, 3, 4, 5, 6, 7, 8, 9], 'HIGH_DEMAND');
+
+    seedMachineSlots('L106-PC-02', [1, 2, 3, 4, 5, 7, 8], 'HIGH_DEMAND');
+    seedMachineSlots('L106-PC-05', [1, 2, 3, 4, 5, 7, 8], 'HIGH_DEMAND');
+    seedMachineSlots('L106-PC-27', [1, 2, 3, 4, 6, 7, 8], 'NORMAL');
+    seedMachineSlots('L106-PC-23', [1, 2, 3, 5, 6, 7, 9], 'NORMAL');
+    seedMachineSlots('L106-PC-65', [1, 2, 3, 4, 5, 7, 8], 'HIGH_DEMAND');
+    seedMachineSlots('L106-PC-71', [1, 2, 4, 5, 6, 7, 8], 'NORMAL');
+
+    seedMachineSlots('L106-PC-06', [1, 2, 3, 6, 7], 'NORMAL');
+    seedMachineSlots('L106-PC-08', [2, 3, 4, 6, 8], 'NORMAL');
+    seedMachineSlots('L106-PC-15', [1, 3, 5, 6, 7], 'NORMAL');
+    seedMachineSlots('L106-PC-21', [1, 2, 4, 6, 8], 'NORMAL');
+    seedMachineSlots('L106-PC-32', [2, 3, 5, 6, 9], 'NORMAL');
+    seedMachineSlots('L106-PC-41', [1, 2, 4, 6, 7], 'NORMAL');
+    seedMachineSlots('L106-PC-63', [1, 3, 5, 6, 8], 'NORMAL');
+    seedMachineSlots('L106-PC-74', [2, 4, 5, 6, 7], 'NORMAL');
+    seedMachineSlots('L106-PC-80', [1, 2, 5, 6, 9], 'NORMAL');
+
+    seedMachineSlots('L106-PC-07', [2, 6], 'NORMAL');
+    seedMachineSlots('L106-PC-28', [3, 6], 'NORMAL');
+    seedMachineSlots('L106-PC-18', [1, 6, 7], 'NORMAL');
+    seedMachineSlots('L106-PC-25', [2, 4], 'NORMAL');
+    seedMachineSlots('L106-PC-35', [3, 6], 'NORMAL');
+    seedMachineSlots('L106-PC-50', [1, 5], 'NORMAL');
+    seedMachineSlots('L106-PC-61', [2, 6], 'NORMAL');
+    seedMachineSlots('L106-PC-77', [3, 7], 'NORMAL');
+  });
+  tx();
+  console.log(`[Seed] Seeded realistic workstation occupancy for today (${today}).`);
+}
+
 async function seedDatabase() {
   const db = getDb();
 
@@ -200,6 +300,7 @@ async function seedDatabase() {
       const defaultHash = hashPassword('demo');
       db.prepare('UPDATE users SET password_hash = ? WHERE password_hash IS NULL').run(defaultHash);
     } catch {}
+    ensureTodayBookingsSeeded(db);
     console.log('[Seed] Database already populated (84 workstations verified).');
     return;
   }
@@ -621,6 +722,7 @@ async function seedDatabase() {
 
 module.exports = {
   seedDatabase,
+  ensureTodayBookingsSeeded,
   generateSlotsFromSchedule,
   buildWorkstationLayout,
   ensureLayoutUpgraded,

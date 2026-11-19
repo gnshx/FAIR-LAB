@@ -80,6 +80,7 @@ async function runConcurrencyTest() {
 
   const studentIds = [];
   const expectedScores = [];
+  const { signAuthToken } = require('../backend/middleware/auth');
 
   const setupTx = db.transaction(() => {
     for (let i = 1; i <= 100; i++) {
@@ -104,12 +105,18 @@ async function runConcurrencyTest() {
 
   const testDate = '2026-12-28';
   const requestPromises = studentIds.map((uid, idx) => {
+    const studentToken = signAuthToken({
+      user_id: uid,
+      email: `conc.${idx + 1}@iitbhilai.ac.in`,
+      role: 'student',
+      permissions: []
+    });
     return request('POST', '/api/bookings/request', {
       slotId: testSlotId,
       bookingDate: testDate,
       computePurpose: `Distributed Parallel Benchmarking - Process ${idx + 1}`,
       researchField: 'AI / Machine Learning'
-    }, { 'x-user-id': uid });
+    }, { 'Authorization': `Bearer ${studentToken}` });
   });
 
   const responses = await Promise.all(requestPromises);
@@ -122,9 +129,15 @@ async function runConcurrencyTest() {
     throw new Error(`Expected all 100 requests to be accepted into queue, got ${successfulQueued.length}`);
   }
 
-  // Phase 2: Run Batch Allocation with limit 5
+  // Phase 2: Run Batch Allocation with limit 5 (Admin auth required in production)
   console.log('[Phase 2] Triggering Fairness Allocation Round (Capped at 5 available nodes)...');
-  const allocRes = await request('POST', `/api/bookings/queue/${testSlotId}/allocate`, { bookingDate: testDate });
+  const adminToken = signAuthToken({
+    user_id: 'usr-admin-sharma',
+    email: 'aksharma@iitbhilai.ac.in',
+    role: 'admin',
+    permissions: ['ADMIN_ALL']
+  });
+  const allocRes = await request('POST', `/api/bookings/queue/${testSlotId}/allocate`, { bookingDate: testDate }, { 'Authorization': `Bearer ${adminToken}` });
   
   console.log(`[Phase 2] Allocation result: Allocated = ${allocRes.data.allocatedCount}, Waitlisted = ${allocRes.data.waitlistedCount}`);
 

@@ -44,6 +44,9 @@ async function runSuite() {
   };
 
   cleanup();
+  const { ensureTodayBookingsSeeded } = require('../backend/db/seed');
+  ensureTodayBookingsSeeded(db);
+  invalidateAvailabilityCache();
 
   try {
     // -----------------------------------------------------------------------
@@ -256,6 +259,9 @@ async function runSuite() {
     console.log('================================================================');
   } finally {
     cleanup();
+  const { ensureTodayBookingsSeeded } = require('../backend/db/seed');
+  ensureTodayBookingsSeeded(db);
+  invalidateAvailabilityCache();
   }
 }
 

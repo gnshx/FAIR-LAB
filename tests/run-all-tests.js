@@ -2,6 +2,10 @@ const { execSync, spawn } = require('child_process');
 const http = require('http');
 const path = require('path');
 
+// Ensure consistent JWT/HMAC secret across test runner and child processes
+process.env.JWT_SECRET = process.env.JWT_SECRET || 'fairlab-jwt-secret-stable-for-all-test-suites-32chars';
+process.env.HMAC_SECRET = process.env.HMAC_SECRET || 'fairlab-hmac-secret-stable-for-all-test-suites-32chars';
+
 console.log('================================================================');
 console.log('🏛️  FAIRLAB (FAIRGPU) — IIT BHILAI L-106 MASTER TEST RUNNER');
 console.log('================================================================');
