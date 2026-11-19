@@ -45,8 +45,18 @@ async function runTests() {
   console.log(`[Test 1] Health check: status = ${health.status}, lab = ${health.data.lab}`);
   if (health.status !== 200) throw new Error('Health check failed');
 
-  // Test 2: User profile & fairness metrics
-  const me = await request('GET', '/api/auth/me', null, { 'x-user-id': 'usr-student-ganesh' });
+  // Test 2: User profile & fairness metrics via verified JWT
+  const loginRes = await request('POST', '/api/auth/login', {
+    email: 'ganesh.k@iitbhilai.ac.in',
+    password: 'demo'
+  });
+  if (loginRes.status !== 200 || !loginRes.data?.token) {
+    throw new Error('Failed to obtain JWT via /api/auth/login: ' + JSON.stringify(loginRes.data));
+  }
+  const studentToken = loginRes.data.token;
+  const studentHeaders = { 'Authorization': `Bearer ${studentToken}` };
+
+  const me = await request('GET', '/api/auth/me', null, studentHeaders);
   console.log(`[Test 2] Auth Profile: ${me.data.user.name} (${me.data.user.roll_no})`);
   console.log(`         Current Fairness Score: ${me.data.fairness.current_score} pts, Completed: ${me.data.fairness.booking_count}`);
   if (typeof me.data.fairness.current_score !== 'number') throw new Error('Invalid fairness score');
@@ -55,6 +65,14 @@ async function runTests() {
   const rigs = await request('GET', '/api/labs/L106/workstations');
   console.log(`[Test 3] Workstations loaded: ${rigs.data.length} rigs in L-106`);
   if (rigs.data.length !== 84) throw new Error(`Expected 84 workstations, got ${rigs.data.length}`);
+
+  // Obtain Gate Operator JWT (Ram Singh holding ACCESS_OPERATOR permission)
+  const opLogin = await request('POST', '/api/auth/login', {
+    email: 'accessdesk.l106@iitbhilai.ac.in',
+    password: 'demo'
+  });
+  const opToken = opLogin.data?.token;
+  const opHeaders = opToken ? { 'Authorization': `Bearer ${opToken}` } : { 'x-user-id': 'usr-watchman-ram' };
 
   // Test 4: Create a fresh confirmed booking & pass for Ganesh to test gate flow
   const activeSem = db.prepare("SELECT semester_id FROM semesters WHERE status = 'active' LIMIT 1").get();
@@ -88,23 +106,23 @@ async function runTests() {
 
   console.log(`[Test 4] Active Test Booking ID: ${testBookingId} on L106-PC-03`);
   
-  const verifyRes = await request('POST', '/api/access/verify', { token: pass.signedToken });
+  const verifyRes = await request('POST', '/api/access/verify', { token: pass.signedToken }, opHeaders);
   console.log(`[Test 4.1] Watchman scan verification: ${verifyRes.data.code} - ${verifyRes.data.message}`);
   if (!verifyRes.data.authorized) throw new Error('Expected authorized pass');
 
   // Test 5: Watchman Check-In (Open Turnstile)
-  const checkInRes = await request('POST', '/api/access/check-in', { passId: pass.passId }, { 'x-user-id': 'usr-watchman-ram' });
+  const checkInRes = await request('POST', '/api/access/check-in', { passId: pass.passId }, opHeaders);
   console.log(`[Test 5] Check-In Result: status = ${checkInRes.data.status}, entryId = ${checkInRes.data.entryId}`);
   if (checkInRes.status !== 200) throw new Error('Check-in failed');
 
   // Test 6: Prevent QR reuse / double check-in
-  const doubleScan = await request('POST', '/api/access/verify', { token: pass.signedToken });
+  const doubleScan = await request('POST', '/api/access/verify', { token: pass.signedToken }, opHeaders);
   console.log(`[Test 6] Duplicate Scan Rejection: ${doubleScan.data.code} (Authorized = ${doubleScan.data.authorized})`);
   if (doubleScan.data.authorized === true) throw new Error('Double check-in should have been rejected');
 
   // Test 7: Watchman Check-Out (Closes session & triggers Fairness Point Deduction)
   const initialScore = me.data.fairness.current_score;
-  const checkOutRes = await request('POST', '/api/access/check-out', { bookingId: testBookingId }, { 'x-user-id': 'usr-watchman-ram' });
+  const checkOutRes = await request('POST', '/api/access/check-out', { bookingId: testBookingId }, opHeaders);
   console.log(`[Test 7] Check-Out & Point Deduction:`);
   console.log(`         Student: ${checkOutRes.data.studentName}`);
   console.log(`         Score Before: ${checkOutRes.data.scoreBefore} pts -> Score After: ${checkOutRes.data.scoreAfter} pts (-${checkOutRes.data.deduction} pts)`);
@@ -113,10 +131,21 @@ async function runTests() {
   // Test 8: Student submits new booking request with fresh unique slot & student
   const testStudentId = `usr-e2e-sub-${Date.now()}`;
   const testRoll = `BT23E2E${Math.floor(Math.random() * 89999 + 10000)}`;
+  const testEmail = `${testStudentId}@iitbhilai.ac.in`;
+  const { hashPassword } = require('./backend/middleware/auth');
   db.prepare(`
-    INSERT INTO users (user_id, name, roll_no, email, role, department)
-    VALUES (?, 'E2E Queue Tester', ?, ?, 'student', 'CSE')
-  `).run(testStudentId, testRoll, `${testStudentId}@iitbhilai.ac.in`);
+    INSERT INTO users (user_id, name, roll_no, email, role, department, password_hash)
+    VALUES (?, 'E2E Queue Tester', ?, ?, 'student', 'CSE', ?)
+  `).run(testStudentId, testRoll, testEmail, hashPassword('demo'));
+
+  const newStudentLogin = await request('POST', '/api/auth/login', {
+    email: testEmail,
+    password: 'demo'
+  });
+  if (newStudentLogin.status !== 200 || !newStudentLogin.data?.token) {
+    throw new Error('Failed to login new student: ' + JSON.stringify(newStudentLogin.data));
+  }
+  const newStudentToken = newStudentLogin.data.token;
 
   const testDate = '2026-12-28';
   const submitRes = await request('POST', '/api/bookings/request', {
@@ -124,13 +153,20 @@ async function runTests() {
     bookingDate: testDate,
     computePurpose: 'Distributed Reinforcement Learning on Gymnasium Environment',
     researchField: 'AI / Machine Learning'
-  }, { 'x-user-id': testStudentId });
+  }, { 'Authorization': `Bearer ${newStudentToken}` });
 
   console.log(`[Test 8] Booking Request Queued: requestId = ${submitRes.data.requestId}, initial score = ${submitRes.data.priorityScore}`);
   if (submitRes.status !== 201) throw new Error('Booking request submission failed: ' + JSON.stringify(submitRes.data));
 
+  // Obtain Admin JWT for allocation round trigger
+  const adminLogin = await request('POST', '/api/auth/login', {
+    email: 'aksharma@iitbhilai.ac.in',
+    password: 'demo'
+  });
+  const adminHeaders = adminLogin.data?.token ? { 'Authorization': `Bearer ${adminLogin.data.token}` } : {};
+
   // Test 9: Run Allocation Round
-  const allocRes = await request('POST', `/api/bookings/queue/slot-5/allocate`, { bookingDate: testDate });
+  const allocRes = await request('POST', `/api/bookings/queue/slot-5/allocate`, { bookingDate: testDate }, adminHeaders);
   console.log(`[Test 9] Batch Allocation Round: allocated = ${allocRes.data.allocatedCount}, waitlisted = ${allocRes.data.waitlistedCount}`);
   if (allocRes.status !== 200) throw new Error('Allocation round failed');
 
