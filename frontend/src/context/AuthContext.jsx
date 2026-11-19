@@ -24,7 +24,25 @@ if (typeof window !== 'undefined' && !window.__fairlabFetchWrapped) {
 
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(() => {
-    return sessionStorage.getItem('fairlab_user_id') || 'usr-student-ganesh';
+    if (typeof window !== 'undefined') {
+      const stored = sessionStorage.getItem('fairlab_user_id');
+      if (stored) return stored;
+      const p = window.location.pathname.toLowerCase();
+      const isAdminRoute =
+        p.startsWith('/admin') ||
+        p === '/overview' ||
+        p === '/settings' ||
+        p === '/allocation' ||
+        p === '/schedule' ||
+        p === '/workstations' ||
+        p === '/students' ||
+        p === '/analytics' ||
+        p === '/access' ||
+        p === '/audit' ||
+        window.location.search.includes('workspace=admin');
+      if (isAdminRoute) return 'usr-admin-sharma';
+    }
+    return 'usr-student-ganesh';
   });
   const [authToken, setAuthToken] = useState(() => sessionStorage.getItem('fairlab_jwt') || '');
   const [profile, setProfile] = useState(null);

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
 import Sidebar, { STUDENT_NAV, ADMIN_NAV } from './components/Sidebar';
+import { VIEW_TO_PATH, PATH_TO_ROUTE, resolveRoute } from './routes';
 
 import LoginView from './views/LoginView';
 import StudentDashboardView from './views/StudentDashboardView';
@@ -23,40 +24,86 @@ import AdminAuditLogView from './views/AdminAuditLogView';
 function MainLayout() {
   const { availableUsers, switchUser, clearSession } = useAuth();
 
+  const initialRoute = typeof window !== 'undefined'
+    ? resolveRoute(window.location.pathname, sessionStorage.getItem('fairlab_last_workspace') || 'student')
+    : { workspace: 'student', view: 'student-dashboard', path: '/dashboard' };
+
   const [isSignedIn, setIsSignedIn] = useState(() => {
     if (typeof window === 'undefined') return false;
     if (window.location.search.includes('login=1')) return false;
+    if (sessionStorage.getItem('fairlab_signed_out') === '1') return false;
+    if (sessionStorage.getItem('fairlab_signed_in') === '1') return true;
     if (window.location.search.includes('workspace=')) return true;
-    return sessionStorage.getItem('fairlab_signed_in') === '1';
+    // In demo environment, allow direct URL access to /overview, /settings, /book, etc.
+    return true;
   });
 
-  const [workspace, setWorkspace] = useState(() => {
-    if (typeof window !== 'undefined' && window.location.search.includes('workspace=admin')) {
-      return 'admin';
-    }
-    return 'student';
-  });
+  const [workspace, setWorkspace] = useState(initialRoute.workspace);
+  const [currentView, setCurrentView] = useState(initialRoute.view);
 
-  const [currentView, setCurrentView] = useState(() => {
-    if (typeof window !== 'undefined' && window.location.search.includes('workspace=admin')) {
-      return 'admin-overview';
+  const handleNavigate = (viewId, replace = false) => {
+    const targetPath = VIEW_TO_PATH[viewId] || '/dashboard';
+    const route = PATH_TO_ROUTE[targetPath] || { workspace: 'student', view: viewId, path: targetPath };
+
+    setWorkspace(route.workspace);
+    setCurrentView(viewId);
+    sessionStorage.setItem('fairlab_last_workspace', route.workspace);
+
+    if (typeof window !== 'undefined') {
+      if (window.location.pathname !== targetPath) {
+        if (replace) {
+          window.history.replaceState(null, '', targetPath);
+        } else {
+          window.history.pushState(null, '', targetPath);
+        }
+      }
     }
-    return 'student-dashboard';
-  });
+  };
 
   const handleSwitchWorkspace = (targetWs, targetView) => {
-    setWorkspace(targetWs);
-    setCurrentView(targetView || (targetWs === 'admin' ? 'admin-overview' : 'student-dashboard'));
+    const nextView = targetView || (targetWs === 'admin' ? 'admin-overview' : 'student-dashboard');
+    handleNavigate(nextView);
   };
+
+  const handleSignOut = () => {
+    clearSession();
+    sessionStorage.setItem('fairlab_signed_out', '1');
+    sessionStorage.removeItem('fairlab_signed_in');
+    setIsSignedIn(false);
+    if (typeof window !== 'undefined') {
+      window.history.pushState(null, '', '/?login=1');
+    }
+  };
+
+  useEffect(() => {
+    // Normalize root URL or alias to canonical path
+    if (typeof window !== 'undefined') {
+      const canonicalPath = VIEW_TO_PATH[currentView] || '/dashboard';
+      if (window.location.pathname !== canonicalPath && (window.location.pathname === '/' || !PATH_TO_ROUTE[window.location.pathname])) {
+        window.history.replaceState(null, '', canonicalPath);
+      }
+    }
+
+    const handlePopState = () => {
+      const route = resolveRoute(window.location.pathname, sessionStorage.getItem('fairlab_last_workspace') || 'student');
+      setWorkspace(route.workspace);
+      setCurrentView(route.view);
+      sessionStorage.setItem('fairlab_last_workspace', route.workspace);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [currentView]);
 
   if (!isSignedIn) {
     return (
       <LoginView
         onSignedIn={(ws, view) => {
+          sessionStorage.removeItem('fairlab_signed_out');
           sessionStorage.setItem('fairlab_signed_in', '1');
           setIsSignedIn(true);
-          setWorkspace(ws);
-          setCurrentView(view);
+          const target = (initialRoute && initialRoute.path !== '/dashboard') ? initialRoute.view : view;
+          handleNavigate(target || (ws === 'admin' ? 'admin-overview' : 'student-dashboard'), true);
         }}
       />
     );
@@ -69,12 +116,9 @@ function MainLayout() {
       <Sidebar
         workspace={workspace}
         currentView={currentView}
-        setCurrentView={setCurrentView}
+        setCurrentView={handleNavigate}
         onSwitchWorkspace={handleSwitchWorkspace}
-        onSignOut={() => {
-          clearSession();
-          setIsSignedIn(false);
-        }}
+        onSignOut={handleSignOut}
       />
 
       {/* Mobile / Tablet Compact Header + Nav */}
@@ -109,10 +153,7 @@ function MainLayout() {
             </button>
             <button
               type="button"
-              onClick={() => {
-                sessionStorage.removeItem('fairlab_signed_in');
-                setIsSignedIn(false);
-              }}
+              onClick={handleSignOut}
               className="px-2.5 py-1 rounded-lg bg-white/10 text-[11px] text-[#CBD5E1]"
             >
               Sign out
@@ -127,7 +168,7 @@ function MainLayout() {
               <button
                 key={item.id}
                 type="button"
-                onClick={() => setCurrentView(item.id)}
+                onClick={() => handleNavigate(item.id)}
                 className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                   active ? 'bg-[#4F46E5] text-white font-semibold' : 'text-[#94A3B8] hover:text-white'
                 }`}
@@ -139,25 +180,25 @@ function MainLayout() {
         </nav>
       </div>
 
-      {/* Main Content Canvas (No redundant top header bar — exact Figma layout) */}
+      {/* Main Content Canvas (Exact Figma layout) */}
       <div className="lg:pl-60">
         <main className="min-h-screen w-full max-w-[1320px] mx-auto px-5 sm:px-8 py-7 pb-16">
           {/* Student Workspace (5 Screens) */}
           {currentView === 'student-dashboard' && (
-            <StudentDashboardView onNavigate={(view) => setCurrentView(view)} />
+            <StudentDashboardView onNavigate={(view) => handleNavigate(view)} />
           )}
           {currentView === 'student-book' && (
-            <WorkstationMapView onNavigateToPass={() => setCurrentView('student-bookings')} />
+            <WorkstationMapView onNavigateToPass={() => handleNavigate('student-bookings')} />
           )}
           {currentView === 'student-bookings' && (
-            <StudentMyBookingsView onNavigateToBook={() => setCurrentView('student-book')} />
+            <StudentMyBookingsView onNavigateToBook={() => handleNavigate('student-book')} />
           )}
           {currentView === 'student-fairness' && <StudentFairnessView />}
           {currentView === 'student-notifications' && <StudentNotificationsView />}
 
           {/* Admin Workspace (9 Screens) */}
           {currentView === 'admin-overview' && (
-            <AdminOverviewView onNavigate={(view) => setCurrentView(view)} />
+            <AdminOverviewView onNavigate={(view) => handleNavigate(view)} />
           )}
           {currentView === 'admin-allocation' && <AdminAllocationView />}
           {currentView === 'admin-schedule' && <AdminScheduleView />}
