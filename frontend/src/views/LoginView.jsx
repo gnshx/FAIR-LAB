@@ -42,10 +42,14 @@ export default function LoginView({ onSignedIn }) {
       const userObj = data.user;
       setSession(data.token, userObj);
 
-      if (userObj.role === 'admin') {
-        const perms = Array.isArray(userObj.permissions) ? userObj.permissions : [];
-        const onlyAccessOp = perms.includes('ACCESS_OPERATOR') && !perms.includes('POLICY_ADMIN');
-        onSignedIn('admin', onlyAccessOp ? 'admin-access' : 'admin-overview');
+      const perms = Array.isArray(userObj.permissions) ? userObj.permissions : [];
+      const onlyAccessOp = userObj.email === 'accessdesk.l106@iitbhilai.ac.in' ||
+        (perms.includes('ACCESS_OPERATOR') && !perms.includes('POLICY_ADMIN'));
+
+      if (onlyAccessOp) {
+        onSignedIn('gate', 'admin-access');
+      } else if (userObj.role === 'admin') {
+        onSignedIn('admin', 'admin-overview');
       } else {
         onSignedIn('student', 'student-dashboard');
       }

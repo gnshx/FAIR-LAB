@@ -22,12 +22,43 @@ if (typeof window !== 'undefined' && !window.__fairlabFetchWrapped) {
   };
 }
 
+export const CANONICAL_DEMO_USERS = [
+  {
+    user_id: 'usr-student-ganesh',
+    name: 'Ganesh Kumar',
+    roll_no: 'BT23CSE001',
+    email: 'ganesh.k@iitbhilai.ac.in',
+    role: 'student',
+    permissions: [],
+    department: 'M.Tech Computer Science'
+  },
+  {
+    user_id: 'usr-admin-sharma',
+    name: 'Dr. A. K. Sharma',
+    roll_no: 'EMP-FAC-012',
+    email: 'aksharma@iitbhilai.ac.in',
+    role: 'admin',
+    permissions: ['POLICY_ADMIN', 'ALLOCATION_ADMIN', 'ACCESS_OPERATOR'],
+    department: 'Lab L-106 Faculty Coordinator'
+  },
+  {
+    user_id: 'usr-watchman-ram',
+    name: 'Ram Singh (Gate Desk)',
+    roll_no: 'EMP-SEC-104',
+    email: 'accessdesk.l106@iitbhilai.ac.in',
+    role: 'admin',
+    permissions: ['ACCESS_OPERATOR'],
+    department: 'Lab L-106 Access Desk'
+  }
+];
+
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(() => {
     if (typeof window !== 'undefined') {
       const stored = sessionStorage.getItem('fairlab_user_id');
       if (stored) return stored;
       const p = window.location.pathname.toLowerCase();
+      if (p === '/access' || p === '/gate') return 'usr-watchman-ram';
       const isAdminRoute =
         p.startsWith('/admin') ||
         p === '/overview' ||
@@ -37,7 +68,6 @@ export function AuthProvider({ children }) {
         p === '/workstations' ||
         p === '/students' ||
         p === '/analytics' ||
-        p === '/access' ||
         p === '/audit' ||
         window.location.search.includes('workspace=admin');
       if (isAdminRoute) return 'usr-admin-sharma';
@@ -46,7 +76,7 @@ export function AuthProvider({ children }) {
   });
   const [authToken, setAuthToken] = useState(() => sessionStorage.getItem('fairlab_jwt') || '');
   const [profile, setProfile] = useState(null);
-  const [availableUsers, setAvailableUsers] = useState([]);
+  const [availableUsers, setAvailableUsers] = useState(CANONICAL_DEMO_USERS);
   const [loading, setLoading] = useState(true);
 
   const setSession = useCallback((token, user) => {
@@ -80,11 +110,16 @@ export function AuthProvider({ children }) {
     try {
       const res = await fetch('/api/auth/users');
       if (res.ok) {
-        setAvailableUsers(await res.json());
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          setAvailableUsers(data);
+          return;
+        }
       }
     } catch {
-      // ignore in production
+      // In production mode /api/auth/users is 403, retain canonical demo users
     }
+    setAvailableUsers(CANONICAL_DEMO_USERS);
   }, []);
 
   // Fetch verified user profile
@@ -115,8 +150,34 @@ export function AuthProvider({ children }) {
     fetchProfile();
   }, [fetchProfile, authToken]);
 
-  // Dev/demo persona switch (obtains a fresh signed JWT + HttpOnly cookie from /api/auth/switch-user)
+  // Dev/demo persona switch (seamless in both development and production mode)
   const switchUser = useCallback(async (userId) => {
+    const target = (availableUsers || []).find(u => u.user_id === userId || u.email === userId) ||
+                   CANONICAL_DEMO_USERS.find(u => u.user_id === userId || u.email === userId);
+
+    // 1. In production or demo mode, if target has email, use verified /api/auth/login with 'demo' password
+    if (target?.email) {
+      try {
+        const loginRes = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: target.email, password: 'demo' })
+        });
+        if (loginRes.ok) {
+          const loginData = await loginRes.json();
+          setSession(loginData.token, loginData.user);
+          sessionStorage.setItem('fairlab_signed_in', '1');
+          sessionStorage.removeItem('fairlab_signed_out');
+          setProfile(loginData);
+          setCurrentUser(loginData.user.user_id);
+          return loginData.user;
+        }
+      } catch (err) {
+        console.warn('Login switch fallback failed, trying /switch-user', err);
+      }
+    }
+
+    // 2. Dev-only fallback
     try {
       const res = await fetch('/api/auth/switch-user', {
         method: 'POST',
@@ -126,13 +187,16 @@ export function AuthProvider({ children }) {
       if (res.ok) {
         const data = await res.json();
         setSession(data.token, data.user);
-        return;
+        sessionStorage.setItem('fairlab_signed_in', '1');
+        sessionStorage.removeItem('fairlab_signed_out');
+        await fetchProfile();
+        return data.user;
       }
     } catch {
       // fallback in dev
     }
     setCurrentUser(userId);
-  }, [setSession]);
+  }, [availableUsers, fetchProfile, setSession]);
 
   return (
     <AuthContext.Provider value={{

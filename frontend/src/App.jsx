@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
-import Sidebar, { STUDENT_NAV, ADMIN_NAV } from './components/Sidebar';
+import Sidebar, { STUDENT_NAV, ADMIN_NAV, GATE_NAV } from './components/Sidebar';
 import { VIEW_TO_PATH, PATH_TO_ROUTE, resolveRoute } from './routes';
 
 import LoginView from './views/LoginView';
@@ -22,11 +22,16 @@ import AdminSettingsView from './views/AdminSettingsView';
 import AdminAuditLogView from './views/AdminAuditLogView';
 
 function MainLayout() {
-  const { availableUsers, switchUser, clearSession } = useAuth();
+  const { profile, availableUsers, switchUser, clearSession } = useAuth();
+
+  const user = profile?.user;
+  const isGateUser = user?.email === 'accessdesk.l106@iitbhilai.ac.in' ||
+    ((Array.isArray(user?.permissions) ? user.permissions : []).includes('ACCESS_OPERATOR') &&
+     !(Array.isArray(user?.permissions) ? user.permissions : []).includes('POLICY_ADMIN'));
 
   const initialRoute = typeof window !== 'undefined'
-    ? resolveRoute(window.location.pathname, sessionStorage.getItem('fairlab_last_workspace') || 'student')
-    : { workspace: 'student', view: 'student-dashboard', path: '/dashboard' };
+    ? resolveRoute(window.location.pathname, sessionStorage.getItem('fairlab_last_workspace') || (isGateUser ? 'gate' : 'student'))
+    : { workspace: isGateUser ? 'gate' : 'student', view: isGateUser ? 'admin-access' : 'student-dashboard', path: isGateUser ? '/access' : '/dashboard' };
 
   const [isSignedIn, setIsSignedIn] = useState(() => {
     if (typeof window === 'undefined') return false;
@@ -45,9 +50,16 @@ function MainLayout() {
     const targetPath = VIEW_TO_PATH[viewId] || '/dashboard';
     const route = PATH_TO_ROUTE[targetPath] || { workspace: 'student', view: viewId, path: targetPath };
 
-    setWorkspace(route.workspace);
+    let targetWs = route.workspace;
+    if (isGateUser && (viewId === 'admin-access' || viewId === 'student-book')) {
+      targetWs = 'gate';
+    } else if (viewId === 'admin-access' && workspace === 'gate') {
+      targetWs = 'gate';
+    }
+
+    setWorkspace(targetWs);
     setCurrentView(viewId);
-    sessionStorage.setItem('fairlab_last_workspace', route.workspace);
+    sessionStorage.setItem('fairlab_last_workspace', targetWs);
 
     if (typeof window !== 'undefined') {
       if (window.location.pathname !== targetPath) {
@@ -61,7 +73,13 @@ function MainLayout() {
   };
 
   const handleSwitchWorkspace = (targetWs, targetView) => {
-    const nextView = targetView || (targetWs === 'admin' ? 'admin-overview' : 'student-dashboard');
+    let nextView = targetView;
+    if (!nextView) {
+      if (targetWs === 'gate') nextView = 'admin-access';
+      else if (targetWs === 'admin') nextView = 'admin-overview';
+      else nextView = 'student-dashboard';
+    }
+    setWorkspace(targetWs);
     handleNavigate(nextView);
   };
 
@@ -109,12 +127,13 @@ function MainLayout() {
     );
   }
 
-  const mobileNav = workspace === 'admin' ? ADMIN_NAV : STUDENT_NAV;
+  const isGateWorkspace = workspace === 'gate' || (isGateUser && (currentView === 'admin-access' || currentView === 'student-book'));
+  const mobileNav = isGateWorkspace ? GATE_NAV : (workspace === 'admin' ? ADMIN_NAV : STUDENT_NAV);
 
   return (
     <div className="min-h-screen bg-[#F6F7FB] text-[#0F172A] antialiased font-sans">
       <Sidebar
-        workspace={workspace}
+        workspace={isGateWorkspace ? 'gate' : workspace}
         currentView={currentView}
         setCurrentView={handleNavigate}
         onSwitchWorkspace={handleSwitchWorkspace}
@@ -125,31 +144,29 @@ function MainLayout() {
       <div className="lg:hidden sticky top-0 z-40 bg-[#0B1120] text-white px-4 py-3 border-b border-[#1E293B]">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-[#4F46E5] text-white font-bold text-xs flex items-center justify-center">
-              F
+            <div className={`w-7 h-7 rounded-lg ${isGateWorkspace ? 'bg-[#10B981]' : 'bg-[#4F46E5]'} text-white font-bold text-xs flex items-center justify-center`}>
+              {isGateWorkspace ? 'G' : 'F'}
             </div>
             <span className="font-bold text-sm">FairLab</span>
             <span className="text-[10px] uppercase tracking-wider text-[#94A3B8] ml-1">
-              {workspace}
+              {isGateWorkspace ? 'Gate Desk' : workspace}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => {
-                if (workspace === 'admin') {
-                  const st = availableUsers.find(u => u.role === 'student');
-                  if (st) switchUser(st.user_id);
+                if (isGateWorkspace) {
+                  handleSwitchWorkspace('student', 'student-dashboard');
+                } else if (workspace === 'admin') {
                   handleSwitchWorkspace('student', 'student-dashboard');
                 } else {
-                  const ad = availableUsers.find(u => u.role === 'admin');
-                  if (ad) switchUser(ad.user_id);
                   handleSwitchWorkspace('admin', 'admin-overview');
                 }
               }}
               className="px-2.5 py-1 rounded-lg bg-[#172036] text-[11px] font-semibold text-[#A5B4FC]"
             >
-              {workspace === 'admin' ? 'Student view' : 'Admin view'}
+              {isGateWorkspace ? 'Student view' : (workspace === 'admin' ? 'Student view' : 'Admin view')}
             </button>
             <button
               type="button"

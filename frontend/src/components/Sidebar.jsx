@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, CANONICAL_DEMO_USERS } from '../context/AuthContext';
 
 export const STUDENT_NAV = [
   { id: 'student-dashboard', label: 'Dashboard' },
@@ -7,6 +7,11 @@ export const STUDENT_NAV = [
   { id: 'student-bookings', label: 'My bookings' },
   { id: 'student-fairness', label: 'Fairness score' },
   { id: 'student-notifications', label: 'Notifications' }
+];
+
+export const GATE_NAV = [
+  { id: 'admin-access', label: 'Access control (Scanner)' },
+  { id: 'student-book', label: 'Workstation live map' }
 ];
 
 export const ADMIN_NAV = [
@@ -26,26 +31,46 @@ export default function Sidebar({ workspace, currentView, setCurrentView, onSwit
   const [menuOpen, setMenuOpen] = useState(false);
 
   const user = profile?.user;
-  const isAdminWorkspace = workspace === 'admin';
-  const navItems = isAdminWorkspace ? ADMIN_NAV : STUDENT_NAV;
+  const isGateOp = user?.email === 'accessdesk.l106@iitbhilai.ac.in' ||
+    ((Array.isArray(user?.permissions) ? user.permissions : []).includes('ACCESS_OPERATOR') &&
+     !(Array.isArray(user?.permissions) ? user.permissions : []).includes('POLICY_ADMIN'));
 
-  const displayName = isAdminWorkspace
-    ? (user?.role === 'admin' ? user.name : 'Lab Admin')
-    : (user?.name || 'Ganesh Kumar');
+  const isGateWorkspace = workspace === 'gate' || (isGateOp && (currentView === 'admin-access' || currentView === 'student-book'));
+  const isAdminWorkspace = workspace === 'admin' && !isGateWorkspace;
 
-  const displaySub = isAdminWorkspace
-    ? 'L-106 · Admin'
-    : `Student · ${(user?.department || 'CSE').split(' ')[0] === 'Computer' ? 'CSE' : (user?.department || 'CSE')}`;
+  let navItems = STUDENT_NAV;
+  let workspaceLabel = 'Student Workspace';
+  let displaySub = `Student · ${(user?.department || 'CSE').split(' ')[0] === 'Computer' ? 'CSE' : (user?.department || 'CSE')}`;
+  let badgeColor = 'bg-[#4F46E5]';
 
-  const initial = (isAdminWorkspace ? 'A' : (displayName || 'S').charAt(0)).toUpperCase();
+  if (isGateWorkspace || isGateOp) {
+    navItems = GATE_NAV;
+    workspaceLabel = 'Gate Desk (Pass Verifier)';
+    displaySub = 'Gate Operator · Lab L-106';
+    badgeColor = 'bg-[#10B981]';
+  } else if (isAdminWorkspace) {
+    navItems = ADMIN_NAV;
+    workspaceLabel = 'Admin Workspace';
+    displaySub = 'L-106 · Faculty Coordinator';
+    badgeColor = 'bg-[#4F46E5]';
+  }
+
+  const displayName = user?.name || (isGateWorkspace || isGateOp ? 'Ram Singh (Gate Desk)' : (isAdminWorkspace ? 'Dr. A. K. Sharma' : 'Ganesh Kumar'));
+  const initial = (isGateWorkspace || isGateOp ? 'R' : (displayName.charAt(0) || 'U')).toUpperCase();
+
+  const userList = (availableUsers && availableUsers.length > 0) ? availableUsers : CANONICAL_DEMO_USERS;
 
   const handleSelectPersona = async (u) => {
-    await switchUser(u.user_id);
     setMenuOpen(false);
-    if (u.role === 'admin') {
-      const perms = Array.isArray(u.permissions) ? u.permissions : [];
-      const onlyAccessOp = perms.includes('ACCESS_OPERATOR') && !perms.includes('POLICY_ADMIN');
-      onSwitchWorkspace('admin', onlyAccessOp ? 'admin-access' : 'admin-overview');
+    await switchUser(u.user_id);
+    const uIsGate = u.email === 'accessdesk.l106@iitbhilai.ac.in' ||
+      ((Array.isArray(u.permissions) ? u.permissions : []).includes('ACCESS_OPERATOR') &&
+       !(Array.isArray(u.permissions) ? u.permissions : []).includes('POLICY_ADMIN'));
+
+    if (uIsGate) {
+      onSwitchWorkspace('gate', 'admin-access');
+    } else if (u.role === 'admin') {
+      onSwitchWorkspace('admin', 'admin-overview');
     } else {
       onSwitchWorkspace('student', 'student-dashboard');
     }
@@ -57,18 +82,23 @@ export default function Sidebar({ workspace, currentView, setCurrentView, onSwit
         {/* Brand Lockup (Exact Figma Match) */}
         <button
           type="button"
-          onClick={() => setCurrentView(isAdminWorkspace ? 'admin-overview' : 'student-dashboard')}
+          onClick={() => setCurrentView(isGateWorkspace ? 'admin-access' : (isAdminWorkspace ? 'admin-overview' : 'student-dashboard'))}
           className="flex items-center gap-2.5 px-1.5 mb-7 w-full text-left"
         >
-          <div className="w-8 h-8 rounded-lg bg-[#4F46E5] text-white font-bold text-sm flex items-center justify-center shrink-0">
-            F
+          <div className={`w-8 h-8 rounded-lg ${badgeColor} text-white font-bold text-sm flex items-center justify-center shrink-0`}>
+            {isGateWorkspace ? 'G' : 'F'}
           </div>
-          <span className="font-bold text-[17px] tracking-tight text-white">FairLab</span>
+          <div className="flex flex-col">
+            <span className="font-bold text-[17px] tracking-tight text-white leading-tight">FairLab</span>
+            {isGateWorkspace && (
+              <span className="text-[10px] text-[#34D399] font-medium tracking-tight">Turnstile Access</span>
+            )}
+          </div>
         </button>
 
         {/* Workspace Section Header */}
         <div className="px-2 mb-2.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#64748B]">
-          {isAdminWorkspace ? 'Admin Workspace' : 'Student Workspace'}
+          {workspaceLabel}
         </div>
 
         {/* Navigation Items */}
@@ -88,7 +118,7 @@ export default function Sidebar({ workspace, currentView, setCurrentView, onSwit
               >
                 <span
                   className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                    active ? 'bg-[#6366F1]' : 'bg-[#475569]'
+                    active ? (isGateWorkspace ? 'bg-[#10B981]' : 'bg-[#6366F1]') : 'bg-[#475569]'
                   }`}
                 />
                 <span>{item.label}</span>
@@ -101,17 +131,31 @@ export default function Sidebar({ workspace, currentView, setCurrentView, onSwit
       {/* Bottom Profile Card + Persona/Workspace Switcher Popover */}
       <div className="relative">
         {menuOpen && (
-          <div className="absolute bottom-full left-0 right-0 mb-2 rounded-2xl bg-[#131B2E] border border-[#1E293B] shadow-xl p-2 z-50">
-            <div className="px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-[#64748B]">
+          <div className="absolute bottom-full left-0 right-0 mb-2 rounded-2xl bg-[#131B2E] border border-[#1E293B] shadow-2xl p-2.5 z-50 animate-in fade-in slide-in-from-bottom-2 duration-150">
+            <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-[#94A3B8]">
               Switch Workspace / Account
             </div>
 
-            <div className="space-y-0.5 max-h-52 overflow-y-auto">
-              {availableUsers.map(u => {
-                const selected = u.user_id === user?.user_id;
+            <div className="space-y-1 my-1 max-h-56 overflow-y-auto">
+              {userList.map(u => {
+                const selected = u.user_id === user?.user_id || u.email === user?.email;
+                const uIsGate = u.email === 'accessdesk.l106@iitbhilai.ac.in' ||
+                  ((Array.isArray(u.permissions) ? u.permissions : []).includes('ACCESS_OPERATOR') &&
+                   !(Array.isArray(u.permissions) ? u.permissions : []).includes('POLICY_ADMIN'));
+
+                let roleBadge = 'Student';
+                let roleColor = 'text-[#94A3B8]';
+                if (uIsGate) {
+                  roleBadge = 'Gate Desk (Pass Verifier)';
+                  roleColor = 'text-[#34D399] font-medium';
+                } else if (u.role === 'admin') {
+                  roleBadge = 'Admin (Coordinator)';
+                  roleColor = 'text-[#A5B4FC] font-medium';
+                }
+
                 return (
                   <button
-                    key={u.user_id}
+                    key={u.user_id || u.email}
                     type="button"
                     onClick={() => handleSelectPersona(u)}
                     className={`w-full px-2.5 py-2 rounded-xl flex items-center justify-between text-left text-xs transition-colors ${
@@ -121,10 +165,10 @@ export default function Sidebar({ workspace, currentView, setCurrentView, onSwit
                     }`}
                   >
                     <div className="min-w-0">
-                      <div className="truncate">{u.name}</div>
-                      <div className="text-[10px] text-[#64748B] capitalize">{u.role}</div>
+                      <div className="truncate text-white font-medium">{u.name}</div>
+                      <div className={`text-[10px] ${roleColor}`}>{roleBadge}</div>
                     </div>
-                    {selected && <span className="w-1.5 h-1.5 rounded-full bg-[#6366F1] shrink-0" />}
+                    {selected && <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] shrink-0" />}
                   </button>
                 );
               })}
@@ -135,17 +179,31 @@ export default function Sidebar({ workspace, currentView, setCurrentView, onSwit
                 type="button"
                 onClick={() => {
                   setMenuOpen(false);
-                  if (isAdminWorkspace) {
-                    const student = availableUsers.find(u => u.role === 'student');
-                    if (student) switchUser(student.user_id);
-                    onSwitchWorkspace('student', 'student-dashboard');
+                  const gateUser = userList.find(u => u.email === 'accessdesk.l106@iitbhilai.ac.in');
+                  if (gateUser) handleSelectPersona(gateUser);
+                  else onSwitchWorkspace('gate', 'admin-access');
+                }}
+                className="w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium text-[#34D399] hover:bg-white/[0.05] flex items-center justify-between"
+              >
+                <span>Switch to Gate Verifier</span>
+                <span className="material-symbols-outlined text-[15px]">qr_code_scanner</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  if (isGateWorkspace || !isAdminWorkspace) {
+                    const admin = userList.find(u => u.role === 'admin' && u.email !== 'accessdesk.l106@iitbhilai.ac.in');
+                    if (admin) handleSelectPersona(admin);
+                    else onSwitchWorkspace('admin', 'admin-overview');
                   } else {
-                    const admin = availableUsers.find(u => u.role === 'admin');
-                    if (admin) switchUser(admin.user_id);
-                    onSwitchWorkspace('admin', 'admin-overview');
+                    const student = userList.find(u => u.role === 'student');
+                    if (student) handleSelectPersona(student);
+                    else onSwitchWorkspace('student', 'student-dashboard');
                   }
                 }}
-                className="w-full px-2.5 py-2 rounded-xl text-left text-xs font-medium text-[#A5B4FC] hover:bg-white/[0.05] flex items-center justify-between"
+                className="w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium text-[#A5B4FC] hover:bg-white/[0.05] flex items-center justify-between"
               >
                 <span>{isAdminWorkspace ? 'Switch to Student View' : 'Switch to Admin View'}</span>
                 <span className="material-symbols-outlined text-[15px]">swap_horiz</span>
@@ -157,7 +215,7 @@ export default function Sidebar({ workspace, currentView, setCurrentView, onSwit
                   setMenuOpen(false);
                   onSignOut();
                 }}
-                className="w-full px-2.5 py-2 rounded-xl text-left text-xs font-medium text-[#FCA5A5] hover:bg-white/[0.05] flex items-center justify-between"
+                className="w-full px-2.5 py-1.5 rounded-xl text-left text-xs font-medium text-[#FCA5A5] hover:bg-white/[0.05] flex items-center justify-between"
               >
                 <span>Sign out</span>
                 <span className="material-symbols-outlined text-[15px]">logout</span>
@@ -171,14 +229,14 @@ export default function Sidebar({ workspace, currentView, setCurrentView, onSwit
           onClick={() => setMenuOpen(v => !v)}
           className="w-full p-2.5 rounded-xl bg-[#131B2E] hover:bg-[#19243D] border border-[#1E293B] flex items-center gap-3 text-left transition-colors"
         >
-          <div className="w-8 h-8 rounded-full bg-[#818CF8] text-white font-semibold text-xs flex items-center justify-center shrink-0">
+          <div className={`w-8 h-8 rounded-full ${isGateWorkspace ? 'bg-[#10B981]' : 'bg-[#818CF8]'} text-white font-semibold text-xs flex items-center justify-center shrink-0`}>
             {initial}
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-[12.5px] font-semibold text-white truncate leading-tight">
               {displayName}
             </div>
-            <div className="text-[11px] text-[#64748B] truncate leading-tight mt-0.5">
+            <div className="text-[11px] text-[#94A3B8] truncate leading-tight mt-0.5">
               {displaySub}
             </div>
           </div>

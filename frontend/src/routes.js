@@ -69,18 +69,27 @@ export const PATH_TO_ROUTE = {
 
 export function resolveRoute(pathname, defaultWorkspace = 'student') {
   if (!pathname || pathname === '/') {
+    if (defaultWorkspace === 'gate') {
+      return { workspace: 'gate', view: 'admin-access', path: '/access' };
+    }
     if (defaultWorkspace === 'admin') {
       return PATH_TO_ROUTE['/overview'];
     }
     return PATH_TO_ROUTE['/dashboard'];
   }
   const clean = pathname.replace(/\/+$/, '') || '/';
+  if (clean === '/access' || clean === '/gate') {
+    return { workspace: defaultWorkspace === 'gate' ? 'gate' : 'admin', view: 'admin-access', path: '/access' };
+  }
   if (PATH_TO_ROUTE[clean]) {
     return PATH_TO_ROUTE[clean];
   }
   const lower = clean.toLowerCase();
   if (PATH_TO_ROUTE[lower]) {
     return PATH_TO_ROUTE[lower];
+  }
+  if (defaultWorkspace === 'gate') {
+    return { workspace: 'gate', view: 'admin-access', path: '/access' };
   }
   return defaultWorkspace === 'admin' ? PATH_TO_ROUTE['/overview'] : PATH_TO_ROUTE['/dashboard'];
 }
