@@ -84,8 +84,13 @@ export default function AdminScheduleView() {
   }, [fetchSchedule]);
 
   useEffect(() => {
-    const unsub = subscribe('SLOT_UPDATED', fetchSchedule);
-    return () => unsub && unsub();
+    const unsubs = [
+      subscribe('SLOT_UPDATED', fetchSchedule),
+      subscribe('TIMETABLE_CHANGED', fetchSchedule),
+      subscribe('OVERRIDE_CHANGED', fetchSchedule),
+      subscribe('TICKET_RELEASE_CHANGED', fetchSchedule)
+    ];
+    return () => unsubs.forEach(fn => fn && fn());
   }, [subscribe, fetchSchedule]);
 
   const adminHeaders = { 'Content-Type': 'application/json', 'x-user-id': currentUser };

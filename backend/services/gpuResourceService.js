@@ -130,6 +130,42 @@ function toggleWorkstationMaintenance(machineId, isMaintenance, actorId = 'usr-a
       `Workstation ${machineId} status changed from ${current.status} to ${newStatus}. Reallocated: ${reallocated.length}, Waitlisted: ${waitlisted.length}.`
     );
 
+    // Cross-replica transactional outbox events
+    const eventId = `evt-ws-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+    db.prepare(`
+      INSERT INTO outbox_events (event_id, event_type, aggregate_id, payload, status)
+      VALUES (?, 'workstation.status_changed', ?, ?, 'PENDING')
+    `).run(
+      eventId,
+      machineId,
+      JSON.stringify({
+        eventId,
+        machineId,
+        isMaintenance,
+        status: newStatus,
+        hardware_state: isMaintenance ? 'MAINTENANCE' : 'ONLINE',
+        reallocatedCount: reallocated.length,
+        timestamp: new Date().toISOString()
+      })
+    );
+
+    const slotEventId = `evt-slot-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+    db.prepare(`
+      INSERT INTO outbox_events (event_id, event_type, aggregate_id, payload, status)
+      VALUES (?, 'SLOT_UPDATED', ?, ?, 'PENDING')
+    `).run(
+      slotEventId,
+      machineId,
+      JSON.stringify({
+        eventId: slotEventId,
+        type: 'WORKSTATION_MAINTENANCE',
+        machineId,
+        isMaintenance,
+        status: newStatus,
+        timestamp: new Date().toISOString()
+      })
+    );
+
     return {
       machineId,
       previousStatus: current.status,

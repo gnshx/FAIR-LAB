@@ -46,7 +46,9 @@ export default function AdminOverviewView({ onNavigate }) {
     const unsubs = [
       subscribe('SLOT_UPDATED', fetchOverview),
       subscribe('workstation.status_changed', fetchOverview),
-      subscribe('allocation.completed', fetchOverview)
+      subscribe('allocation.completed', fetchOverview),
+      subscribe('TIMETABLE_CHANGED', fetchOverview),
+      subscribe('OVERRIDE_CHANGED', fetchOverview)
     ];
     return () => unsubs.forEach(fn => fn && fn());
   }, [subscribe, fetchOverview]);
@@ -67,7 +69,7 @@ export default function AdminOverviewView({ onNavigate }) {
   const freeNow = availability?.summary?.slotAvailableCount ?? Math.max(0, onlineCount - activeSessions);
 
   const avgDailyUtil = useMemo(() => {
-    const onlineWs = workstations.filter(w => w.status !== 'MAINTENANCE');
+    const onlineWs = workstations.filter(w => w.status !== 'MAINTENANCE' && w.operational_status !== 'MAINTENANCE' && !w.is_maintenance);
     if (onlineWs.length === 0) return 0;
     const sum = onlineWs.reduce((acc, w) => acc + Number(w.daily_occupancy_pct || 0), 0);
     return Math.round(sum / onlineWs.length);
@@ -100,7 +102,17 @@ export default function AdminOverviewView({ onNavigate }) {
   }, [workstations, blockTab]);
 
   const maintAlerts = useMemo(
-    () => workstations.filter(w => w.status === 'MAINTENANCE' || w.status === 'OFFLINE').slice(0, 4),
+    () =>
+      workstations
+        .filter(
+          w =>
+            w.status === 'MAINTENANCE' ||
+            w.operational_status === 'MAINTENANCE' ||
+            w.hardware_state === 'MAINTENANCE' ||
+            Boolean(w.is_maintenance) ||
+            w.status === 'OFFLINE'
+        )
+        .slice(0, 4),
     [workstations]
   );
 

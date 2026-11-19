@@ -10,7 +10,8 @@ const {
   runAllocationRound,
   runWindowAllocationRound,
   processNoShows,
-  publishPendingOutboxEvents
+  publishPendingOutboxEvents,
+  recordOutboxEvent
 } = require('../services/bookingService');
 const { syncLabSlotsFromPolicy, getLabAvailability, invalidateAvailabilityCache } = require('../services/availabilityService');
 const {
@@ -202,6 +203,8 @@ router.post('/allocation-rounds', requireAdmin, validateBody(allocRoundSchema), 
       maxLimit: req.body.maxLimit || null
     });
 
+    recordOutboxEvent('QUEUE_CHANGED', result.roundId, { roundId: result.roundId });
+    recordOutboxEvent('SLOT_UPDATED', result.roundId, { roundId: result.roundId });
     if (req.app.get('wssBroadcast')) {
       publishPendingOutboxEvents(req.app.get('wssBroadcast'));
       req.app.get('wssBroadcast')('QUEUE_CHANGED', { roundId: result.roundId });
@@ -231,6 +234,8 @@ router.post('/allocate/:slotId', requireAdmin, async (req, res) => {
     const maxLimit = (req.body && req.body.maxLimit) ? Number(req.body.maxLimit) : null;
     const result = await runAllocationRound(req.params.slotId, maxLimit, bookingDate);
 
+    recordOutboxEvent('QUEUE_CHANGED', req.params.slotId, { slotId: req.params.slotId });
+    recordOutboxEvent('SLOT_UPDATED', req.params.slotId, { slotId: req.params.slotId });
     if (req.app.get('wssBroadcast')) {
       publishPendingOutboxEvents(req.app.get('wssBroadcast'));
       req.app.get('wssBroadcast')('QUEUE_CHANGED', { slotId: req.params.slotId });
@@ -262,6 +267,9 @@ router.post('/process-no-shows', requireAdmin, validateBody(noShowSchema), async
       actorId
     });
 
+    recordOutboxEvent('workstation.status_changed', 'no-show-recovery', { reason: 'NO_SHOW_RECOVERY', count: result.noShowCount });
+    recordOutboxEvent('fairness.score_updated', 'no-show-recovery', { reason: 'NO_SHOW_PENALTY' });
+    recordOutboxEvent('SLOT_UPDATED', 'no-show-recovery', { reason: 'NO_SHOW_RECOVERY' });
     if (req.app.get('wssBroadcast')) {
       req.app.get('wssBroadcast')('workstation.status_changed', { reason: 'NO_SHOW_RECOVERY', count: result.noShowCount });
       req.app.get('wssBroadcast')('fairness.score_updated', { reason: 'NO_SHOW_PENALTY' });
@@ -379,10 +387,17 @@ router.post('/workstation/toggle-maintenance', requireAdmin, validateBody(toggle
     if (req.app.get('wssBroadcast')) {
       req.app.get('wssBroadcast')('workstation.status_changed', {
         machineId: req.body.machineId,
+        isMaintenance: req.body.isMaintenance,
         status: result.newStatus,
+        hardware_state: req.body.isMaintenance ? 'MAINTENANCE' : 'ONLINE',
         reallocatedCount: result.reallocatedCount
       });
-      req.app.get('wssBroadcast')('SLOT_UPDATED', { machineId: req.body.machineId });
+      req.app.get('wssBroadcast')('SLOT_UPDATED', {
+        type: 'WORKSTATION_MAINTENANCE',
+        machineId: req.body.machineId,
+        isMaintenance: req.body.isMaintenance,
+        status: result.newStatus
+      });
     }
 
     res.json({ success: true, ...result });
@@ -507,7 +522,11 @@ router.put('/ticket-release-mode', requireAdmin, validateBody(ticketModeSchema),
       `Set require_ticket_release = ${val === 1 ? 'ENABLED (Students can book only released ticket drops)' : 'DISABLED (Open booking mode)'}`
     );
     invalidateAvailabilityCache();
-    if (req.app.get('wssBroadcast')) req.app.get('wssBroadcast')('SLOT_UPDATED', { type: 'TICKET_MODE' });
+    recordOutboxEvent('SLOT_UPDATED', 'policy', { type: 'TICKET_MODE', requireTicketRelease: Boolean(val) });
+    if (req.app.get('wssBroadcast')) {
+      req.app.get('wssBroadcast')('SLOT_UPDATED', { type: 'TICKET_MODE', requireTicketRelease: Boolean(val) });
+      req.app.get('wssBroadcast')('TICKET_RELEASE_CHANGED', { type: 'TICKET_MODE', requireTicketRelease: Boolean(val) });
+    }
     res.json({ success: true, requireTicketRelease: Boolean(val) });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -528,7 +547,12 @@ router.post('/timetable', requireAdmin, validateBody(timetableSchema), (req, res
   try {
     const entry = createTimetableEntry({ ...req.body, actorId: req.user.user_id });
     invalidateAvailabilityCache();
-    if (req.app.get('wssBroadcast')) req.app.get('wssBroadcast')('SLOT_UPDATED', { type: 'TIMETABLE' });
+    recordOutboxEvent('SLOT_UPDATED', 'timetable', { type: 'TIMETABLE', action: 'ADD', entryId: entry.entry_id });
+    recordOutboxEvent('TIMETABLE_CHANGED', 'timetable', { type: 'TIMETABLE', action: 'ADD', entry });
+    if (req.app.get('wssBroadcast')) {
+      req.app.get('wssBroadcast')('SLOT_UPDATED', { type: 'TIMETABLE', action: 'ADD', entryId: entry.entry_id });
+      req.app.get('wssBroadcast')('TIMETABLE_CHANGED', { type: 'TIMETABLE', action: 'ADD', entry });
+    }
     res.status(201).json(entry);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -549,7 +573,12 @@ router.put('/timetable/:id', requireAdmin, validateBody(timetablePatchSchema), (
   try {
     const updated = updateTimetableEntry(req.params.id, req.body, req.user.user_id);
     invalidateAvailabilityCache();
-    if (req.app.get('wssBroadcast')) req.app.get('wssBroadcast')('SLOT_UPDATED', { type: 'TIMETABLE' });
+    recordOutboxEvent('SLOT_UPDATED', 'timetable', { type: 'TIMETABLE', action: 'UPDATE', entryId: req.params.id });
+    recordOutboxEvent('TIMETABLE_CHANGED', 'timetable', { type: 'TIMETABLE', action: 'UPDATE', updated });
+    if (req.app.get('wssBroadcast')) {
+      req.app.get('wssBroadcast')('SLOT_UPDATED', { type: 'TIMETABLE', action: 'UPDATE', entryId: req.params.id });
+      req.app.get('wssBroadcast')('TIMETABLE_CHANGED', { type: 'TIMETABLE', action: 'UPDATE', updated });
+    }
     res.json(updated);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -560,7 +589,12 @@ router.delete('/timetable/:id', requireAdmin, (req, res) => {
   try {
     const out = deleteTimetableEntry(req.params.id, req.user.user_id);
     invalidateAvailabilityCache();
-    if (req.app.get('wssBroadcast')) req.app.get('wssBroadcast')('SLOT_UPDATED', { type: 'TIMETABLE' });
+    recordOutboxEvent('SLOT_UPDATED', 'timetable', { type: 'TIMETABLE', action: 'DELETE', entryId: req.params.id });
+    recordOutboxEvent('TIMETABLE_CHANGED', 'timetable', { type: 'TIMETABLE', action: 'DELETE', entryId: req.params.id });
+    if (req.app.get('wssBroadcast')) {
+      req.app.get('wssBroadcast')('SLOT_UPDATED', { type: 'TIMETABLE', action: 'DELETE', entryId: req.params.id });
+      req.app.get('wssBroadcast')('TIMETABLE_CHANGED', { type: 'TIMETABLE', action: 'DELETE', entryId: req.params.id });
+    }
     res.json(out);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -582,7 +616,12 @@ router.post('/date-overrides', requireAdmin, validateBody(dateOverrideSchema), (
   try {
     const row = upsertDateOverride({ ...req.body, actorId: req.user.user_id });
     invalidateAvailabilityCache();
-    if (req.app.get('wssBroadcast')) req.app.get('wssBroadcast')('SLOT_UPDATED', { type: 'DATE_OVERRIDE' });
+    recordOutboxEvent('SLOT_UPDATED', 'date_override', { type: 'DATE_OVERRIDE', date: req.body.overrideDate, override: row });
+    recordOutboxEvent('OVERRIDE_CHANGED', 'date_override', { type: 'DATE_OVERRIDE', date: req.body.overrideDate, override: row });
+    if (req.app.get('wssBroadcast')) {
+      req.app.get('wssBroadcast')('SLOT_UPDATED', { type: 'DATE_OVERRIDE', date: req.body.overrideDate, override: row });
+      req.app.get('wssBroadcast')('OVERRIDE_CHANGED', { type: 'DATE_OVERRIDE', date: req.body.overrideDate, override: row });
+    }
     res.status(201).json(row);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -593,7 +632,12 @@ router.delete('/date-overrides/:date', requireAdmin, (req, res) => {
   try {
     const out = deleteDateOverride(req.params.date, req.user.user_id);
     invalidateAvailabilityCache();
-    if (req.app.get('wssBroadcast')) req.app.get('wssBroadcast')('SLOT_UPDATED', { type: 'DATE_OVERRIDE' });
+    recordOutboxEvent('SLOT_UPDATED', 'date_override', { type: 'DATE_OVERRIDE', date: req.params.date, deleted: true });
+    recordOutboxEvent('OVERRIDE_CHANGED', 'date_override', { type: 'DATE_OVERRIDE', date: req.params.date, deleted: true });
+    if (req.app.get('wssBroadcast')) {
+      req.app.get('wssBroadcast')('SLOT_UPDATED', { type: 'DATE_OVERRIDE', date: req.params.date, deleted: true });
+      req.app.get('wssBroadcast')('OVERRIDE_CHANGED', { type: 'DATE_OVERRIDE', date: req.params.date, deleted: true });
+    }
     res.json(out);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -614,7 +658,12 @@ router.post('/ticket-releases', requireAdmin, validateBody(ticketReleaseSchema),
   try {
     const row = createTicketRelease({ ...req.body, actorId: req.user.user_id });
     invalidateAvailabilityCache();
-    if (req.app.get('wssBroadcast')) req.app.get('wssBroadcast')('SLOT_UPDATED', { type: 'TICKET_RELEASE' });
+    recordOutboxEvent('SLOT_UPDATED', 'ticket_release', { type: 'TICKET_RELEASE', release: row });
+    recordOutboxEvent('TICKET_RELEASE_CHANGED', 'ticket_release', { type: 'TICKET_RELEASE', release: row });
+    if (req.app.get('wssBroadcast')) {
+      req.app.get('wssBroadcast')('SLOT_UPDATED', { type: 'TICKET_RELEASE', release: row });
+      req.app.get('wssBroadcast')('TICKET_RELEASE_CHANGED', { type: 'TICKET_RELEASE', release: row });
+    }
     res.status(201).json(row);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -652,7 +701,12 @@ router.post('/ticket-releases/bulk', requireAdmin, validateBody(bulkReleaseSchem
       }
     }
     invalidateAvailabilityCache();
-    if (req.app.get('wssBroadcast')) req.app.get('wssBroadcast')('SLOT_UPDATED', { type: 'TICKET_RELEASE' });
+    recordOutboxEvent('SLOT_UPDATED', 'ticket_release', { type: 'TICKET_RELEASE', createdCount: created.length });
+    recordOutboxEvent('TICKET_RELEASE_CHANGED', 'ticket_release', { type: 'TICKET_RELEASE', createdCount: created.length });
+    if (req.app.get('wssBroadcast')) {
+      req.app.get('wssBroadcast')('SLOT_UPDATED', { type: 'TICKET_RELEASE', createdCount: created.length });
+      req.app.get('wssBroadcast')('TICKET_RELEASE_CHANGED', { type: 'TICKET_RELEASE', createdCount: created.length });
+    }
     res.status(201).json({ createdCount: created.length, releases: created });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -669,7 +723,12 @@ router.patch('/ticket-releases/:id', requireAdmin, validateBody(ticketPatchSchem
   try {
     const updated = updateTicketReleaseStatus(req.params.id, req.body, req.user.user_id);
     invalidateAvailabilityCache();
-    if (req.app.get('wssBroadcast')) req.app.get('wssBroadcast')('SLOT_UPDATED', { type: 'TICKET_RELEASE' });
+    recordOutboxEvent('SLOT_UPDATED', 'ticket_release', { type: 'TICKET_RELEASE', updated });
+    recordOutboxEvent('TICKET_RELEASE_CHANGED', 'ticket_release', { type: 'TICKET_RELEASE', updated });
+    if (req.app.get('wssBroadcast')) {
+      req.app.get('wssBroadcast')('SLOT_UPDATED', { type: 'TICKET_RELEASE', updated });
+      req.app.get('wssBroadcast')('TICKET_RELEASE_CHANGED', { type: 'TICKET_RELEASE', updated });
+    }
     res.json(updated);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -680,7 +739,12 @@ router.delete('/ticket-releases/:id', requireAdmin, (req, res) => {
   try {
     const out = deleteTicketRelease(req.params.id, req.user.user_id);
     invalidateAvailabilityCache();
-    if (req.app.get('wssBroadcast')) req.app.get('wssBroadcast')('SLOT_UPDATED', { type: 'TICKET_RELEASE' });
+    recordOutboxEvent('SLOT_UPDATED', 'ticket_release', { type: 'TICKET_RELEASE', releaseId: req.params.id });
+    recordOutboxEvent('TICKET_RELEASE_CHANGED', 'ticket_release', { type: 'TICKET_RELEASE', releaseId: req.params.id });
+    if (req.app.get('wssBroadcast')) {
+      req.app.get('wssBroadcast')('SLOT_UPDATED', { type: 'TICKET_RELEASE', releaseId: req.params.id });
+      req.app.get('wssBroadcast')('TICKET_RELEASE_CHANGED', { type: 'TICKET_RELEASE', releaseId: req.params.id });
+    }
     res.json(out);
   } catch (err) {
     res.status(400).json({ error: err.message });

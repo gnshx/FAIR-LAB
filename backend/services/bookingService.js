@@ -1364,6 +1364,25 @@ function tailOutboxEventsSince(lastRowId, broadcastFn) {
   return cursor;
 }
 
+/**
+ * Persists an event into `outbox_events` so it is durably committed and
+ * propagated across all backend replicas via the cross-replica outbox tailer.
+ */
+function recordOutboxEvent(eventType, aggregateId, payload = {}, dbInstance = null) {
+  const db = dbInstance || getDb();
+  const eventId = `evt-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+  const fullPayload = { ...payload, eventId, timestamp: new Date().toISOString() };
+  try {
+    db.prepare(`
+      INSERT INTO outbox_events (event_id, event_type, aggregate_id, payload, status)
+      VALUES (?, ?, ?, ?, 'PENDING')
+    `).run(eventId, eventType, String(aggregateId || 'system'), JSON.stringify(fullPayload));
+  } catch (err) {
+    console.error('Failed to insert outbox event:', err.message);
+  }
+  return { eventId, fullPayload };
+}
+
 module.exports = {
   submitBookingRequest,
   submitHybridBookingRequest,
@@ -1375,5 +1394,6 @@ module.exports = {
   getQueueForSlot,
   publishPendingOutboxEvents,
   getLatestOutboxRowId,
-  tailOutboxEventsSince
+  tailOutboxEventsSince,
+  recordOutboxEvent
 };

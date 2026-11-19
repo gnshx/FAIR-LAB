@@ -117,7 +117,10 @@ export default function WorkstationMapView({ onNavigateToPass }) {
       subscribe('SLOT_UPDATED', fetchAvailability),
       subscribe('booking.confirmed', fetchAvailability),
       subscribe('booking.cancelled', fetchAvailability),
-      subscribe('workstation.status_changed', fetchAvailability)
+      subscribe('workstation.status_changed', fetchAvailability),
+      subscribe('TIMETABLE_CHANGED', fetchAvailability),
+      subscribe('OVERRIDE_CHANGED', fetchAvailability),
+      subscribe('TICKET_RELEASE_CHANGED', fetchAvailability)
     ];
     return () => unsubs.forEach(fn => fn && fn());
   }, [subscribe, fetchAvailability]);

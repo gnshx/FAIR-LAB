@@ -37,18 +37,26 @@ export default function AdminWorkstationsView() {
     return () => unsubs.forEach(fn => fn && fn());
   }, [subscribe, fetchWorkstations]);
 
+  const checkIsMaintenance = (ws) => {
+    return ws.status === 'MAINTENANCE' ||
+           ws.operational_status === 'MAINTENANCE' ||
+           ws.hardware_state === 'MAINTENANCE' ||
+           Boolean(ws.is_maintenance);
+  };
+
   const handleToggleMaintenance = async (ws) => {
-    const isMaint = ws.status !== 'MAINTENANCE';
+    const isCurrentlyMaint = checkIsMaintenance(ws);
+    const nextMaint = !isCurrentlyMaint;
     const res = await fetch('/api/admin/workstation/toggle-maintenance', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-user-id': currentUser },
-      body: JSON.stringify({ machineId: ws.machine_id, isMaintenance: isMaint })
+      body: JSON.stringify({ machineId: ws.machine_id, isMaintenance: nextMaint })
     });
     const data = await res.json();
     if (res.ok) {
       setBanner({
         type: 'success',
-        text: isMaint
+        text: nextMaint
           ? `${ws.display_label || ws.machine_id} placed in maintenance.${data.reallocatedCount ? ` Automatically reallocated ${data.reallocatedCount} active booking(s).` : ''}`
           : `${ws.display_label || ws.machine_id} restored to online pool.`
       });
@@ -59,9 +67,9 @@ export default function AdminWorkstationsView() {
   };
 
   const counts = useMemo(() => {
-    const online = workstations.filter(w => w.status !== 'MAINTENANCE' && w.status !== 'OFFLINE').length;
-    const offline = workstations.filter(w => w.status === 'OFFLINE').length;
-    const maint = workstations.filter(w => w.status === 'MAINTENANCE').length;
+    const maint = workstations.filter(checkIsMaintenance).length;
+    const offline = workstations.filter(w => w.status === 'OFFLINE' || w.operational_status === 'OFFLINE').length;
+    const online = Math.max(0, workstations.length - maint - offline);
     const blockA = workstations.filter(w => (w.block_code || 'A') === 'A').length;
     const blockB = workstations.filter(w => w.block_code === 'B').length;
     return { total: workstations.length, online, offline, maint, attention: offline + maint, blockA, blockB };
@@ -70,7 +78,7 @@ export default function AdminWorkstationsView() {
   const filtered = useMemo(() => {
     if (filter === 'A') return workstations.filter(w => (w.block_code || 'A') === 'A');
     if (filter === 'B') return workstations.filter(w => w.block_code === 'B');
-    if (filter === 'ATTENTION') return workstations.filter(w => w.status === 'MAINTENANCE' || w.status === 'OFFLINE');
+    if (filter === 'ATTENTION') return workstations.filter(w => checkIsMaintenance(w) || w.status === 'OFFLINE');
     return workstations;
   }, [workstations, filter]);
 
@@ -201,10 +209,10 @@ export default function AdminWorkstationsView() {
               </thead>
               <tbody className="divide-y divide-[#F1F5F9] tabular-nums">
                 {filtered.map(ws => {
-                  const isMaint = ws.status === 'MAINTENANCE' || ws.status === 'OFFLINE';
+                  const isMaint = checkIsMaintenance(ws);
                   const slotSt = (ws.slot_status || 'AVAILABLE').toUpperCase();
                   const todayPill = isMaint
-                    ? { label: 'Blocked', cls: 'bg-[#F1F5F9] text-[#64748B]' }
+                    ? { label: 'Maintenance', cls: 'bg-[#FEF3C7] text-[#B45309]' }
                     : slotSt === 'BOOKED'
                     ? { label: 'Booked', cls: 'bg-[#FEE2E2] text-[#DC2626]' }
                     : slotSt === 'PENDING'
@@ -245,8 +253,9 @@ export default function AdminWorkstationsView() {
                               ? 'bg-[#DCFCE7] border-[#BBF7D0] text-[#15803D] hover:bg-[#BBF7D0]'
                               : 'bg-white border-[#E2E8F0] text-[#475569] hover:border-[#FCA5A5] hover:text-[#DC2626]'
                           }`}
+                          title={isMaint ? 'Restore workstation to available online pool' : 'Place workstation in maintenance mode'}
                         >
-                          {isMaint ? 'Restore' : 'Maintenance'}
+                          {isMaint ? 'Mark online' : 'Maintenance'}
                         </button>
                       </td>
                     </tr>
