@@ -3,6 +3,7 @@ import { AuthProvider, useAuth, isGateDeskUser, CANONICAL_DEMO_USERS } from './c
 import { SocketProvider } from './context/SocketContext';
 import Sidebar, { STUDENT_NAV, ADMIN_NAV, GATE_NAV } from './components/Sidebar';
 import { VIEW_TO_PATH, PATH_TO_ROUTE, resolveRoute } from './routes';
+import ErrorBoundary from './components/ErrorBoundary';
 
 import LoginView from './views/LoginView';
 import StudentDashboardView from './views/StudentDashboardView';
@@ -412,34 +413,36 @@ function MainLayout() {
       {/* Main Content Canvas */}
       <div className="lg:pl-60">
         <main className="min-h-screen w-full max-w-[1320px] mx-auto px-3.5 sm:px-6 lg:px-8 py-5 sm:py-7 pb-16">
-          {/* Student Workspace (5 Screens) */}
-          {currentView === 'student-dashboard' && (
-            <StudentDashboardView onNavigate={(view) => handleNavigate(view)} />
-          )}
-          {currentView === 'student-book' && (
-            <WorkstationMapView onNavigateToPass={() => handleNavigate('student-bookings')} />
-          )}
-          {currentView === 'student-bookings' && (
-            <StudentMyBookingsView
-              onNavigateToBook={() => handleNavigate('student-book')}
-              onNavigate={handleNavigate}
-            />
-          )}
-          {currentView === 'student-fairness' && <StudentFairnessView />}
-          {currentView === 'student-notifications' && <StudentNotificationsView />}
+          <ErrorBoundary fallbackTitle={`Error rendering ${currentView}`}>
+            {/* Student Workspace (5 Screens) */}
+            {currentView === 'student-dashboard' && (
+              <StudentDashboardView onNavigate={(view) => handleNavigate(view)} />
+            )}
+            {currentView === 'student-book' && (
+              <WorkstationMapView onNavigateToPass={() => handleNavigate('student-bookings')} />
+            )}
+            {currentView === 'student-bookings' && (
+              <StudentMyBookingsView
+                onNavigateToBook={() => handleNavigate('student-book')}
+                onNavigate={handleNavigate}
+              />
+            )}
+            {currentView === 'student-fairness' && <StudentFairnessView />}
+            {currentView === 'student-notifications' && <StudentNotificationsView />}
 
-          {/* Admin Workspace (9 Screens) */}
-          {currentView === 'admin-overview' && (
-            <AdminOverviewView onNavigate={(view) => handleNavigate(view)} />
-          )}
-          {currentView === 'admin-allocation' && <AdminAllocationView />}
-          {currentView === 'admin-schedule' && <AdminScheduleView />}
-          {currentView === 'admin-workstations' && <AdminWorkstationsView />}
-          {currentView === 'admin-students' && <AdminStudentsView />}
-          {currentView === 'admin-analytics' && <AdminAnalyticsView />}
-          {currentView === 'admin-access' && <AdminAccessControlView />}
-          {currentView === 'admin-settings' && <AdminSettingsView />}
-          {currentView === 'admin-audit' && <AdminAuditLogView />}
+            {/* Admin Workspace (9 Screens) */}
+            {currentView === 'admin-overview' && (
+              <AdminOverviewView onNavigate={(view) => handleNavigate(view)} />
+            )}
+            {currentView === 'admin-allocation' && <AdminAllocationView />}
+            {currentView === 'admin-schedule' && <AdminScheduleView />}
+            {currentView === 'admin-workstations' && <AdminWorkstationsView />}
+            {currentView === 'admin-students' && <AdminStudentsView />}
+            {currentView === 'admin-analytics' && <AdminAnalyticsView />}
+            {currentView === 'admin-access' && <AdminAccessControlView />}
+            {currentView === 'admin-settings' && <AdminSettingsView />}
+            {currentView === 'admin-audit' && <AdminAuditLogView />}
+          </ErrorBoundary>
         </main>
       </div>
     </div>
@@ -448,10 +451,12 @@ function MainLayout() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <SocketProvider>
-        <MainLayout />
-      </SocketProvider>
-    </AuthProvider>
+    <ErrorBoundary fallbackTitle="FairLab Global Shell Recovery">
+      <AuthProvider>
+        <SocketProvider>
+          <MainLayout />
+        </SocketProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }

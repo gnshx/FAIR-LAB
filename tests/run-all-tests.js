@@ -64,7 +64,8 @@ async function main() {
     { name: 'Max 2h Limit, Mon–Fri Academic Timetable, Holidays/Extra Days & Ticket Releases', file: 'tests/test-schedule-timetable-tickets.js' },
     { name: 'Autonomous Allocation Engine & Overlap Conflict Resilience', file: 'tests/test-autonomous-overlap-fixes.js' },
     { name: 'Statistical 50-Seed Fairness Benchmark', file: 'tests/benchmark-fairness-50seeds.js' },
-    { name: 'Phase 10: Final Validation (Clean DB, E2E Journey, Production JWT/Cookie & Outbox Recovery)', file: 'tests/test-phase10-validation.js' }
+    { name: 'Phase 10: Final Validation (Clean DB, E2E Journey, Production JWT/Cookie & Outbox Recovery)', file: 'tests/test-phase10-validation.js' },
+    { name: 'Phase 11: Real Headless Chrome Render Test (All 14 Views, Tab Switching & Error Boundary)', file: 'tests/test-frontend-views-resilience.js' }
   ];
 
   let allPassed = true;

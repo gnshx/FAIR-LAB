@@ -153,9 +153,27 @@ This document records all functional, architectural, visual, mobile, and test-su
 
 ---
 
+### 14. Missing React Hook Import (`useMemo`) & Lack of Error Boundary Leading to Blank White Screen on `/schedule`
+* **Symptoms & Discovery**:
+  * Navigating to `http://10.1.75.40:3500/schedule` rendered a completely blank white screen in the browser (`media_1795161491634_ad806ff6.png`).
+* **Root Cause**:
+  * In `AdminScheduleView.jsx`, `coverageDays` was refactored to compute 14-day ticket drop coverage using `useMemo`, but `useMemo` was omitted from the `import React, { ... } from 'react'` statement.
+  * Vite/Rollup tree-shaking allowed the production build to compile without failing on undeclared global identifiers.
+  * At runtime, opening `/schedule` threw `ReferenceError: useMemo is not defined`.
+  * Because React 18 unmounts the entire DOM root on unhandled component errors and no top-level `ErrorBoundary` was present, the entire viewport went pure white.
+  * Previous test suites verified backend HTTP/REST endpoints via Node `http`, but lacked real browser DOM rendering tests.
+* **Resolution & Permanent Mistake-Proofing**:
+  * Corrected React hook imports in `AdminScheduleView.jsx` (`import React, { useState, useEffect, useCallback, useMemo } from 'react'`).
+  * Added defensive array guards (`(Array.isArray(x) ? x : []).filter(...)`) across all timetable, override, and ticket release lists.
+  * Built a production-grade React class `<ErrorBoundary>` (`frontend/src/components/ErrorBoundary.jsx`) with automatic error containment, clean recovery card, and 1-click "Reload View" / "Return to Dashboard" actions.
+  * Wrapped both the FairLab global application shell and individual view renderer in `App.jsx` with `<ErrorBoundary>`.
+  * Created automated headless Chrome validation suite (`tests/test-frontend-views-resilience.js`) integrated into `tests/run-all-tests.js` (expanding test suites to 16) that opens and verifies all 14 routes in real Google Chrome, validating DOM content and asserting 0 uncaught runtime exceptions.
+
+---
+
 ## Verification Summary & Test Suite Results
 
-All 15 test suites have been verified on the live production VM (`10.1.75.40`) and local repository:
+All 16 test suites have been verified on the live production VM (`10.1.75.40`) and local repository:
 
 ```text
 ================================================================
@@ -178,9 +196,10 @@ All 15 test suites have been verified on the live production VM (`10.1.75.40`) a
 ▶ Running [Autonomous Allocation Engine & Overlap Conflict Resilience]  ✅ PASSED
 ▶ Running [Statistical 50-Seed Fairness Benchmark]                      ✅ PASSED
 ▶ Running [Phase 10: Final Validation (JWT/Cookie & Outbox Recovery)]   ✅ PASSED
+▶ Running [Phase 11: Real Headless Chrome Render Test (All 14 Views)]   ✅ PASSED
 
 ================================================================
-🎉 ALL 15 TEST SUITES PASSED FLAWLESSLY WITH 100% SUCCESS RATE!
+🎉 ALL 16 TEST SUITES PASSED FLAWLESSLY WITH 100% SUCCESS RATE!
 ================================================================
 ```
 

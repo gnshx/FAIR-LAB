@@ -68,6 +68,8 @@ export default function AdminScheduleView() {
   const coverageDays = useMemo(() => {
     const today = getTodayStr();
     const days = [];
+    const relList = Array.isArray(releases) ? releases : [];
+    const ovrList = Array.isArray(overrides) ? overrides : [];
     for (let i = 0; i < 14; i++) {
       const d = new Date(`${today}T00:00:00Z`);
       d.setUTCDate(d.getUTCDate() + i);
@@ -75,8 +77,8 @@ export default function AdminScheduleView() {
       const dayName = new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: 'UTC' }).format(d);
       const formattedDate = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(d);
 
-      const rel = releases.find(r => r.release_date === iso);
-      const ovr = overrides.find(o => o.override_date === iso);
+      const rel = relList.find(r => r && r.release_date === iso);
+      const ovr = ovrList.find(o => o && o.override_date === iso);
 
       days.push({
         iso,
@@ -406,9 +408,9 @@ export default function AdminScheduleView() {
       {/* Section Filter Pills */}
       <div className="flex flex-wrap items-center gap-2">
         {[
-          { id: 'TIMETABLE', label: `Mon–Fri Academic Timetable · ${timetable.filter(t => t.is_active).length}` },
-          { id: 'OVERRIDES', label: `Holidays & Extra Days · ${overrides.length}` },
-          { id: 'TICKETS', label: `Ticket Releases · ${releases.filter(r => r.status === 'RELEASED').length}` }
+          { id: 'TIMETABLE', label: `Mon–Fri Academic Timetable · ${(Array.isArray(timetable) ? timetable : []).filter(t => t?.is_active).length}` },
+          { id: 'OVERRIDES', label: `Holidays & Extra Days · ${(Array.isArray(overrides) ? overrides : []).length}` },
+          { id: 'TICKETS', label: `Ticket Releases · ${(Array.isArray(releases) ? releases : []).filter(r => r?.status === 'RELEASED').length}` }
         ].map(item => (
           <button
             key={item.id}
@@ -444,7 +446,7 @@ export default function AdminScheduleView() {
             ) : (
               <div className="space-y-4">
                 {WEEKDAYS.slice(0, 5).map(day => {
-                  const dayEntries = timetable.filter(t => Number(t.day_of_week) === day.id);
+                  const dayEntries = (Array.isArray(timetable) ? timetable : []).filter(t => t && Number(t.day_of_week) === day.id);
                   return (
                     <div key={day.id} className="p-4 rounded-xl bg-[#F8FAFC] border border-[#E5E7EB]">
                       <div className="flex items-center justify-between mb-2.5">
@@ -609,7 +611,7 @@ export default function AdminScheduleView() {
               </p>
             </div>
 
-            {overrides.length === 0 ? (
+            {(Array.isArray(overrides) ? overrides : []).length === 0 ? (
               <div className="py-12 text-center text-xs text-[#64748B]">
                 No holidays or extra-day overrides configured yet. Add one on the right.
               </div>
@@ -626,7 +628,7 @@ export default function AdminScheduleView() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#F1F5F9] tabular-nums">
-                    {overrides.map(o => {
+                    {(Array.isArray(overrides) ? overrides : []).map(o => {
                       const isHol = o.override_type === 'HOLIDAY';
                       return (
                         <tr key={o.override_id} className="hover:bg-[#F8FAFC]">
@@ -924,7 +926,7 @@ export default function AdminScheduleView() {
                 <p className="text-xs text-[#64748B] mt-0.5">Live claimed vs remaining tickets per drop</p>
               </div>
 
-              {releases.length === 0 ? (
+              {(Array.isArray(releases) ? releases : []).length === 0 ? (
                 <div className="py-12 text-center text-xs text-[#64748B]">
                   No ticket releases created yet. Release a day or window on the right.
                 </div>
@@ -941,7 +943,7 @@ export default function AdminScheduleView() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#F1F5F9] tabular-nums">
-                      {releases.map(rel => {
+                      {(Array.isArray(releases) ? releases : []).map(rel => {
                         const pct = Math.min(100, Math.round((rel.claimed_tickets / Math.max(1, rel.total_tickets)) * 100));
                         const pill =
                           rel.status === 'RELEASED'
