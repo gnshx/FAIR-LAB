@@ -297,7 +297,7 @@ export default function StudentPassView({ onNavigateToMap, onNavigateToQueue }) 
             </span>
           </div>
           <p className="text-sm text-[#667085] mt-1">
-            {user?.name || 'Ganesh Kumar'} · <span className="font-mono text-xs">{user?.roll_no || 'BT23CSE001'}</span> · {user?.department || 'Computer Science & Engineering'}
+            {user?.name || 'NDS Ganesh'} · <span className="font-mono text-xs">{user?.roll_no || 'BT23CSE001'}</span> · {user?.department || 'Computer Science & Engineering'}
           </p>
         </div>
 

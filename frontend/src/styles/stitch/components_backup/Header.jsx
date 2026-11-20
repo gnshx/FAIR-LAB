@@ -92,7 +92,7 @@ export default function Header({ currentView, setCurrentView }) {
               <span className="material-symbols-outlined text-[16px]">person</span>
             </div>
             <div className="hidden md:flex flex-col">
-              <span className="text-xs font-medium text-zinc-200 leading-tight">{user?.name || 'Ganesh Kumar'}</span>
+              <span className="text-xs font-medium text-zinc-200 leading-tight">{user?.name || 'NDS Ganesh'}</span>
               <span className="text-[10px] font-mono text-zinc-400 capitalize">{user?.role || 'student'} · {user?.roll_no || ''}</span>
             </div>
             <span className="material-symbols-outlined text-zinc-400 text-[16px]">expand_more</span>

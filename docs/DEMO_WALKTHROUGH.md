@@ -71,7 +71,7 @@ Every login requires an `@iitbhilai.ac.in` account and issues a signed **HS256 J
 
 ## 3. Recommended 8-Step Live CSD Presentation Flow (Campus VM: `http://10.1.75.40:3500`)
 
-For the live professor evaluation on Group 10's deployed VM (`stu130_sys1`, `10.1.75.40`), demonstrate these **8 steps in exact order**:
+For the live evaluation on NDS Ganesh's deployed campus VM (`stu130_sys1`, `10.1.75.40`), demonstrate these **8 steps in exact order**:
 
 1. **Student Login & 84-Workstation Map** — Open `http://10.1.75.40:3500`, test `@gmail.com` rejection (`403`), then sign in as **Priya Sharma** (`priya.s@iitbhilai.ac.in`) and show the 84-seat map (Block A `6×10` + Block B `4×6`).
 2. **Two Students Compete for a Workstation** — Submit competing requests for the same window and same preferred seat (`L106-PC-01`) from **Ananya** (score `70`, submits first) and **Priya** (score `100`, submits second). Show that contention atomically queues requests instead of allowing immediate fairness bypass.

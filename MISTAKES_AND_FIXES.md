@@ -1,5 +1,7 @@
 # FairLab (Lab L-106) — Mistakes Encountered, Root Causes & Comprehensive Fixes
 
+**Author & Developer:** NDS Ganesh (Roll: BT23CSE001 · M.Tech CSE, IIT Bhilai · Email: ganesh.k@iitbhilai.ac.in)
+
 This document records all functional, architectural, visual, mobile, and test-suite issues identified during the development and live deployment of FairLab (IIT Bhilai Lab L-106 Workstation Fairness & Allocation System), along with their root causes, engineering fixes, and verification evidence.
 
 ---

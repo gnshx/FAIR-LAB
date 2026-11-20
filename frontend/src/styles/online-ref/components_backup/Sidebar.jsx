@@ -82,7 +82,7 @@ export default function Sidebar({ currentView, setCurrentView, onSignOut }) {
       {/* Bottom Account + Sign Out */}
       <div className="pt-4 border-t border-[#EAECF0] space-y-2">
         <div className="px-3 py-2 rounded-xl bg-[#F7F8FC] border border-[#EAECF0]">
-          <div className="text-xs font-semibold text-[#1D2939] truncate">{user?.name || 'Ganesh Kumar'}</div>
+          <div className="text-xs font-semibold text-[#1D2939] truncate">{user?.name || 'NDS Ganesh'}</div>
           <div className="text-[11px] font-mono text-[#667085] capitalize mt-0.5">
             {user?.role || 'student'} · {user?.roll_no || 'BT23CSE001'}
           </div>

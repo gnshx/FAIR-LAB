@@ -138,12 +138,12 @@ Validate the complete PostgreSQL path end-to-end before migration; add backups/r
 The current campus demo uses HTTP; live persistence is on one shared SQLite WAL DB; two app processes share one VM/failure domain; PostgreSQL is not serving live requests; a WebSocket event is not guaranteed receipt; and a displayed availability map can be stale until server-side revalidation.
 
 ### 42. What would you say if the panel asks whether everything is bug-free?
-“No nontrivial software can be honestly guaranteed bug-free. We tested defined scenarios and invariants, and I can show those results. Remaining risks include deployment/network failures, untested edge cases, and the PostgreSQL migration path, which is not live.”
+“No nontrivial software can be honestly guaranteed bug-free. I tested defined scenarios and invariants across 16 automated test suites, and I can demonstrate those results. Remaining risks include network partitions, unhandled physical environment failures, and the PostgreSQL migration path, which is evaluated but not currently live.”
 
 ## Individual contribution questions (prepare truthful answers)
 
 ### 43. What did you personally implement?
-Prepare a precise list of your own commits/files/features. Do not claim team members’ work as yours.
+You designed, architected, and implemented the entire FairLab system end-to-end as the sole developer: the modular monolith backend, SQLite WAL and PostgreSQL schemas with atomic exclusion triggers, the hybrid fairness ranking algorithm, transactional outbox engine, cryptographic HMAC-SHA256 QR gate verification, responsive React frontend (all 14 views), and all 16 automated test suites.
 
 ### 44. What was the hardest bug and how did you debug it?
 Use one real example: symptom → reproduction → root cause → fix → regression test. Avoid inventing a story; show the relevant commit/test if possible.

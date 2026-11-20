@@ -31,7 +31,7 @@ export default function LoginView({ onSignedIn }) {
   };
 
   const demoPersonas = [
-    { id: 'usr-student-ganesh', label: 'Student Portal', name: 'Ganesh Kumar', tag: '90 pts' },
+    { id: 'usr-student-ganesh', label: 'Student Portal', name: 'NDS Ganesh', tag: '90 pts' },
     { id: 'usr-admin-sharma', label: 'Admin Portal', name: 'Dr. A. K. Sharma', tag: 'Admin' },
     { id: 'usr-watchman-ram', label: 'Gate Turnstile', name: 'Guard Ram Singh', tag: 'Gate' }
   ];

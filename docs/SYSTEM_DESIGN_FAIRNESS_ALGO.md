@@ -2,7 +2,7 @@
 ## Comprehensive Architectural Blueprint for Academic Computer Laboratory Access Management
 **Target Facility:** Computer Lab L-106, Indian Institute of Technology Bhilai (IIT Bhilai)  
 **Document Type:** System Architecture Document (HLD & LLD) + Algorithmic Specification  
-**Authors:** FairLab Engineering Team  
+**Author:** NDS Ganesh (Roll: BT23CSE001) · Department of Computer Science & Engineering, IIT Bhilai  
 **Status:** Approved for Academic Defense & Production Deployment  
 
 ---

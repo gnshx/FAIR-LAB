@@ -61,7 +61,7 @@ export default function Header({ currentView, setCurrentView, onSignOut }) {
               {initial}
             </div>
             <span className="hidden md:inline text-xs font-medium text-[#1D2939] max-w-[120px] truncate">
-              {user?.name || 'Ganesh Kumar'}
+              {user?.name || 'NDS Ganesh'}
             </span>
             <span className="material-symbols-outlined text-[16px] text-[#667085]">expand_more</span>
           </button>

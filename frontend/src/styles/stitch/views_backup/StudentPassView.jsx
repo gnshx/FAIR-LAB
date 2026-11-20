@@ -150,7 +150,7 @@ export default function StudentPassView({ onNavigateToMap, onNavigateToQueue }) 
             <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-zinc-800">
               <div>
                 <h1 className="text-xl font-bold text-zinc-100 tracking-tight">
-                  {user?.name || 'Ganesh Kumar'}
+                  {user?.name || 'NDS Ganesh'}
                 </h1>
                 <p className="text-xs text-zinc-400 font-mono mt-0.5">
                   {user?.roll_no || 'BT23CSE001'} · {user?.department || 'Computer Science & Engineering'}
