@@ -158,7 +158,7 @@ router.put('/policy', requireAdmin, validateBody(policyUpdateSchema), (req, res)
       INSERT INTO audit_logs (log_id, actor_id, actor_name, role, action, target_type, target_id, details)
       VALUES (?, ?, 'Lab Coordinator', 'admin', 'POLICY_UPDATE', 'policy_config', '1', ?)
     `).run(
-      `audit-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      `audit-${Date.now()}-${Math.floor(Math.random() * 10000000)}`,
       actorId,
       `Updated policy: Hours ${openTime}-${closeTime} (${intervalMins}m slots), DailyMax=${req.body.max_daily_hours ?? current.max_daily_hours}h/${req.body.max_daily_bookings ?? current.max_daily_bookings} bookings, Rate=-${req.body.deduction_per_hour ?? current.deduction_per_hour}pts/hr normal, -${req.body.high_demand_deduction_per_hour ?? current.high_demand_deduction_per_hour}pts/hr peak.`
     );
@@ -524,7 +524,7 @@ router.post('/override', requireAdmin, validateBody(overrideSchema), async (req,
         INSERT INTO audit_logs (log_id, actor_id, actor_name, role, action, target_type, target_id, details)
         VALUES (?, ?, 'Dr. A. K. Sharma', 'admin', 'ADMIN_OVERRIDE_BOOKING', 'bookings', ?, ?)
       `).run(
-        `audit-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        `audit-${Date.now()}-${Math.floor(Math.random() * 10000000)}`,
         actorId,
         bookingId,
         `Emergency override granted to ${user.name} (${user.roll_no}) on ${machine.machine_id} (${bookingDate}). Reason: ${req.body.reason}`
@@ -592,7 +592,7 @@ router.put('/ticket-release-mode', requireAdmin, validateBody(ticketModeSchema),
       INSERT INTO audit_logs (log_id, actor_id, actor_name, role, action, target_type, target_id, details)
       VALUES (?, ?, ?, 'admin', 'TICKET_MODE_UPDATE', 'policy_config', '1', ?)
     `).run(
-      `audit-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      `audit-${Date.now()}-${Math.floor(Math.random() * 10000000)}`,
       req.user.user_id,
       req.user.name,
       `Set require_ticket_release = ${val === 1 ? 'ENABLED (Students can book only released ticket drops)' : 'DISABLED (Open booking mode)'}`

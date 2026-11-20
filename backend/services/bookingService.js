@@ -628,7 +628,7 @@ function cancelBookingRequest(requestId, userId) {
     db.prepare(`
       INSERT INTO audit_logs (log_id, actor_id, actor_name, role, action, target_type, target_id, details)
       VALUES (?, ?, 'Student', 'student', 'REQUEST_CANCELLED', 'booking_requests', ?, ?)
-    `).run(`audit-${Date.now()}-${Math.floor(Math.random() * 1000)}`, userId, requestId, `Withdrew queued request (${reqRow.start_time || reqRow.slot_id} on ${reqRow.booking_date}, 0 penalty).`);
+    `).run(`audit-${Date.now()}-${Math.floor(Math.random() * 10000000)}`, userId, requestId, `Withdrew queued request (${reqRow.start_time || reqRow.slot_id} on ${reqRow.booking_date}, 0 penalty).`);
 
     return { success: true, requestId, penaltyApplied: 0 };
   });
@@ -1121,7 +1121,7 @@ function cancelBooking(bookingId, userId, reason = 'Student voluntary cancellati
       INSERT INTO audit_logs (log_id, actor_id, actor_name, role, action, target_type, target_id, details)
       VALUES (?, ?, ?, 'student', 'BOOKING_CANCELLED', 'bookings', ?, ?)
     `).run(
-      `audit-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      `audit-${Date.now()}-${Math.floor(Math.random() * 10000000)}`,
       userId,
       'Student',
       bookingId,

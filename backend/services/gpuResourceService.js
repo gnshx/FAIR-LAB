@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const { getDb } = require('../db/database');
 const { invalidateAvailabilityCache } = require('./availabilityService');
 
@@ -143,7 +144,7 @@ function toggleWorkstationMaintenance(machineId, isMaintenance, actorId = 'usr-a
       INSERT INTO audit_logs (log_id, actor_id, actor_name, role, action, target_type, target_id, details)
       VALUES (?, ?, ?, 'admin', 'MAINTENANCE_TOGGLE', 'workstations', ?, ?)
     `).run(
-      `audit-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      `audit-${Date.now()}-${crypto.randomUUID()}`,
       actorId,
       actorName,
       targetMachineId,

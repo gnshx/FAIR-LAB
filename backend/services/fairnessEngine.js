@@ -314,7 +314,7 @@ function executeSemesterReset(actorId, actorName, newSemesterName, ipAddress = '
       INSERT INTO audit_logs (log_id, actor_id, actor_name, role, action, target_type, target_id, details, ip_address)
       VALUES (?, ?, ?, 'admin', 'SEMESTER_RESET', 'semesters', ?, ?, ?)
     `).run(
-      `audit-${Date.now()}`,
+      `audit-${Date.now()}-${Math.floor(Math.random() * 10000000)}`,
       actorId,
       actorName,
       newSemId,
