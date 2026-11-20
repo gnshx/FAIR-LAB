@@ -25,7 +25,7 @@ if (typeof window !== 'undefined' && !window.__fairlabFetchWrapped) {
 export const CANONICAL_DEMO_USERS = [
   {
     user_id: 'usr-student-ganesh',
-    name: 'Ganesh Kumar',
+    name: 'NDS Ganesh',
     roll_no: 'BT23CSE001',
     email: 'ganesh.k@iitbhilai.ac.in',
     role: 'student',

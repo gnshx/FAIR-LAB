@@ -129,7 +129,7 @@ SSH access to the VM uses port `2500`: `ssh -p 2500 student@10.1.75.40`. The VM'
 
 | Role | Name & Email | Password | Permissions | Scope / Views Accessible |
 | :--- | :--- | :---: | :--- | :--- |
-| **Student** | **Ganesh Kumar**<br>`ganesh.k@iitbhilai.ac.in` | `demo` | Standard Student | Student Workspace (`/dashboard`, `/book`, `/bookings`, `/fairness`, `/notifications`) |
+| **Student** | **NDS Ganesh**<br>`ganesh.k@iitbhilai.ac.in` | `demo` | Standard Student | Student Workspace (`/dashboard`, `/book`, `/bookings`, `/fairness`, `/notifications`) |
 | **Admin** | **Dr. A. K. Sharma**<br>`aksharma@iitbhilai.ac.in` | `demo` | `POLICY_ADMIN`<br>`ALLOCATION_ADMIN`<br>`ACCESS_OPERATOR` | Full Admin Workspace (`/overview`, `/settings`, `/allocation`, `/schedule`, `/workstations`, `/students`, `/analytics`, `/access`, `/audit`) |
 | **Gate Desk** | **Access Operator**<br>`accessdesk.l106@iitbhilai.ac.in` | `demo` | `ACCESS_OPERATOR` | Access Control Gate Desk (`/access` only; policy & settings blocked `403`) |
 

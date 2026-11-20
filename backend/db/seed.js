@@ -517,7 +517,7 @@ async function seedDatabase() {
 
     // 5. Users (Primary Personas + Cohort Students for realistic map occupancy)
     const primaryUsers = [
-      { id: 'usr-student-ganesh', name: 'Ganesh Kumar', roll: 'BT23CSE001', email: 'ganesh.k@iitbhilai.ac.in', role: 'student', dept: 'M.Tech Computer Science & Engineering', bookings: 2, totalHrs: 2.0, highCnt: 0, highHrs: 0.0, waitSec: 600, score: 90 },
+      { id: 'usr-student-ganesh', name: 'NDS Ganesh', roll: 'BT23CSE001', email: 'ganesh.k@iitbhilai.ac.in', role: 'student', dept: 'M.Tech Computer Science & Engineering', bookings: 2, totalHrs: 2.0, highCnt: 0, highHrs: 0.0, waitSec: 600, score: 90 },
       { id: 'usr-student-priya', name: 'Priya Sharma', roll: 'BT23CSE015', email: 'priya.s@iitbhilai.ac.in', role: 'student', dept: 'B.Tech Computer Science & Engineering', bookings: 0, totalHrs: 0.0, highCnt: 0, highHrs: 0.0, waitSec: 1800, score: 100 },
       { id: 'usr-student-rahul', name: 'Rahul Verma', roll: 'BT23CSE022', email: 'rahul.v@iitbhilai.ac.in', role: 'student', dept: 'Dual Degree (B.Tech + M.Tech CSE)', bookings: 3, totalHrs: 3.0, highCnt: 1, highHrs: 1.0, waitSec: 1540, score: 80 },
       { id: 'usr-student-ananya', name: 'Ananya Patel', roll: 'BT23CSE034', email: 'ananya.p@iitbhilai.ac.in', role: 'student', dept: 'PhD Scholar (Computer Science)', bookings: 4, totalHrs: 4.0, highCnt: 2, highHrs: 2.0, waitSec: 980, score: 70 },
@@ -602,7 +602,7 @@ async function seedDatabase() {
       );
     }
 
-    // 7. Confirmed Booking & Signed QR Pass for Ganesh Kumar on L106-PC-03 (slot-3: 11:00-12:00)
+    // 7. Confirmed Booking & Signed QR Pass for NDS Ganesh on L106-PC-03 (slot-3: 11:00-12:00)
     const bookingId = 'L106-2026-00125';
     const requestId = 'req-ganesh-slot3';
     insertRequest.run(
@@ -618,7 +618,7 @@ async function seedDatabase() {
     const payload = JSON.stringify({
       bookingId,
       rollNo: 'BT23CSE001',
-      studentName: 'Ganesh Kumar',
+      studentName: 'NDS Ganesh',
       machineId: 'L106-PC-03',
       slot: '11:00 – 12:00',
       date: today,

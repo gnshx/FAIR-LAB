@@ -58,7 +58,7 @@ Every login requires an `@iitbhilai.ac.in` account and issues a signed **HS256 J
 | Persona | Email | Role | Permissions | Starting Score | Best Demo Use |
 | :--- | :--- | :--- | :--- | :---: | :--- |
 | **Priya Sharma** | `priya.s@iitbhilai.ac.in` | `student` | `[]` | `100` | Fresh student winning contested allocation |
-| **Ganesh Kumar** | `ganesh.k@iitbhilai.ac.in` | `student` | `[]` | `90` | Active booking, QR pass & voluntary cancel |
+| **NDS Ganesh** | `ganesh.k@iitbhilai.ac.in` | `student` | `[]` | `90` | Active booking, QR pass & voluntary cancel |
 | **Rahul Verma** | `rahul.v@iitbhilai.ac.in` | `student` | `[]` | `80` | Mid-tier competing request |
 | **Ananya Patel** | `ananya.p@iitbhilai.ac.in` | `student` | `[]` | `70` | Lower-score student submitting earlier than Priya |
 | **Dr. A. K. Sharma** | `aksharma@iitbhilai.ac.in` | `admin` | `POLICY_ADMIN`, `ALLOCATION_ADMIN`, `ACCESS_OPERATOR` | — | Full lab coordinator (timetable, tickets, maintenance, allocation, gate) |

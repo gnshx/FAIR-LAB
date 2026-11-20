@@ -1,6 +1,6 @@
 # Group 10 — Individual Viva Preparation Guide (Individual Marking)
 
-> **Team (Group 10):** Ganesh · V Karthik · Charith Reddy  
+> **Team (Group 10):** NDS Ganesh · V Karthik · Charith Reddy  
 > **Key Rule from Panel:** *"After the demo, we would ask questions regarding the implementation of the project. Marking will be individual."*
 
 Every team member **must understand the full architecture**, and each member should also own a deep-dive domain so panel questions can be answered crisply down to exact file names, SQL constraints, and line-level logic.
@@ -11,7 +11,7 @@ Every team member **must understand the full architecture**, and each member sho
 
 | Teammate | Primary Deep-Dive Modules | Key Files to Know Cold |
 | :--- | :--- | :--- |
-| **Ganesh** | Core Fairness Engine, Hybrid Atomic Allocation, Transactional Outbox, Cross-Replica WS Tailer, Automated Test & Benchmark Suite | `backend/services/fairnessEngine.js`, `backend/services/bookingService.js`, `backend/db/database.js`, `tests/benchmark-fairness-50seeds.js`, `tests/test-phase10-validation.js` |
+| **NDS Ganesh** | Core Fairness Engine, Hybrid Atomic Allocation, Transactional Outbox, Cross-Replica WS Tailer, Automated Test & Benchmark Suite | `backend/services/fairnessEngine.js`, `backend/services/bookingService.js`, `backend/db/database.js`, `tests/benchmark-fairness-50seeds.js`, `tests/test-phase10-validation.js` |
 | **V Karthik** | 15-Screen React SPA, 84-Seat Interactive Map, Custom `[start, end)` Interval Booking, Mon–Fri Timetable / Holidays / Ticket Releases, Idempotent WS Client | `frontend/src/views/WorkstationMapView.jsx`, `frontend/src/views/AdminScheduleView.jsx`, `frontend/src/context/SocketContext.jsx`, `frontend/src/context/AuthContext.jsx`, `backend/services/scheduleService.js`, `backend/services/availabilityService.js` |
 | **Charith Reddy** | Zero-Trust Auth (HS256 JWT + `HttpOnly`/`Secure` Cookie), 2-Role + `ACCESS_OPERATOR` RBAC, HMAC-SHA256 QR Gate Verification, Maintenance Auto-Reallocation, Nginx LB + PM2 + PostgreSQL 16 VM Deployment | `backend/middleware/auth.js`, `backend/routes/auth.js`, `backend/routes/access.js`, `backend/services/passService.js`, `backend/services/verificationService.js`, `backend/services/gpuResourceService.js`, `backend/db/postgres-schema.sql` |
 
@@ -43,7 +43,7 @@ Every team member **must understand the full architecture**, and each member sho
 
 ## 3. Rapid-Fire Individual Panel Questions (Practice Drill)
 
-### For Ganesh (Algorithms, Concurrency & Recovery)
+### For NDS Ganesh (Algorithms, Concurrency & Recovery)
 - **Q:** *"How do your two backend replicas communicate WebSocket updates with each other?"*
   - **A:** Both replicas share `fairlab.db` (SQLite WAL) on the single VM. When Replica 1 commits a booking, it writes a row into `outbox_events`. Replica 2's 1-second outbox tailer (`tailOutboxEventsSince`) discovers new rows by `rowid`, invalidates its availability cache, and broadcasts the event to Replica 2's connected WebSocket clients (`431 ms` measured live). Note: sharing a SQLite WAL file works for a controlled single-VM demo; multi-host horizontal scaling requires cutting over runtime traffic to PostgreSQL 16 + a network broker (e.g., Redis Pub/Sub).
 - **Q:** *"How do you prevent both replicas from publishing the same pending outbox event, and what is the crash trade-off?"*

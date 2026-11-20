@@ -121,7 +121,7 @@ This document records all functional, architectural, visual, mobile, and test-su
 * **Symptom**: UI was broken on smartphone viewports (360px–480px): sidebar occupied the full width, workstation rows were compressed, camera viewfinder clipped, and switching user personas required desktop viewports.
 * **Engineering Fix**:
   * **Slide-Out Mobile Drawer**: Added touch-friendly navigation drawer with active state badges.
-  * **1-Tap Mobile Persona Switcher**: Header popover allows switching between Student (`Ganesh Kumar`), Coordinator (`Dr. A. K. Sharma`), and Security (`Ram Singh`) with genuine JWT sessions on mobile.
+  * **1-Tap Mobile Persona Switcher**: Header popover allows switching between Student (`NDS Ganesh`), Coordinator (`Dr. A. K. Sharma`), and Security (`Ram Singh`) with genuine JWT sessions on mobile.
   * **Priority Pass Layout**: Active pass appears at the top of the mobile screen (`order-first xl:order-last`).
   * **Sticky Booking Bar**: Fixed bottom bar allows instant booking submission without scrolling through all 84 workstations.
   * **Viewfinder Resizing**: Mobile-first height `h-72 sm:h-auto` with touch targets $\ge 44\text{px}$.
@@ -187,3 +187,4 @@ All 15 test suites have been verified on the live production VM (`10.1.75.40`) a
 * **Live Frontend**: [http://10.1.75.40:3500](http://10.1.75.40:3500)
 * **Live API**: [http://10.1.75.40:5000/health](http://10.1.75.40:5000/health)
 * **PM2 Status**: All 3 services (`fairlab-api-1`, `fairlab-api-2`, `fairlab-ops-monitor`) active with zero crashes.
+

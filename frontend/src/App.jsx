@@ -134,7 +134,7 @@ function MainLayout() {
   const isGateWorkspace = workspace === 'gate' || (isGateUser && (currentView === 'admin-access' || currentView === 'student-book'));
   const mobileNav = isGateWorkspace ? GATE_NAV : (workspace === 'admin' ? ADMIN_NAV : STUDENT_NAV);
   const userList = (availableUsers && availableUsers.length > 0) ? availableUsers : CANONICAL_DEMO_USERS;
-  const displayName = user?.name || (isGateWorkspace ? 'Ram Singh (Gate Desk)' : (workspace === 'admin' ? 'Dr. A. K. Sharma' : 'Ganesh Kumar'));
+  const displayName = user?.name || (isGateWorkspace ? 'Ram Singh (Gate Desk)' : (workspace === 'admin' ? 'Dr. A. K. Sharma' : 'NDS Ganesh'));
   const userInitial = (displayName.charAt(0) || 'U').toUpperCase();
 
   const handleSelectPersona = async (u) => {

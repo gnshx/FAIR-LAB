@@ -52,7 +52,7 @@ export default function Sidebar({ workspace, currentView, setCurrentView, onSwit
     badgeColor = 'bg-[#4F46E5]';
   }
 
-  const displayName = user?.name || (isGateWorkspace || isGateOp ? 'Ram Singh (Gate Desk)' : (isAdminWorkspace ? 'Dr. A. K. Sharma' : 'Ganesh Kumar'));
+  const displayName = user?.name || (isGateWorkspace || isGateOp ? 'Ram Singh (Gate Desk)' : (isAdminWorkspace ? 'Dr. A. K. Sharma' : 'NDS Ganesh'));
   const initial = (isGateWorkspace || isGateOp ? 'R' : (displayName.charAt(0) || 'U')).toUpperCase();
 
   const userList = (availableUsers && availableUsers.length > 0) ? availableUsers : CANONICAL_DEMO_USERS;

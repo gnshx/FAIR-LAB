@@ -89,7 +89,7 @@ async function main() {
   const demoUserId = 'usr-demo-student';
   db.prepare(`
     INSERT OR IGNORE INTO users (user_id, name, roll_no, email, role, department)
-    VALUES (?, 'Ganesh Kumar (Demo)', 'BT23DEMO01', 'demo.ganesh@iitbhilai.ac.in', 'student', 'CSE')
+    VALUES (?, 'NDS Ganesh (Demo)', 'BT23DEMO01', 'demo.ganesh@iitbhilai.ac.in', 'student', 'CSE')
   `).run(demoUserId);
   db.prepare("DELETE FROM entry_logs WHERE user_id = ?").run(demoUserId);
   db.prepare("DELETE FROM access_passes WHERE user_id = ?").run(demoUserId);
@@ -126,7 +126,7 @@ async function main() {
   console.log('\n  Simulating Watchman Gate optical scan...');
   const verifyResult = verifyToken(pass.signedToken);
   console.log(`  ✓ Verification Result: \x1b[32m${verifyResult.code}\x1b[0m — ${verifyResult.message}`);
-  console.log(`  ✓ Authorized Student:  ${verifyResult.pass ? verifyResult.pass.student_name : 'Ganesh Kumar'} (${verifyResult.pass ? verifyResult.pass.roll_no : 'BT23DEMO01'})`);
+  console.log(`  ✓ Authorized Student:  ${verifyResult.pass ? verifyResult.pass.student_name : 'NDS Ganesh'} (${verifyResult.pass ? verifyResult.pass.roll_no : 'BT23DEMO01'})`);
   console.log(`  ✓ Assigned Hardware:   ${verifyResult.pass ? verifyResult.pass.machine_id : 'L106-PC-05'} in Lab L-106`);
 
   await sleep(600);

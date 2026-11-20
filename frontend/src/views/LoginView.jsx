@@ -210,7 +210,7 @@ export default function LoginView({ onSignedIn }) {
                   completeLoginRequest('ganesh.k@iitbhilai.ac.in', 'demo');
                 }}
                 className="h-10 px-2 rounded-xl bg-[#F8FAFC] hover:bg-[#EEF2FF] border border-[#E2E8F0] text-[11px] font-semibold text-[#334155] hover:text-[#4F46E5] flex flex-col items-center justify-center text-center transition-colors"
-                title="Student: Ganesh Kumar (M.Tech CSE)"
+                title="Student: NDS Ganesh (M.Tech CSE)"
               >
                 <span>Student</span>
                 <span className="text-[9px] font-normal text-[#94A3B8]">@iitbhilai</span>
