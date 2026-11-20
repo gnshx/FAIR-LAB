@@ -12,6 +12,7 @@ class SqliteAdapter {
     this.dialect = 'sqlite';
     this.db = new Database(dbPath);
     this.db.pragma('journal_mode = WAL');
+    this.db.pragma('busy_timeout = 10000');
     this.db.pragma('foreign_keys = ON');
     this.db.pragma('synchronous = NORMAL');
     this._initializeSchema();

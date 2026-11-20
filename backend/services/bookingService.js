@@ -363,7 +363,7 @@ function submitBookingRequest({
       dailyQuota: dailyCheck,
       status: 'QUEUED'
     };
-  });
+  }).immediate;
 
   const res = tx();
   invalidateAvailabilityCache();
@@ -550,7 +550,7 @@ async function submitHybridBookingRequest(params) {
       allocationMode: 'IMMEDIATE'
     };
     return confirmedBooking;
-  });
+  }).immediate;
 
   immediateTx();
   invalidateAvailabilityCache();
@@ -966,7 +966,7 @@ async function runWindowAllocationRound({
       roundId,
       JSON.stringify({ roundId, bookingDate: targetDate, allocatedCount: allocations.length, waitlistedCount: remainingWaitlist.length })
     );
-  });
+  }).immediate;
 
   matchTx();
   invalidateAvailabilityCache();
@@ -1153,7 +1153,7 @@ function cancelBooking(bookingId, userId, reason = 'Student voluntary cancellati
       bookingDate: booking.booking_date,
       penaltyApplied: 0
     };
-  });
+  }).immediate;
 
   const res = cancelTx();
   invalidateAvailabilityCache();
@@ -1307,7 +1307,7 @@ async function processNoShows({ bookingId = null, slotId = null, bookingDate = n
         endTime: b.eff_end
       });
     }
-  });
+  }).immediate;
 
   tx();
   invalidateAvailabilityCache();
